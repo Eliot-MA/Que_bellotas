@@ -11,7 +11,7 @@ rD.codobs <- read.csv2(file = "00-data/code_observations.csv")
 
 
 
-rD.sp.procedencias <- read.csv2(file = "data/procedencias_updated.csv", stringsAsFactors = FALSE)
+rD.sp.procedencias <- read.csv2(file = "00-data/procedencias_updated.csv", stringsAsFactors = FALSE)
 rD.sp.procedencias <- rD.sp.procedencias |> 
   filter(Localidad != "El Pozo") |> 
   dplyr::select(ID, Procedencia, Localidad)
@@ -59,20 +59,30 @@ df.ti <- cbind(df.ti, df.ti.minuto)
 for (i in 0:9) {
   
   df.ti[[paste0("Fecha y hora t", i)]] <-
-    as.POSIXct(
       paste(
-        df.ti[[paste0("fecha t", i)]],
-        paste(df.ti[[paste0("hora t", i)]],
-              df.ti[[paste0("minuto t", i)]],
+        df.ti[[paste0("fecha.t", i)]],
+        paste(df.ti[[paste0("hora.t", i)]],
+              df.ti[[paste0("minuto.t", i)]],
               sep = ":")
-      ),
-      format = "%Y-%m-%d %H:%M",
-      tz = "Europe/Madrid"
-    )
+      )
 }
 
 df.ti <- df.ti |>
-  dplyr::select(contains(c("id_bellota", "especie", "procedencia", "Fecha y hora")))
+  dplyr::select(
+    id_bellota,
+    especie,
+    procedencia,
+    starts_with("Fecha y hora")
+  ) |>
+  mutate(
+    across(
+      starts_with("Fecha y hora"),
+      ~ as.POSIXct(.x,
+                   format = "%d/%m/%Y %H:%M",
+                   tz = "Europe/Madrid")
+    )
+  )
+  
 
 ### Hacerla tidy
 df.ti <- df.ti %>%
@@ -196,11 +206,11 @@ df.obs.id <- df.obs.ti %>%
 df.pesos <- rD.bellotas %>%
   dplyr::select(!starts_with(c("fecha", "hora", "minuto", "observaciones"))) |>
   pivot_longer(
-    cols = starts_with("peso t"), # Selecciona las columnas de peso
+    cols = starts_with("peso.t"), # Selecciona las columnas de peso
     names_to = "tiempo",         # Nueva columna para identificar el tiempo
     values_to = "peso"           # Nueva columna para los valores de peso
   ) %>%
-  mutate(tiempo = gsub("peso t", "t", tiempo)) # Ajusta los nombres de tiempo
+  mutate(tiempo = gsub("peso.t", "t", tiempo)) # Ajusta los nombres de tiempo
 
 # Crear dataframe
 df.bellotas <- merge(df.pesos, df.ti[,c("id_bellota", "tiempo", "fecha_hora")], by = c("id_bellota", "tiempo"))

@@ -49,3 +49,6 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 .positai
+
+# Ignore data
+00-data/*
