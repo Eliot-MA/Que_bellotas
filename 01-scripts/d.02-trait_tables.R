@@ -182,7 +182,7 @@ procesar_modelo <- function(modelo, meta_row, factor_var = "species") {
 emm.results <- Map(procesar_modelo, modelos, split(metadata, seq_len(nrow(metadata))))
 names(emm.results) <- metadata$modelo
 
-## 2. Creat mother table
+## 2. Creat mother table ----
 
 library(dplyr)
 library(purrr)
@@ -226,7 +226,7 @@ tidy_emm <- function(res, modelo_nombre) {
 
 tabla_final <- purrr::imap_dfr(emm.results, tidy_emm)
 
-## 3. Creat publication table
+## 3. Creat publication table ----
 
 library(dplyr)
 library(tidyr)
@@ -263,3 +263,8 @@ tabla_publicacion <- tabla_final %>%
   pivot_wider(names_from = columna, values_from = valor_formateado)
 
 tabla_publicacion
+
+## Save ----
+
+write.csv2(x = tabla_final, file = "00-data/emm_traits_long.csv")
+write.csv2(x = tabla_publicacion, file = "00-data/paper_traits.csv")
