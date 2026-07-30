@@ -1,8 +1,11 @@
 library(tidyverse)
 
-source("01-scripts/d.01-load_desiccation_exp.R")
+# Si no tienes desiccation_traits_long.csv
+# ejecuta primero VVV
+# source("01-scripts/d.01-load_desiccation_exp.R")
+# rm(list = ls())
 
-rm(list = setdiff(ls(), "df.bellotas"))
+df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 
 # 1. Calculate FAMD ----
 ## 1.1. Create famd dataframe ----
@@ -46,6 +49,11 @@ df.famd <- df |> select(-id_bellota, -species, -provenance, -prov_code)
 
 # Calculate famd
 famd.traits <- FAMD(df.famd, graph = FALSE)
+
+df <- cbind(df, famd.traits$ind$coord[,1:5])
+
+write.csv(x = df, "00-data/famd_ind_coord.csv")
+
 
 ### Save famd info ----
 # If not created, create famd folder

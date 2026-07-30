@@ -10,6 +10,7 @@ rD.bellotas <- read.csv2(file = "00-data/desiccation_traits_wide.csv")
 rD.codobs <- read.csv2(file = "00-data/code_observations.csv")
 
 rD.sp.procedencias <- read.csv2(file = "00-data/procedencias_updated.csv", stringsAsFactors = FALSE)
+
 rD.sp.procedencias <- rD.sp.procedencias |> 
   filter(Localidad != "El Pozo") |> 
   dplyr::select(ID, Procedencia, Localidad)
