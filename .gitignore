@@ -52,3 +52,6 @@ rsconnect/
 
 # Ignore data
 00-data/*
+
+# Others
+Estimating Phylogenetic Multilevel Models with brms.pdf

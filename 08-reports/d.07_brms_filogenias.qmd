@@ -1,0 +1,480 @@
+---
+title: "Incorporación de la filogenia de *Quercus* en los modelos de desecación"
+subtitle: "Razonamiento y proceso para la introducción de la no-independencia filogenética con `brms`"
+author: "Análisis del proyecto Que_bellotas"
+date: "2026-08-02"
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    geometry:
+      - margin=2.5cm
+    fontsize: 11pt
+    keep-md: false
+---
+
+```{r setup, include=FALSE}
+# Asegurar que el directorio de trabajo de los chunks sea la raiz del repositorio
+# (independiente del nombre de la carpeta donde viva este .qmd)
+if (!file.exists("00-data/desiccation_traits_long.csv")) {
+  knitr::opts_knit$set(root.dir = "..")
+}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(ape)
+  library(knitr)
+})
+```
+
+# Contexto y objetivo
+
+El proyecto Que_bellotas analiza la velocidad de desecación de bellotas de
+distintas especies de roble (*Quercus*). El conjunto de datos contiene
+mediciones repetidas de contenido de humedad (`Moisture_content`) a lo largo
+del tiempo de secado (`time`) para cada bellota.
+
+El modelo de partida (ajustado con `glmmTMB`) es:
+
+```r
+m.t1 <- glmmTMB(
+  Moisture_content ~ time * (Dim.1 + Dim.2 + Dim.3) + (time | id_bellota:species),
+  data = df.t1
+)
+```
+
+en el que se estima una pendiente y un intercepto aleatorios para cada
+combinación de bellota y especie. Este término recoge la no-independencia
+de las mediciones repetidas dentro de cada bellota.
+
+**Limitación identificada:** en este modelo, cada especie se trata como si
+fuese independiente de las demás. Sin embargo, debido al parentesco
+filogenético, algunas especies están más emparentadas entre sí y cabe esperar
+que compartan características (p. ej., tasas de desecación o niveles iniciales
+de humedad). Ignorar esa estructura puede sesgar las inferencias a nivel de
+especie y subestimar la incertidumbre.
+
+**Objetivo:** incorporar la estructura de covarianza filogenética entre las 8
+especies de *Quercus* presentes en el estudio, afectando tanto a interceptos
+como a pendientes.
+
+# La aproximación recomendada: modelos filogenéticos multinivel con `brms`
+
+La recomendación es ajustar los modelos en el marco bayesiano con el paquete
+`brms`, que permite especificar un término aleatorio a nivel de especie cuya
+estructura de covarianza viene dada por una **matriz filogenética** `A`
+obtenida del árbol de las especies.
+
+La referencia metodológica es el documento
+*"Estimating Phylogenetic Multilevel Models with brms"* (vignette de
+P. Bürkner, que acompaña a `brms`). La estrategia central que se extrae de
+dicha vignette es:
+
+1. Obtener el árbol filogenético (`phylo`) de las especies.
+2. Construir la matriz de varianza-covarianza filogenética con
+   `A <- ape::vcv.phylo(phylo)`.
+3. Especificar el término aleatorio filogenético con
+   `(1 | gr(species, cov = A))`, pasando la matriz `A` mediante el argumento
+   `data2 = list(A = A)`.
+4. Cuando hay varias observaciones por especie, la vignette recomienda
+   combinar el efecto filogenético con un término de especie "libre"
+   (`(1 | species)`) para separar la señal filogenética del efecto específico
+   no filogenético.
+5. La vignette advierte que es posible estimar **pendiente e intercepto**
+   filogenéticos (`(1 + x | gr(...))`), aunque requiere productos de Kronecker
+   de matrices de covarianza. Con 8 especies la matriz es pequeña (8×8), por lo
+   que el coste es asumible.
+
+::: {.callout-note}
+La vignette **no proporciona el árbol** de las especies del estudio: usa un
+árbol de ejemplo (`phylo.nex`, con tips `sp_1`…`sp_200`) con fines
+ilustrativos. La metodología se tomó del PDF; la filogenia se obtuvo por otra
+vía (sección @sec-fuente-filogenia).
+:::
+
+# Exploración de los datos
+
+Antes de plantear el modelo se verificó la estructura de los datos:
+
+- `df.t1` tiene 2069 observaciones (tiempos < 90 h).
+- 8 especies de *Quercus*: `petraea`, `robur`, `faginea`, `coccifera`, `ilex`,
+  `pyrenaica`, `suber`, `pubescens`.
+- `id_bellota` es un identificador único a nivel global (no se repite entre
+  especies). Por tanto, el término `(time | id_bellota:species)` del modelo
+  original equivale a `(time | id_bellota)`.
+
+::: {.callout-note}
+**¿Por qué `(time | id_bellota:species)` equivale a `(time | id_bellota)`?**
+
+En `glmmTMB` (y `lme4`), el término `(time | g)` estima un intercepto y una
+pendiente aleatorios para **cada nivel** del factor `g`. La expresión
+`id_bellota:species` es la interacción de dos factores: crea un nuevo factor
+cuyos niveles son todas las combinaciones únicas `(id_bellota, species)`.
+
+Como cada bellota pertenece a una única especie y sus valores de `id_bellota`
+no se repiten entre especies, la correspondencia entre `(id_bellota, species)`
+e `id_bellota` es **biyectiva**: ambas especificaciones tienen el mismo número
+de niveles y agrupan exactamente las mismas observaciones, por lo que producen
+la misma estructura de efectos aleatorios. La interacción solo sería necesaria
+si los valores de `id_bellota` se repitieran entre especies.
+:::
+
+- `numero_bellota`: numeración de las bellotas **dentro de cada procedencia**;
+  se reinicia en cada `codigo` (valores 1–30). La combinación
+  `codigo × numero_bellota` identifica cada bellota de forma única (equivale a
+  `id_bellota`).
+- `codigo` (columna `prov_code` en los dataframes derivados): identificador
+  alfanumérico único para cada combinación **especie × procedencia**
+  (`PE1`, `PE2`, `IL1`, `IL2`, …). Está **anidado** dentro de especie: cada
+  `codigo` pertenece a una sola especie.
+- `procedencia` (columna `provenance` en los dataframes derivados): el nombre
+  concreto de la procedencia (p. ej. Santos de la Humosa, Región Vasco-Navarra,
+  …). **No está anidado** en la especie: algunos nombres de procedencia se
+  comparten entre especies distintas (p. ej. "Alcarria-Serranía de
+  Cuenca-Chiloeches" aparece en *Q. coccifera* y *Q. ilex*;
+  "Alcarria-Serranía de Cuenca-Santos de la Humosa" en *Q. faginea* y
+  *Q. ilex*). Es, por tanto, una variable **cruzada** con la especie.
+
+La jerarquía anidada real de los datos es: **observaciones → bellota
+(`id_bellota`) → procedencia (`codigo`) → especie (filogenia)**.
+
+## Implicaciones para el flujo de trabajo
+
+Esta información modifica el planteamiento del modelo en varios puntos:
+
+1. **Nivel de procedencia.** Existe un nivel de agrupación intermedio entre la
+   bellota y la especie: la procedencia (`codigo`, 16 niveles). Es recomendable
+   incluir un término aleatorio `(1 + time | codigo)` para absorber la
+   variación entre procedencias dentro de una misma especie. De lo contrario,
+   esa variación se confunde con el efecto de especie (filogenético o no) o
+   infla la varianza a nivel de bellota.
+2. **`procedencia` no es anidada.** Al compartirse nombres de procedencia entre
+   especies, no debe especificarse `procedencia` como factor anidado en especie.
+   Un efecto cruzado `(1 + time | procedencia)` sería concebible, pero con solo
+   2 de 15 nombres de procedencia compartidos entre especies su aportación es
+   marginal y arriesga problemas de identificación; se recomienda modelar la
+   procedencia mediante `codigo` (anidado).
+3. **Nombre del término filogenético.** En `brms` no se puede usar el mismo
+   factor dos veces con distinta estructura de covarianza. Para el modelo M2 se
+   necesita una copia de la variable de especie (p. ej.
+   `phylo_species = species`) dedicada al término con `cov = A`, mientras que
+   `species` queda para el efecto libre no filogenético (siguiendo la
+   recomendación de la vignette).
+4. **Señal filogenética.** La fórmula de la CCI/λ debe incorporar la varianza
+   del nivel de procedencia: `sd_phylo² / (sd_phylo² + sd_codigo² + sd_bellota² + sigma²)`.
+
+```{r datos, eval=TRUE}
+df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
+df.famd <- read.csv("00-data/famd_ind_coord.csv")
+
+df.t1 <- df.bellotas |>
+  dplyr::select(-X) |>
+  dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content, numero_bellota) |>
+  left_join(y = df.famd, by = "id_bellota") |>
+  tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
+  rename(time = tiempo_acumulado_horas, id_bellota2 = numero_bellota) |>
+  mutate(log.t = log(time + 1), sqrt.t = sqrt(time + 1)) |>
+  filter(time < 90)
+
+cat("Observaciones:", nrow(df.t1), "\n")
+cat("Bellotas (id_bellota unicos):", n_distinct(df.t1$id_bellota), "\n")
+cat("numero_bellota unicos (se reinicia por procedencia):", n_distinct(df.t1$id_bellota2), "\n")
+cat("Codigos de procedencia:", n_distinct(df.t1$codigo), "\n")
+cat("Procedencias (nombre):", n_distinct(df.t1$provenance), "\n")
+cat("Especies:", n_distinct(df.t1$species), "\n")
+cat("Procedencias compartidas entre especies:\n")
+print(
+  df.t1 |>
+    distinct(provenance, species) |>
+    group_by(provenance) |>
+    summarise(n_especies = n_distinct(species), .groups = "drop") |>
+    filter(n_especies > 1) |>
+    as.data.frame()
+)
+```
+
+# Fuente de la filogenia {#sec-fuente-filogenia}
+
+La elección de la fuente filogenética es una decisión metodológica importante y
+conviene documentar las alternativas consideradas.
+
+## Alternativa descartada: mega-árbol de plantas (GBOTB / V.PhyloMaker2)
+
+Se consideró generar el árbol con el paquete `V.PhyloMaker2`, que inserta una
+lista de especies en el mega-árbol de plantas vasculares GBOTB
+(Smith & Brown 2018; Jin & Qian 2019, 2022).
+
+**Motivo del descarte:** GBOTB funciona esencialmente a nivel de género. Como
+las 8 especies del estudio pertenecen al mismo género (*Quercus*), la inserción
+las habría dejado como una **politomía de hermanas** en el nodo del género.
+En ese caso, todas las covarianzas de la matriz `A` habrían sido iguales y el
+modelo no habría tenido ninguna información filogenética que estimar (señal
+nula por construcción). Es decir, la herramienta es adecuada para comunidades
+de plantas de distintos géneros, pero no para comparar especies dentro de un
+género.
+
+## Alternativa elegida: Open Tree of Life (OToL) vía `rotl`
+
+La filogenia se obtuvo del **árbol sintético de Open Tree of Life** mediante el
+paquete `rotl`. El árbol sintético es un consenso de filogenias moleculares
+publicadas, y **sí contiene filogenias intra-genéricas de *Quercus***, que es
+la resolución necesaria en este estudio.
+
+Ventajas de esta elección:
+
+- **Resolución intra-genérica**: permite diferenciar las relaciones dentro de
+  *Quercus*, que es exactamente lo que necesita el análisis.
+- **Reproducibilidad**: los identificadores de la taxonomía (OTT ids) quedan
+  registrados y el árbol puede regenerarse en cualquier momento.
+- **Transparencia**: la topología proviene de un consenso de literatura
+  publicada, no de decisiones ad hoc.
+
+# Construcción del árbol (script `01-scripts/d.07.0-phylo_tree.R`)
+
+## Resolución de nombres (TNRS)
+
+Se consultó la taxonomía de OToL con `tnrs_match_names()` para verificar los
+nombres científicos. Las 8 especies se resolvieron sin sinónimos ni errores:
+
+```{r tnrs, eval=FALSE}
+library(rotl)
+spp <- c("Quercus petraea", "Quercus robur", "Quercus faginea",
+         "Quercus coccifera", "Quercus ilex", "Quercus pyrenaica",
+         "Quercus suber", "Quercus pubescens")
+resolved <- tnrs_match_names(spp, context_name = "Vascular plants")
+```
+
+| search_string    | unique_name       | ott_id   | is_synonym |
+|------------------|-------------------|----------|------------|
+| quercus petraea  | Quercus petraea   | 516540   | FALSE      |
+| quercus robur    | Quercus robur     | 239659   | FALSE      |
+| quercus faginea  | Quercus faginea   | 381049   | FALSE      |
+| quercus coccifera| Quercus coccifera | 272695   | FALSE      |
+| quercus ilex     | Quercus ilex      | 272692   | FALSE      |
+| quercus pyrenaica| Quercus pyrenaica | 716878   | FALSE      |
+| quercus suber    | Quercus suber     | 272709   | FALSE      |
+| quercus pubescens| Quercus pubescens | 426505   | FALSE      |
+
+## Subárbol inducido
+
+Se extrajo el subárbol inducido con `tol_induced_subtree()` a partir de los
+OTT ids. El subárbol resultante está **completamente resuelto** (8 tips y 7
+nodos internos, es decir, árbol binario).
+
+```{r subtree, eval=FALSE}
+tree <- tol_induced_subtree(ott_ids = resolved$ott_id)
+```
+
+## Problema: ausencia de longitudes de rama
+
+El subárbol devuelto por OToL **no traía longitudes de rama**
+(`Rooted; no branch length`).
+
+¿Qué significa? Una filogenia tiene dos componentes:
+
+- la **topología** (qué especies están emparentadas entre sí), que sí se obtuvo;
+- las **longitudes de rama** (cuánta evolución o tiempo separa cada par de
+  divergencias), que es lo que faltaba.
+
+Las longitudes son imprescindibles porque la matriz de covarianza filogenética
+se construye a partir de ellas: bajo un modelo browniano de evolución, la
+covarianza entre dos especies es proporcional a la suma de longitudes desde la
+raíz hasta su ancestro común. Sin longitudes no se puede construir `A`.
+
+¿Por qué faltaban? Las relaciones entre estas especies dentro del árbol
+sintético proceden de **inserciones taxonómicas** (sin datos moleculares
+datados), y esos nodos no llevan longitudes asignadas. Al inducir el subárbol,
+esas aristas quedaron sin longitud.
+
+## Solución: longitudes de rama por el método de Grafen
+
+Al disponer únicamente de la topología, se asignaron longitudes con el método
+de **Grafen (1989)**, implementado en `ape::compute.brlen(..., method = "Grafen")`.
+
+En qué se basa:
+
+1. A cada nodo interno se le asigna una "altura" proporcional al número de
+   hojas que tiene por debajo: `altura(nodo) = (n_descendientes)^ρ`, con
+   `ρ = 1` por defecto.
+2. La longitud de cada rama es la **diferencia de alturas** entre los dos nodos
+   que conecta.
+
+Propiedades:
+
+- Produce un árbol **ultramétrico** (todas las especies equidistan de la raíz),
+  lo que asume la mayoría de métodos comparativos.
+- Las ramas cercanas a la raíz (divergencias antiguas) reciben longitudes
+  mayores que las de clados recientes.
+- Las longitudes están en **unidades arbitrarias** (número de hojas), no en
+  tiempo ni sustituciones: es un heurístico, no un dato.
+
+**Justificación de su uso aquí:** el objetivo era realizar una primera prueba
+metodológica. La escala absoluta de `A` no afecta a la inferencia en `brms`,
+porque el modelo estima un parámetro de desviación `sd_phylo` que escala la
+matriz (la covarianza modelada es `sd² · A`); lo relevante es la **estructura
+relativa** de covarianzas, que Grafen sí conserva a partir de la topología.
+
+## Árbol resultante
+
+```{r arbol, eval=TRUE, fig.cap="Filogenia de las 8 especies de Quercus (Open Tree of Life, longitudes de Grafen)."}
+tree <- readRDS("00-data/phylo/oak_tree.rds")
+plot(tree, cex = 1.2)
+```
+
+```{r newick, eval=TRUE}
+cat("Newick:\n", ape::write.tree(tree), "\n")
+```
+
+La topología resultante es:
+
+```
+((((pyrenaica, (pubescens, faginea)), (petraea, robur)), suber), (ilex, coccifera))
+```
+
+## Matriz de covarianza filogenética `A`
+
+```{r A, eval=TRUE}
+A <- readRDS("00-data/phylo/oak_vcv.rds")
+kable(round(A, 3), caption = "Matriz de varianza-covarianza filogenética (A = vcv.phylo).")
+```
+
+## Advertencias sobre la filogenia
+
+1. **Posición de *Quercus suber*:** en el árbol de OToL, `suber` aparece como
+   hermana de los robles blancos. Sin embargo, filogenias genómicas recientes
+   (Hipp et al. 2020) sitúan a `suber` en el subgénero *Cerris*, junto a
+   `ilex` y `coccifera`. Esta discrepancia refleja que OToL sintetiza distintas
+   fuentes y la resolución a este nivel puede ser inestable.
+2. **Longitudes de Grafen:** son un heurístico. Para el artículo convendría
+   sustituirlas por una filogenia de robles **datada** (p. ej. Hipp et al.
+   2020) o, al menos, realizar un análisis de sensibilidad con métodos
+   alternativos de longitudes.
+3. **Número de especies:** con solo 8 especies, la señal filogenética se estima
+   con incertidumbre alta; el término de bellota puede absorber parte de la
+   variación entre especies. Los resultados deben interpretarse con cautela.
+
+# Especificación del modelo `brms` (script `01-scripts/d.07.1-brms_phylo_model.R`)
+
+La estructura general sigue el modelo original, sustituyendo la independencia
+entre especies por una covarianza filogenética, y añadiendo el término de
+bellota para la variación dentro de especie y el de procedencia (`codigo`)
+para la variación entre procedencias dentro de especie.
+
+Nota previa: en `brms` no se puede usar el mismo factor dos veces con distinta
+estructura de covarianza. Por eso se crea una copia de la variable de especie
+dedicada al término filogenético:
+
+```r
+df.t1$phylo_species <- df.t1$species
+```
+
+## Modelo M1: filogenia + procedencia + bellota
+
+```r
+form1 <- bf(
+  Moisture_content ~ time * (Dim.1 + Dim.2 + Dim.3) +
+    (1 + time | gr(phylo_species, cov = A)) +   # filogenético (intercepto + pendiente)
+    (1 + time | codigo) +                        # procedencia (anidada en especie)
+    (1 + time | id_bellota)                      # variación entre bellotas
+)
+```
+
+## Modelo M2: filogenia + especie libre + procedencia + bellota
+
+Siguiendo la recomendación de la vignette para datos con observaciones
+repetidas, se añade un término de especie "libre" que separa el componente
+filogenético del efecto específico no filogenético:
+
+```r
+form2 <- bf(
+  Moisture_content ~ time * (Dim.1 + Dim.2 + Dim.3) +
+    (1 + time | gr(phylo_species, cov = A)) +   # filogenético
+    (1 + time | species) +                       # especie no filogenética
+    (1 + time | codigo) +                        # procedencia (anidada en especie)
+    (1 + time | id_bellota)                      # variación entre bellotas
+)
+```
+
+## Priors y muestreo
+
+```r
+priors <- c(
+  prior(normal(40, 20), class = "Intercept"),
+  prior(normal(0, 10),  class = "b"),
+  prior(student_t(3, 0, 10), class = "sd"),
+  prior(student_t(3, 0, 10), class = "sigma"),
+  prior(lkj(2), class = "cor")
+)
+
+m1 <- brm(
+  form1, data = df.t1, data2 = list(A = A),
+  family = gaussian(), prior = priors,
+  iter = 4000, warmup = 2000, chains = 4, cores = 4,
+  control = list(adapt_delta = 0.95, max_treedepth = 12),
+  seed = 123
+)
+```
+
+## Señal filogenética
+
+Siguiendo la vignette, la señal filogenética (análoga al λ de Pagel, aquí como
+CCI) se calcula como la proporción de varianza atribuible al nivel
+filogenético:
+
+```r
+hyp_phylo <- paste(
+  "sd_phylo_species__Intercept^2 /",
+  "(sd_phylo_species__Intercept^2 + sd_codigo__Intercept^2 +",
+  " sd_id_bellota__Intercept^2 + sigma^2)"
+)
+hypothesis(m1, hyp_phylo, class = NULL)
+```
+
+# Estado del proceso y próximos pasos
+
+1. **Filogenia y matriz `A`:** completadas y guardadas en
+   `00-data/phylo/` (`oak_tree.rds`, `oak_tree.nwk`, `oak_vcv.rds`).
+2. **Ajuste de prueba (M1 y M2):** el primer lanzamiento se interrumpió por
+   exceder el tiempo máximo de la sesión (la compilación del modelo Stan
+   arrancó correctamente, confirmando que la sintaxis `gr(species, cov = A)` +
+   `data2 = list(A = A)` es válida en la versión instalada de `brms`), pero el
+   muestreo no llegó a completarse.
+3. **Pendiente:**
+   - completar el ajuste de M1 y M2 (más iteraciones, 4 cadenas);
+   - verificar convergencia (R-hat, ESS) y diagnósticos;
+   - comparar M1 vs M2 con LOO/WAIC;
+   - contrastar con el modelo `glmmTMB` original;
+   - **análisis de sensibilidad** de la filogenia (Grafen vs longitudes
+     iguales vs filogenia datada de robles).
+
+# Archivos generados
+
+| Archivo                                         | Contenido                                             |
+|-------------------------------------------------|-------------------------------------------------------|
+| `01-scripts/d.07.0-phylo_tree.R`                | Obtención del árbol en OToL y construcción de `A`     |
+| `01-scripts/d.07.1-brms_phylo_model.R`          | Ajuste de M1 y M2 con `brms`                          |
+| `00-data/phylo/oak_tree.rds` / `.nwk`           | Árbol filogenético (topología + longitudes de Grafen) |
+| `00-data/phylo/oak_vcv.rds`                     | Matriz de varianza-covarianza filogenética `A`        |
+| `08-reports/d.07_brms_filogenias.qmd`           | Este documento                                        |
+
+# Referencias
+
+- Bürkner, P.-C. *Estimating Phylogenetic Multilevel Models with brms*
+  (vignette de `brms`, versión 2025-09-09). Documento PDF incluido en el
+  repositorio.
+- de Villemeruil, P. & Nakagawa, S. (2014). General quantitative genetic
+  methods for comparative biology. En *Modern Phylogenetic Comparative Methods*,
+  Springer.
+- Hadfield, J. D. & Nakagawa, S. (2010). General quantitative genetic methods
+  for comparative biology: phylogenies, taxonomies, and multi-trait models.
+  *Journal of Evolutionary Biology*, 23, 494–508.
+- Grafen, A. (1989). The phylogenetic regression. *Philosophical Transactions
+  of the Royal Society B*, 326, 119–157.
+- Smith, S. A. & Brown, J. W. (2018). Constructing a broadly inclusive seed
+  plant phylogeny. *American Journal of Botany*, 105(3), 302–314.
+- Jin, Y. & Qian, H. (2019). V.PhyloMaker: an R package that can generate very
+  large phylogenies for vascular plants. *Ecography*, 42(8), 1353–1359.
+- Jin, Y. & Qian, H. (2022). V.PhyloMaker2: an updated and enlarged R package.
+  *Plant Diversity*, 44(4), 335–339.
+- Hipp, A. L. et al. (2020). Genomic landscape of the global oak phylogeny.
+  *New Phytologist*, 226(4), 1198–1212.

@@ -120,7 +120,9 @@ p1 <- df2 |>
   geom_point(aes(color = fase), size = 0.8, alpha = .2) +
   geom_vline(aes(xintercept = 100), linetype = "dashed", colour = "red", alpha = .8) +
   scale_color_manual(values = c("antes" = "red", "despues" = "grey30"), guide = "none") +
-  labs(x = "Time (hours)", y = "Moisture content (%)") +
+  labs(x = "Time (hours)", y = "Moisture content (%)", 
+       caption = "Points before calculated breakpoints per acorn (red).", 
+       title = "Analysys of the presence of breakpoints in the desiccation curves.") +
   theme_minimal()
  
 sumtable_breakpoints <- df2 |> 
@@ -246,3 +248,4 @@ tabla_comp_final <- tabla_comp %>%
 
 # Save table
 write.csv(tabla_comp_final, "00-data/model_comparisons.csv")
+
