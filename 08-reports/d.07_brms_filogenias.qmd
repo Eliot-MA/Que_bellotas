@@ -1,8 +1,8 @@
 ---
 title: "Incorporación de la filogenia de *Quercus* en los modelos de desecación"
 subtitle: "Razonamiento y proceso para la introducción de la no-independencia filogenética con `brms`"
-author: "Análisis del proyecto Que_bellotas"
-date: "2026-08-02"
+author: "Open Code & Eliot Mompeán"
+date: today
 format:
   pdf:
     toc: true
@@ -85,13 +85,6 @@ dicha vignette es:
    de matrices de covarianza. Con 8 especies la matriz es pequeña (8×8), por lo
    que el coste es asumible.
 
-::: {.callout-note}
-La vignette **no proporciona el árbol** de las especies del estudio: usa un
-árbol de ejemplo (`phylo.nex`, con tips `sp_1`…`sp_200`) con fines
-ilustrativos. La metodología se tomó del PDF; la filogenia se obtuvo por otra
-vía (sección @sec-fuente-filogenia).
-:::
-
 # Exploración de los datos
 
 Antes de plantear el modelo se verificó la estructura de los datos:
@@ -115,8 +108,7 @@ Como cada bellota pertenece a una única especie y sus valores de `id_bellota`
 no se repiten entre especies, la correspondencia entre `(id_bellota, species)`
 e `id_bellota` es **biyectiva**: ambas especificaciones tienen el mismo número
 de niveles y agrupan exactamente las mismas observaciones, por lo que producen
-la misma estructura de efectos aleatorios. La interacción solo sería necesaria
-si los valores de `id_bellota` se repitieran entre especies.
+la misma estructura de efectos aleatorios.
 :::
 
 - `numero_bellota`: numeración de las bellotas **dentro de cada procedencia**;
@@ -202,7 +194,10 @@ conviene documentar las alternativas consideradas.
 
 Se consideró generar el árbol con el paquete `V.PhyloMaker2`, que inserta una
 lista de especies en el mega-árbol de plantas vasculares GBOTB
-(Smith & Brown 2018; Jin & Qian 2019, 2022).
+(Smith & Brown 2018; Jin & Qian 2019, 2022). GBOTB es un árbol "backbone" de
+~74.000 especies de plantas vasculares: bien resuelto en niveles taxonómicos
+altos (órdenes, familias, géneros), pero a nivel intra-genérico suele estar
+sin resolver.
 
 **Motivo del descarte:** GBOTB funciona esencialmente a nivel de género. Como
 las 8 especies del estudio pertenecen al mismo género (*Quercus*), la inserción
@@ -212,6 +207,59 @@ modelo no habría tenido ninguna información filogenética que estimar (señal
 nula por construcción). Es decir, la herramienta es adecuada para comunidades
 de plantas de distintos géneros, pero no para comparar especies dentro de un
 género.
+
+### Verificación empírica {#sec-verificacion-gbotb}
+
+Para documentar qué ocurre realmente, el apéndice del script
+`01-scripts/d.07.0-phylo_tree.R` ejecuta `V.PhyloMaker2::phylo.maker()` con las
+8 especies en los tres escenarios de inserción que ofrece el paquete (S1, S2 y
+S3). Los resultados matizan y precisan el razonamiento anterior:
+
+1. **No se produce un error.** `phylo.maker` completa y devuelve un árbol con
+   longitudes de rama. El fallo de esta vía es **silencioso**, no un fallo de
+   ejecución.
+2. **Solo 5 de las 8 especies están en GBOTB** (`status = "prune"`): *petraea*,
+   *faginea*, *coccifera*, *pyrenaica* y *suber*. Las 3 restantes —*robur*,
+   *ilex* y *pubescens*— **no están en el mega-árbol** y se injertan ad hoc
+   (`status = "bind"`).
+3. **S1 y S3 producen exactamente el mismo árbol** (los newicks coinciden
+   carácter a carácter): las especies injertadas quedan en **politomía** en el
+   nodo de *Quercus*, todas con la misma longitud de rama, es decir, sin
+   resolución entre ellas.
+4. **S2 produce un árbol resuelto pero aleatorio**: cada especie injertada se
+   empareja con un congénere elegido al azar, de modo que la topología cambia
+   con la semilla de la ejecución (y difiere de la de S1/S3).
+5. Las 5 especies `prune` heredan la topología interna de GBOTB, donde
+   *suber* queda entre los robles blancos, contradiciendo la filogenia genómica
+   de referencia (Hipp et al. 2020).
+
+```r
+# S1 y S3 (idénticos): robur, ilex y pubescens politómicas en el nodo de Quercus
+(pubescens:11.78, ilex:11.78, robur:11.78,
+   ((((faginea:4.75, petraea:4.75):0.42, pyrenaica:5.17):3.51, suber:8.68):2.42, coccifera:11.09):0.68)
+
+# S2: emparejamientos aleatorios (ejemplo de una ejecución)
+(((faginea, petraea), pyrenaica), suber, coccifera),
+   (pubescens, (ilex, robur)))
+```
+
+```{r phylomaker-fig, eval=TRUE, echo=FALSE, fig.cap="Topologías de *Quercus* devueltas por V.PhyloMaker2 (mega-árbol GBOTB) para las 8 especies según el escenario de inserción. En rojo, las especies no presentes en GBOTB e injertadas ad hoc (robur, ilex, pubescens): en S1 y S3 quedan en politomía en el nodo del género (árboles idénticos), mientras que en S2 se emparejan arbitrariamente con un congénere.", fig.width=10, fig.height=4.2}
+gb <- readRDS("00-data/phylo/gbotb_scenarios.rds")
+par(mfrow = c(1, 3), mar = c(2, 1, 3, 1))
+for (sc in names(gb$trees)) {
+  phy <- gb$trees[[sc]]
+  bind_sp <- gb$status$species[gb$status$status == "bind"]
+  tip_col <- ifelse(gsub("_", " ", phy$tip.label) %in% bind_sp, "firebrick", "black")
+  plot(phy, cex = 1.1, tip.color = tip_col, label.offset = 0.1)
+  title(paste("V.PhyloMaker2 - escenario", sc))
+}
+```
+
+La comprobación confirma el motivo del descarte y lo precisa: la vía GBOTB no
+falla de forma ruidosa, sino que **no aporta resolución intra-genérica
+fiable**. En S1/S3 la matriz `A` habría tenido covarianzas idénticas entre las
+especies injertadas y el resto (politomía sin información filogenética); en S2
+la topología habría dependido de la semilla aleatoria del emparejamiento.
 
 ## Alternativa elegida: Open Tree of Life (OToL) vía `rotl`
 

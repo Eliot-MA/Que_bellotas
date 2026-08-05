@@ -21,11 +21,16 @@ df <- df.bellotas |>
 # Model selection ----
 library(glmmTMB)
 
-m.orig <- glmmTMB(Moisture_content ~ time * species + (time|id_bellota), data = df)
+m.orig <- glmmTMB(Moisture_content ~ time * species + (time | provenance/id_bellota), data = df)
 
-m.log <- glmmTMB(Moisture_content ~ log.t * species + (log.t|id_bellota), data = df)
+m.log <- glmmTMB(Moisture_content ~ log.t * species + 
+                   (log.t | provenance/id_bellota), 
+                 data = df
+                 )
+# Convergence problem
+# I couldn't resolve it with more iterations or alternative likelihood algorihtms
 
-m.sqr <- glmmTMB(Moisture_content ~ sqrt.t * species + (sqrt.t|id_bellota), data = df)
+m.sqr <- glmmTMB(Moisture_content ~ sqrt.t * species + (sqrt.t|provenance/id_bellota), data = df)
 
 ## Segmented model ----
 ### Breakpoint detection with davies.test
@@ -72,11 +77,7 @@ for (i in seq_along(ids)) {
       seg.modelo <- tryCatch(
         segmented(modelo, psi = list(time = median(x, na.rm = TRUE))),
         error = function(e) e
-  )
-
-dir.create("07-img", showWarnings = FALSE)
-ggsave("07-img/breakpoint_scatter.png", p1, width = 8, height = 6)
-write.csv(sumtable_breakpoints, "00-data/sumtable_breakpoints.csv", row.names = FALSE)
+      )
     }
   } else {
     seg.modelo <- tryCatch(
@@ -94,6 +95,17 @@ write.csv(sumtable_breakpoints, "00-data/sumtable_breakpoints.csv", row.names = 
 }
 
 puntos_inflexion <- res
+
+# Guardar tabla por bellota con especie y procedencia (para el articulo)
+# Nota: se usa un objeto aparte para no anadir columnas duplicadas a df
+breakpoints_out <- puntos_inflexion |>
+  left_join(
+    df |> distinct(id_bellota, species, codigo),
+    by = "id_bellota"
+  )
+
+write.csv(breakpoints_out, "00-data/breakpoints_per_acorn.csv", row.names = FALSE)
+cat("Tabla de puntos de inflexion guardada en 00-data/breakpoints_per_acorn.csv\n")
 
 # Añadir la columna lógica al dataframe original
 df <- df %>%
@@ -155,7 +167,7 @@ df <- df |>
   )
 
 # 2) Fit model
-m.seg <- glmmTMB(Moisture_content ~ t_pre * species + t_post * species + (t_pre|id_bellota), data = df)
+m.seg <- glmmTMB(Moisture_content ~ t_pre * species + t_post * species + (t_pre|provenance/id_bellota), data = df)
 
 # Compare  models
 performance::compare_performance(m.orig, m.log, m.sqr, m.seg)
@@ -248,4 +260,63 @@ tabla_comp_final <- tabla_comp %>%
 
 # Save table
 write.csv(tabla_comp_final, "00-data/model_comparisons.csv")
+
+# Species models
+## data
+df.t1 <- df |> 
+  filter(time < 94)
+
+df.t2 <- df |> 
+  filter(time > 94)
+
+## Model pre
+mm.pre <- glmmTMB(Moisture_content ~ time * species + (time|provenance) + (time|id_bellota), data = df.t1)
+
+## Model post
+mm.post <- glmmTMB(Moisture_content ~ time * species + (time|provenance) + (time|id_bellota), data = df.t2)
+
+# ============================================================
+# Export de resultados para el articulo / material suplementario
+# ============================================================
+source("01-scripts/00-export_helpers.R")
+
+# Objetos de modelo
+save_models(list(m.orig = m.orig, m.log = m.log, m.sqr = m.sqr,
+                 m.seg = m.seg, mm.pre = mm.pre, mm.post = mm.post))
+
+# Tabla de coeficientes de los modelos finales (MC ~ time * species)
+coef_especie <- coef_table(list("mm.pre (t<94h)" = mm.pre, "mm.post (t>94h)" = mm.post))
+write.csv(coef_especie, "00-data/coef_species_models.csv", row.names = FALSE)
+cat("Tabla de coeficientes guardada en 00-data/coef_species_models.csv\n")
+
+# Componentes de varianza + barplot por nivel
+varcomp_especie <- varcomp_table(list("mm.pre (t<94h)" = mm.pre, "mm.post (t>94h)" = mm.post))
+write.csv(varcomp_especie, "00-data/varcomp_species_models.csv", row.names = FALSE)
+cat("Componentes de varianza guardados en 00-data/varcomp_species_models.csv\n")
+plot_varcomp(varcomp_especie, "07-img/varcomp_species_models.png",
+             "Varianza por nivel - modelos de especie")
+
+# Diagnosticos de los modelos finales de especie
+modelos_especie <- list(mm.pre = mm.pre, mm.post = mm.post)
+plot_check_model(modelos_especie, sufijo = "species")
+plot_obs_fitted(modelos_especie, sufijo = "species")
+plot_dharma(modelos_especie, sufijo = "species")
+
+# Efectos marginales de time * species (pre y post)
+suppressPackageStartupMessages(library(ggeffects))
+for (nm in names(modelos_especie)) {
+  mod <- modelos_especie[[nm]]
+  pred <- tryCatch(
+    ggeffects::ggpredict(mod, terms = c("time", "species")),
+    error = function(e) e
+  )
+  if (inherits(pred, "error")) {
+    warning("ggpredict fallo para ", nm, ": ", conditionMessage(pred))
+    next
+  }
+  p <- plot(pred) + labs(title = paste("MC ~ time * species -", nm))
+  ggsave(file.path("07-img", paste0("marginal_", nm, ".png")), p, width = 9, height = 6)
+  cat("Efectos marginales guardados en 07-img/marginal_", nm, ".png\n", sep = "")
+}
+
 
