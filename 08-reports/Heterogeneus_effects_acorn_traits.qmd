@@ -1,0 +1,660 @@
+---
+title: "El efecto heterogéneo de los rasgos de las bellotas"
+author: "Eliot Mompeán"
+date: today
+format: 
+  html:
+    code-fold: true
+    code-summary: "Conjuro arcano"
+---
+
+# Introducción 
+
+Me encontraba explorando la estructura de efectos aleatorios que queríamos introducir en los modelos mixtos que describen el efecto de los rasgos sobre la tasa de desecación. Empecé por el modelo más sencillo, que introduce un intercepto y pendiente aleatoria por bellota (`(time|id_bellota)`). El efecto de los rasgos era el esperado, el tamaño de la bellota proteje de la desecación, el pericarpo parece tener un sutil efecto protector, pero no significativo, y la cicatriz y probabildiad de rajado dan lugar a tasas de desecación más altas. 
+
+Sin embargo, el siguiente paso era introducir la especie y la procedencia en los efectos aleatorios, con el objetivo de que los patrones de desecación característicos de la especie se separaran de los efectos de los rasgos (`(time||species/provenance)`). Aquí vino la debacle. Sistemáticamente, la introducción de la especie o la procedencia modulando la pendiente en los efectos aleatorios daba lugar a una conclusión contraria según la interpretación del coeficiente `Dim.2*time`. Ahora, bellotas con pericarpos más robustos se secan más rápido. 
+
+¿Cómo era posible que la introducción de unos efectos aleatorios concretos cambie por completo nuestras conclusiones? ChatGPT propuso la siguiente idea: "si el efecto de los rasgos sobre la tasa de desecación es muy diferente en función de la especie, el efecto global observado puede cambiar sustancialmente al permtirle al modelo tener en cuenta la variación especie específica". Y bueno, pues aquí estamos, para sacarle todo el jugo a esa idea. 
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(glmmTMB)
+  library(parameters)
+  library(performance)
+  library(emmeans)
+})
+
+
+df.bellotas <- read.csv("../00-data/desiccation_traits_long.csv")
+df.famd <- read.csv("../00-data/famd_ind_coord.csv")
+
+# Creat working dataframe ----
+df <- df.bellotas |> 
+  dplyr::select(-X) |>
+  dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |> 
+  left_join(y = df.famd, by = "id_bellota") |> 
+  drop_na(Dim.1, Dim.2, Dim.3) |> 
+  rename(time = tiempo_acumulado_horas) |> 
+  mutate(time_s = scale(time))
+
+# Create traits dataframe ----
+df.traits <- df |> 
+  dplyr::select(id_bellota, species, provenance, Dim.1, Dim.2, Dim.3) |> 
+  distinct()
+
+# Separate data in two datasets
+t94 <- as.vector((94 - mean(df$time)) / sd(df$time))
+
+df.t1 <- df |> 
+  filter(time_s < t94)
+
+df.t2 <- df |> 
+  filter(time_s > t94)
+
+# Models pre
+mm.pre.0 <- 
+  glmmTMB(Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + 
+                      (time_s|id_bellota), 
+          data = df.t1)
+
+mm.pre.1 <- glmmTMB(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    (0 + time_s | species) +  # Justificado por variación ínfima en intercepto
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t1
+)
+
+performance::check_singularity(mm.pre.1)
+
+# Models post
+mm.post.0 <- 
+  glmmTMB(Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + 
+                      (time_s|id_bellota), 
+          data = df.t2)
+
+mm.post.1 <- 
+  glmmTMB(Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + 
+             +
+    (0 + time_s | species) +  # Justificado por variación ínfima en intercepto
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+          data = df.t2)
+
+# Parametros pre
+compare_parameters(mm.pre.0, mm.pre.1, 
+                   ci = 0.95,
+                   select = "{estimate}{stars} [{ci}]")
+
+# Parametros post
+compare_parameters(mm.post.0, mm.post.1, 
+                   ci = 0.95,
+                   select = "{estimate}{stars} [{ci}]")
+```
+
+# Objetivo
+
+Describir el efecto de los tres ejes del FAMD sobre la tasa de desecación a nivel de especie. 
+
+# Metodología
+
+## Descripción de la variación interespecífica de los ejes
+
+Con la ayuda de gráficos boxplot y violín se describirá la variación global y entre especies de los ejes del FAMD. Además, se ajustarán modelos para describir qué parte de la media de las dimensiones se debe a la especie. 
+
+```{r}
+lm.d1 <- lm(Dim.1 ~ species, data = df.traits)
+lm.d2 <- lm(Dim.2 ~ species, data = df.traits)
+lm.d3 <- lm(Dim.3 ~ species, data = df.traits)
+```
+
+## Describir la estructura de correlación dentro de la especie
+
+Aunque una característica fundamental de las dimensiones del FAMD es la ortogonalidad, esto no implica que dentro de los grupos las dimensiones puedan presentar correlación entre sí. Para ello se realizarán análisis de correlación entre las dimensiones a nivel global y dentro de la especie. 
+
+```{r}
+cor.global <- df.traits |>
+  select(Dim.1, Dim.2, Dim.3) |>
+  distinct() |> 
+  cor()
+```
+
+```{r}
+cor.species <-
+  df |> 
+  group_by(species) |>
+  group_modify(~{
+    cormat <- cor(select(.x, Dim.1, Dim.2, Dim.3))
+    
+    tibble(
+      cor12 = cormat["Dim.1","Dim.2"],
+      cor13 = cormat["Dim.1","Dim.3"],
+      cor23 = cormat["Dim.2","Dim.3"]
+    )
+  })
+```
+
+## Análisis del efecto heterogeneo de las dimensiones del FAMD sobre la tasa de desecación
+
+Con el objetivo de evaluar hasta que grado nos encontramos con un efecto heterogeneo de las dimensiones sobre la tasa de desecación se ajustarán modelos donde se permite que las dimensiones tengan una interacción con la especie en los efectos fijos. 
+
+```{r}
+mm.pre.d1.het <- glmmTMB(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s * Dim.1 * species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t1
+)
+
+mm.post.d1.het <- glmmTMB(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s * Dim.1 * species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t2
+)
+
+mm.pre.d2.het <- glmmTMB(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s * Dim.2 * species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t1
+)
+
+mm.post.d2.het <- glmmTMB(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s * Dim.2 * species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t2
+)
+
+mm.pre.d3.het <- glmmTMB(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s * Dim.3 * species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t1
+)
+
+mm.post.d3.het <- glmmTMB(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s * Dim.3 * species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t2
+)
+```
+
+Además, se ajustará un modelo global que evalúe la heterogeneidad del efecto de los tres ejes sobre la tasa de desecación. 
+
+```{r}
+m.pre.all.het <- glmmTMB(
+  Moisture_content ~
+    time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s:Dim.1:species +
+    time_s:Dim.2:species +
+    time_s:Dim.3:species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t1
+)
+
+m.post.all.het <- glmmTMB(
+  Moisture_content ~
+    time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s:Dim.1:species +
+    time_s:Dim.2:species +
+    time_s:Dim.3:species +
+    (time_s | provenance:species) +
+    (time_s | id_bellota),
+  data = df.t2
+)
+```
+
+Los modelos se compararán mediante `performance::compare_performance()`. Mediante un forest plot se analizará el cambio en el valor medio de los coeficientes y su IC95%. Además, se realizarán predicciones con los modelos para análizar el cambio en los resultados con un model u otro. Se utilizarán valores altos y bajos de la dimensión evaluada para analizar su efecto. Con el objetivo de no extrapolar el efecto fuera del rango observado de ninguna de las especies se definirá como valor alto el decil 90 y como valor bajo el decil 10 de los valores de la dimensión evaluada.
+
+```{r}
+D1.values.species <- df.traits |> 
+  group_by(species) |> 
+  summarise(
+    low  = quantile(Dim.1, .1), 
+    high = quantile(Dim.1, .9)
+  )
+
+D2.values.species <- df.traits |> 
+  group_by(species) |> 
+  summarise(
+    low  = quantile(Dim.2, .1), 
+    high = quantile(Dim.2, .9)
+  )
+
+D3.values.species <- df.traits |> 
+  group_by(species) |> 
+  summarise(
+    low  = quantile(Dim.3, .1), 
+    high = quantile(Dim.3, .9)
+  )
+
+D.values.global <- tibble(
+  Dim = 1:3,
+  low = c(
+    max(D1.values.species$low),
+    max(D2.values.species$low),
+    max(D3.values.species$low)
+  ),
+  high = c(
+    min(D1.values.species$high),
+    min(D2.values.species$high),
+    min(D3.values.species$high)
+  )
+)
+
+D.global <- df.traits |>
+  summarise(
+    Dim.1 = median(Dim.1, na.rm = TRUE),
+    Dim.2 = median(Dim.2, na.rm = TRUE),
+    Dim.3 = median(Dim.3, na.rm = TRUE)
+  )
+```
+
+```{r}
+calc_species_contrasts <- function(model,
+                                    dimension,
+                                    values_species,
+                                    values_global) {
+  
+  stopifnot(dimension %in% c("Dim.1", "Dim.2", "Dim.3"))
+  
+  resultados <- lapply(seq_len(nrow(values_species)), function(i) {
+    
+    sp <- values_species$species[i]
+    low <- values_species$low[i]
+    high <- values_species$high[i]
+    
+    # Valores centrales de las otras dimensiones
+    at_values <- list(
+      species = sp,
+      Dim.1 = values_global$Dim.1,
+      Dim.2 = values_global$Dim.2,
+      Dim.3 = values_global$Dim.3
+    )
+    
+    # Sustituimos la dimensión estudiada por low y high
+    at_values[[dimension]] <- c(low, high)
+    
+    # Pendientes respecto al tiempo
+    tr <- emtrends(
+      model,
+      specs = dimension,
+      var = "time_s",
+      at = at_values
+    )
+    
+    # high - low
+    contr <- contrast(
+      tr,
+      method = "revpairwise",
+      adjust = "none"
+    )
+    
+    as.data.frame(contr) |>
+      left_join(
+        as.data.frame(confint(contr)) |>
+          select(contrast, asymp.LCL, asymp.UCL),
+        by = "contrast"
+        ) |>
+      mutate(
+        species = sp,
+        dimension = dimension,
+        low = low,
+        high = high
+      )
+  })
+  
+  bind_rows(resultados)
+}
+```
+
+```{r, message=FALSE}
+models_het <- list(
+  
+  PRE_Dim1 = mm.pre.d1.het,
+  PRE_Dim2 = mm.pre.d2.het,
+  PRE_Dim3 = mm.pre.d3.het,
+  
+  POST_Dim1 = mm.post.d1.het,
+  POST_Dim2 = mm.post.d2.het,
+  POST_Dim3 = mm.post.d3.het
+  
+)
+
+model_info <- tibble(
+  model = names(models_het),
+  phase = c(
+    "PRE", "PRE", "PRE",
+    "POST", "POST", "POST"
+  ),
+  dimension = c(
+    "Dim.1", "Dim.2", "Dim.3",
+    "Dim.1", "Dim.2", "Dim.3"
+  )
+)
+
+values_species <- list(
+  "Dim.1" = D1.values.species,
+  "Dim.2" = D2.values.species,
+  "Dim.3" = D3.values.species
+)
+```
+
+```{r, message=FALSE}
+all_contrasts <- lapply(seq_len(nrow(model_info)), function(i) {
+  
+  model_name <- model_info$model[i]
+  phase_i <- model_info$phase[i]
+  dimension_i <- model_info$dimension[i]
+  
+  calc_species_contrasts(
+    model = models_het[[model_name]],
+    dimension = dimension_i,
+    values_species = values_species[[dimension_i]],
+    values_global = D.global
+  ) |>
+    mutate(
+      phase = phase_i,
+      model = model_name
+    )
+  
+}) |>
+  bind_rows()
+```
+
+```{r}
+species_order <- c(
+  "Quercus coccifera",
+  "Quercus ilex",
+  "Quercus suber",
+  "Quercus faginea",
+  "Quercus pyrenaica",
+ "Quercus pubescens",
+  "Quercus petraea",
+  "Quercus robur"
+)
+
+all_contrasts <- all_contrasts |>
+  mutate(
+    species = factor(
+      species,
+      levels = rev(species_order)
+    ),
+    
+    dimension = factor(
+      dimension,
+      levels = c("Dim.1", "Dim.2", "Dim.3")
+    ),
+    
+    phase = factor(
+      phase,
+      levels = c("PRE", "POST")
+    )
+  )
+
+all_contrasts <- all_contrasts |>
+  mutate(
+    sig = case_when(
+      p.value < 0.001 ~ "***",
+      p.value < 0.01  ~ "**",
+      p.value < 0.05  ~ "*",
+      TRUE ~ ""
+    )
+  )
+
+p <- ggplot(
+  all_contrasts,
+  aes(
+    x = estimate,
+    y = species
+  )
+) +
+  
+  geom_vline(
+    xintercept = 0,
+    linetype = "dashed"
+  ) +
+  
+  geom_errorbar(
+    aes(
+      xmin = asymp.LCL,
+      xmax = asymp.UCL
+    ),
+    orientation = "y",
+    width = 0
+  ) +
+  
+  geom_point(
+    size = 2.5
+  ) +
+  
+  geom_text(
+    aes(
+      label = sig
+    ),
+    nudge_y = .2,
+    size = 4
+  ) +
+  
+  facet_grid(
+    phase ~ dimension,
+    scales = "fixed"
+  ) +
+  
+  labs(
+    x = expression(
+      Delta * " slope (Dim. high − Dim. low)"
+    ),
+    y = NULL, 
+    caption = "x>0 protege de desecacion \n x<0 acelera la desecación"
+  ) +
+  
+  theme_classic() +
+  
+  theme(
+    strip.background = element_rect(fill = "grey95"),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+## Análisis del efecto dentro/entre especies
+
+Para cada uno de los ejes del FAMD se calculará la diferencia entre la media del eje en la especie y cada observación individual. 
+
+```{r}
+df.wb.t1 <- df.t1 |>
+  group_by(species) |>
+  mutate(
+    D1_between = mean(Dim.1),
+    D1_within = Dim.1 - D1_between,
+
+    D2_between = mean(Dim.2),
+    D2_within = Dim.2 - D2_between,
+
+    D3_between = mean(Dim.3),
+    D3_within = Dim.3 - D3_between
+  ) |>
+  ungroup()
+
+df.wb.t2 <- df.t2 |>
+  group_by(species) |>
+  mutate(
+    D1_between = mean(Dim.1),
+    D1_within = Dim.1 - D1_between,
+
+    D2_between = mean(Dim.2),
+    D2_within = Dim.2 - D2_between,
+
+    D3_between = mean(Dim.3),
+    D3_within = Dim.3 - D3_between
+  ) |>
+  ungroup()
+```
+
+Posteriormente, mediante un modelo mixto se analizarán los efectos de las diferencias dentro y entre especies sobre la tasas de desecación. Con este análisis se pretende desgranar si el efecto global cambia sustancialmente a nivel de especie. 
+
+```{r}
+m.wb.t1 <- glmmTMB(
+  Moisture_content ~
+    time_s *
+    (D1_between + D1_within +
+     D2_between + D2_within +
+     D3_between + D3_within) +
+    (time_s | id_bellota),
+  data = df.wb.t1
+)
+
+m.wb.t2 <- glmmTMB(
+  Moisture_content ~
+    time_s *
+    (D1_between + D1_within +
+     D2_between + D2_within +
+     D3_between + D3_within) +
+    (time_s | id_bellota),
+  data = df.wb.t2
+)
+```
+
+# Resultados
+
+## Variación interespecífica en los ejes del FAMD
+
+El análisis del gráfico boxplot no permite identificar sesgos importantes en ninguna de las tres dimensiones del FAMD. Existiendo tendencias en algunas especies a tener valores más altos en una dimensión u otra, el grado de solape es considerable. El único caso más extremo podría ser *Q. petraea* en la dimensión 3, donde su cuartil 25 es mayor que todos los cuartiles 75 del resto de bellotas, lo que indica una desviación apreciable en los valores típicos de dimensión 3 en esta especie. Aún con esto, este caso particular sigue presentando una cantidad considerable de datos solapados con el resto de especies. 
+
+```{r}
+p1 <- ggplot(df.traits, aes(y = species, x = Dim.1)) +
+  geom_boxplot() +
+  geom_violin(alpha = .4) +
+  geom_jitter(alpha = .2)
+
+p2 <- ggplot(df.traits, aes(y = species, x = Dim.2)) +
+  geom_boxplot() +
+  geom_violin(alpha = .4) +
+  geom_jitter(alpha = .2)
+
+p3 <- ggplot(df.traits, aes(y = species, x = Dim.3)) +
+  geom_boxplot() +
+  geom_violin(alpha = .4) +
+  geom_jitter(alpha = .2)
+
+p1
+p2
+p3
+```
+
+El análisis de la proporción de la varianza de la media de las dimensiones del FAMD explicada por la especie indica que indica que entre el 45 y el 31% de la varianza de las dimensiones del FAMD está explicada por la especie. No se trata de una proporción mayoritaria, pero tal vez suficiente para incluir algún sesgo o cambio sustancia en la interpretación de los modelos. 
+
+- Dimensión 1. Tamaño de la bellota.
+
+```{r}
+performance::r2(lm.d1)
+```
+
+- Dimensión 2. Robustez del pericarpo. 
+
+```{r}
+performance::r2(lm.d2)
+```
+
+- Dimensión 3. Tamaño de la cicatriz y propensión al rajado. 
+
+```{r}
+performance::r2(lm.d3)
+```
+
+## Estructura de correlación dentro de especie
+
+El análisis de la correlación global entre las dimensiones del FAMD nos indica lo esperado: la ortogonalidad entre las dimensiones se expresa en coeficientes de correlación casi 0 ($x < 10^{-16}$). 
+
+```{r}
+cor.global
+```
+
+Sin embargo, dentro de especie pueden encontrarse algunos coeficientes de correlación mayores. *Q. pyrenaica* destaca especialmente por un coeficiente de `r round(cor.species |> filter(species == "Quercus pyrenaica") |> pull(cor12), 2)` para la correlación entre la dimensión 1 y la 2. En esta especie, las bellotas más grandes suelen ser más robustas. Las especies con un valor más alto de correlación entre los ejes después de *Q. pyrenaica* son *Q. coccifera* y *Q. robur*. Ambas presentan correlaciones negativas entre la dimensión 1 y la 2 de alrededor de `r mean(round(cor.species |> filter(species == "Quercus coccifera") |> pull(cor12), 2), round(cor.species |> filter(species == "Quercus robur") |> pull(cor12), 2))`. 
+
+```{r}
+cor.species
+```
+
+La falta de independencia en los ejes podría afectar a la capacidad de identificar los coeficientes si decidiéramos incluir la especie como efecto fijo en los modelos. 
+
+## Efecto heterogeneo sobre la tasa de desecación
+
+Existe evidencia de que la relación entre los rasgos de las bellotas y la tasa de desecación no es completamente homogénea entre especies ni entre fases de desecación. 
+
+**Fase previa**. La incorporación de heterogeneidad interespecífica en los efectos de los rasgos mejoró sustancialmente el ajuste respecto al modelo que asumía efectos comunes. Entre los modelos que permitían heterogeneidad en un único eje, el mayor apoyo correspondió al modelo que permitía variar entre especies el efecto de Dim1 (AIC = 5734.0; peso de AIC = 0.926), seguido del modelo con heterogeneidad en Dim2 (AIC = 5741.2; peso = 0.025). El modelo con heterogeneidad en Dim3 recibió escaso apoyo (AIC = 5761.6).
+
+```{r}
+compare_performance(mm.pre.0, mm.pre.1, mm.pre.d1.het, mm.pre.d2.het, mm.pre.d3.het, m.pre.all.het)
+```
+
+**Fase posterior**. En la fase posterior, el patrón cambió: el mayor apoyo correspondió al modelo que permitía heterogeneidad interespecífica en el efecto de Dim2 (AIC = 7747.3; peso = 0.860), mientras que el modelo con heterogeneidad en Dim1 recibió apoyo secundario (AIC = 7751.0; peso = 0.140). El modelo con heterogeneidad en Dim3 recibió escaso apoyo (AIC = 7764.8).
+
+```{r}
+compare_performance(mm.post.0, mm.post.1, mm.post.d1.het, mm.post.d2.het, mm.post.d3.het, m.post.all.het)
+```
+
+
+Los resultados del análisis del cambio en el efecto de los rasgos por especie indica que existen marcadas diferencias. Los efectos tienden a ser más marcados y heterogéneos en la fase previa, mientras que en la fase posterior son más débiles y consistentes. Los efectos de los rasgos sobre la tasa de desecación difieren marcadamente entre la fase previa y la fase posterior. Durante la fase previa, el tamaño de la bellota (`Dim.1`) presenta un efecto protector predominante (x>0) en la mayoría de las especies (6 de 8), mientras que en la fase posterior este efecto se encuentra marcadamente reducido. La robustez del pericarpo (`Dim.2`) tiene un efecto predominantemente acelerador de la desecación (x<0) en la fase previa, alcanzando grados de significancia ($p<0.05$) en *Q. pubescens* y *Q. pyrenaica*. Sin embargo, estos efectos desaparecen mayoritariamente en la fase posterior, excepto para *Q. faginea* donde presenta efectos protectores de la desecación. Finalmente, el tamaño de la cicatriz y propensión al rajado apenas presenta efectos apreciables en la fase previa o posterior. El único caso significativo fue *Q. coccifera*, donde presentó un efecto acelerador de la desecación. 
+
+```{r}
+p
+```
+
+Entre los efectos encontrados, el único que resulta difícil de explicar según nuestras hipótesis *a priori* es el de la robustez del pericarpo en algunas especies de *Quercus*. Concretamente, hemos descrito que en especies como *Q. pyrenaica* y *Q. pubescens* pericarpos más robustos dan lugar a tasas de desecación más altas. Se pensó en la correlación entre ejes como una posible explicación. Si en *Q. pyrenaica* la correlación entre el eje 1 y el 2 fuera elevada y negativa podría argumentarse que el modelo está asociando el efecto de tener bellotas pequeñas a la robustez del pericarpo. Sin embargo, el coeficiente de correlación era positivo en ese caso, por lo que en *Q. pyrenaica* las bellotas con pericarpos robustos se asocian con bellotas grandes. 
+
+Otro elemento explicativo puede estar asociado a la presencia de este efecto acelerador solo en la fase previa. Durante el experimento de desecación es conocido por el grupo que algunas bellotas acumulaban agua entre el pericarpo y los cotiledones. Es posible que pericarpos más robustos estén asociados a mayor acumulación inicial de agua en esta especie. Esto podría observarse graficando el contenido hídrico inicial en función de la dimensión 2. Sin embargo, como puede observarse a continuación, la relación entre estos dos parámetros es heterogénea entre especies y, en el caso particular de *Q. pyrenaica* negativa.   
+
+```{r}
+df |> 
+  select(Moisture_content, Dim.2, SPM_g_cm2, SCR, species, time) |> 
+  filter(time == 0) |> 
+  ggplot(aes(x = Dim.2, y = Moisture_content)) + 
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~species) +
+  xlab("Robustez del pericarpo (Dim.2)") +
+  ylab("Contenido hídrico inicial (%)")
+```
+
+A estas alturas de la tesis empiezo a renunciar a entender algunos de los patrones encontrados en estos datos. Además, sospecho que perderse en estas cosas es intentar explicar ruído, más teniendo en cuenta que estoy intentando explicar unos patrones que, al producirse solo en las primeras 50-90 horas del experimento, probablemente solo expliquen una parte limitada, tal vez despreciable, del destino biológico de nuestras bellotas. Por ejemplo, ¿qué importaría que el pericarpo acelere la tasa de desecación en las primeras 50 horas si eso supusiera que la bellota llega a contenidos hídricos críticos prácticamente a la vez que si no hubieras tenido un cuenta el patrón inicial? 
+
+## Diferencias dentro y entre especies
+
+En conjunto, los modelos **within–between** muestran que los tres ejes del PCA presentan patrones diferenciados en su relación con la desecación y que estos patrones cambian entre las fases PRE y POST. Dim.1 presenta un efecto relativamente consistente, Dim.2 evidencia una marcada divergencia entre los componentes between y within, y Dim.3 parece estar principalmente asociado con diferencias entre especies, especialmente durante la fase posterior
+
+Dim.1 muestra el efecto más consistente: valores elevados, asociados a bellotas de mayor tamaño, se relacionan con una menor tasa de desecación tanto por diferencias entre especies como, especialmente durante PRE, por diferencias entre bellotas dentro de las especies. Dim.2 presenta el patrón más llamativo: durante PRE, el efecto entre especies es protector, mientras que el efecto dentro de especie es contrario, de modo que las especies con valores medios más altos de Dim.2 tienden a desecarse más lentamente, pero dentro de cada especie las bellotas con valores relativamente altos de Dim.2 muestran una mayor tasa de desecación. Durante POST, este efecto entre especies desaparece, mientras que el efecto within se mantiene. Finalmente, Dim.3 se asocia con una mayor tasa de desecación durante PRE tanto entre especies como dentro de ellas, aunque el efecto entre especies es considerablemente mayor; durante POST, la asociación entre especies persiste, mientras que el efecto within deja de estar claramente respaldado.
+
+
+```{r}
+compare_parameters(m.wb.t1, m.wb.t2, 
+                   ci = 0.95,
+                   select = "{estimate}{stars} [{ci}]")
+```
+
+# Conclusiones
+
+El análisis evidencia que el efecto de los rasgos de las bellotas sobre la tasa de desecación es heterogéneo entre especies y, además, cambia entre las fases de desecación (PRE y POST). La especie explica entre el 31 y el 45% de la varianza de las dimensiones del FAMD y, aunque globalmente estas dimensiones son ortogonales, dentro de algunas especies (destacando *Q. pyrenaica*) aparecen correlaciones entre ejes que pueden sesgar la interpretación de los coeficientes. Los modelos que permiten que el efecto de los rasgos varíe entre especies mejoran sustancialmente el ajuste, con un apoyo máximo para la heterogeneidad en el tamaño de la bellota (Dim.1) durante la fase previa y en la robustez del pericarpo (Dim.2) durante la fase posterior. El tamaño de la bellota ejerce un efecto protector en la mayoría de las especies durante la fase previa, efecto que se desvanece en la fase posterior. La robustez del pericarpo presenta un efecto dual: protector entre especies pero acelerador dentro de especie, significativo en *Q. pubescens* y *Q. pyrenaica* durante la fase previa. Por último, el tamaño de la cicatriz y la predisposición al rajado (Dim.3) aceleran la desecación principalmente a través de diferencias entre especies, aunque su efecto recibe escaso apoyo a nivel de interacción especie×tiempo y solo es significativo en *Q. coccifera*.
+
+| Eje | Interpretación | Fase | Efecto sobre la tasa de desecación | Heterogeneidad entre especies | Within vs between |
+| --- | --- | --- | --- | --- | --- |
+| **Dim.1** | Tamaño de la bellota | **PRE** | **Protector** (↓ tasa) en 6/8 especies | **Alta en apoyo del modelo** (peso AIC = 0.926), con dirección consistente entre especies | **Within y between protectores** |
+| **Dim.1** | Tamaño de la bellota | **POST** | **Marcadamente reducido** | Moderada; apoyo secundario (peso AIC = 0.140) | Efectos debilitados |
+| **Dim.2** | Robustez del pericarpo | **PRE** | **Contrario según el nivel de análisis**: protector entre especies, acelerador dentro de especie (significativo en *Q. pubescens* y *Q. pyrenaica*) | Moderada; apoyo secundario (peso AIC = 0.025) | **Between protector, within perjudicial** |
+| **Dim.2** | Robustez del pericarpo | **POST** | **Acelerador dentro de especie**; entre especies ≈ 0 | **Alta**; mayor apoyo del modelo (peso AIC = 0.860) | **Between ≈ 0, within perjudicial** |
+| **Dim.3** | Tamaño relativo de la cicatriz / predisposición a rajas | **PRE** | **Acelerador** (↑ tasa); solo *Q. coccifera* significativo | Baja; escaso apoyo del modelo (AIC = 5761.6) | **Between y within perjudiciales**, con efecto between mucho mayor |
+| **Dim.3** | Tamaño relativo de la cicatriz / predisposición a rajas | **POST** | **Acelerador**, principalmente entre especies | Baja; escaso apoyo del modelo (AIC = 7764.8) | **Principalmente between**; within ≈ 0 |
+
+

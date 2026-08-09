@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Eliot Mompeán">
+<meta name="dcterms.date" content="2026-08-09">
+
+<title>El efecto heterogéneo de los rasgos de las bellotas</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Heterogeneus_effects_acorn_traits_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Heterogeneus_effects_acorn_traits_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Heterogeneus_effects_acorn_traits_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Heterogeneus_effects_acorn_traits_files/libs/quarto-html/popper.min.js"></script>
+<script src="Heterogeneus_effects_acorn_traits_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Heterogeneus_effects_acorn_traits_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Heterogeneus_effects_acorn_traits_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Heterogeneus_effects_acorn_traits_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Heterogeneus_effects_acorn_traits_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Heterogeneus_effects_acorn_traits_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Heterogeneus_effects_acorn_traits_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">El efecto heterogéneo de los rasgos de las bellotas</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Eliot Mompeán </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">August 9, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introducción" class="level1">
+<h1>Introducción</h1>
+<p>Me encontraba explorando la estructura de efectos aleatorios que queríamos introducir en los modelos mixtos que describen el efecto de los rasgos sobre la tasa de desecación. Empecé por el modelo más sencillo, que introduce un intercepto y pendiente aleatoria por bellota (<code>(time|id_bellota)</code>). El efecto de los rasgos era el esperado, el tamaño de la bellota proteje de la desecación, el pericarpo parece tener un sutil efecto protector, pero no significativo, y la cicatriz y probabildiad de rajado dan lugar a tasas de desecación más altas.</p>
+<p>Sin embargo, el siguiente paso era introducir la especie y la procedencia en los efectos aleatorios, con el objetivo de que los patrones de desecación característicos de la especie se separaran de los efectos de los rasgos (<code>(time||species/provenance)</code>). Aquí vino la debacle. Sistemáticamente, la introducción de la especie o la procedencia modulando la pendiente en los efectos aleatorios daba lugar a una conclusión contraria según la interpretación del coeficiente <code>Dim.2*time</code>. Ahora, bellotas con pericarpos más robustos se secan más rápido.</p>
+<p>¿Cómo era posible que la introducción de unos efectos aleatorios concretos cambie por completo nuestras conclusiones? ChatGPT propuso la siguiente idea: “si el efecto de los rasgos sobre la tasa de desecación es muy diferente en función de la especie, el efecto global observado puede cambiar sustancialmente al permtirle al modelo tener en cuenta la variación especie específica”. Y bueno, pues aquí estamos, para sacarle todo el jugo a esa idea.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>({</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(glmmTMB)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(parameters)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(performance)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(emmeans)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>df.bellotas <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../00-data/desiccation_traits_long.csv"</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>df.famd <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../00-data/famd_ind_coord.csv"</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Creat working dataframe ----</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df.bellotas <span class="sc">|&gt;</span> </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>X) <span class="sc">|&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) <span class="sc">|&gt;</span> </span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="at">y =</span> df.famd, <span class="at">by =</span> <span class="st">"id_bellota"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(Dim<span class="fl">.1</span>, Dim<span class="fl">.2</span>, Dim<span class="fl">.3</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">time =</span> tiempo_acumulado_horas) <span class="sc">|&gt;</span> </span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">time_s =</span> <span class="fu">scale</span>(time))</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Create traits dataframe ----</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>df.traits <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> </span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(id_bellota, species, provenance, Dim<span class="fl">.1</span>, Dim<span class="fl">.2</span>, Dim<span class="fl">.3</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate data in two datasets</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>t94 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>((<span class="dv">94</span> <span class="sc">-</span> <span class="fu">mean</span>(df<span class="sc">$</span>time)) <span class="sc">/</span> <span class="fu">sd</span>(df<span class="sc">$</span>time))</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>df.t1 <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> </span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(time_s <span class="sc">&lt;</span> t94)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using one column matrices in `filter()` or `filter_out()` was deprecated in
+dplyr 1.1.0.
+ℹ Please use one dimensional logical vectors instead.</code></pre>
+</div>
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df.t2 <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(time_s <span class="sc">&gt;</span> t94)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using one column matrices in `filter()` or `filter_out()` was deprecated in
+dplyr 1.1.0.
+ℹ Please use one dimensional logical vectors instead.</code></pre>
+</div>
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Models pre</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>mm.pre<span class="fl">.0</span> <span class="ot">&lt;-</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">glmmTMB</span>(Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span> </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                      (time_s<span class="sc">|</span>id_bellota), </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> df.t1)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>mm.pre<span class="fl">.1</span> <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">0</span> <span class="sc">+</span> time_s <span class="sc">|</span> species) <span class="sc">+</span>  <span class="co"># Justificado por variación ínfima en intercepto</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t1</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>performance<span class="sc">::</span><span class="fu">check_singularity</span>(mm.pre<span class="fl">.1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] FALSE</code></pre>
+</div>
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Models post</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>mm.post<span class="fl">.0</span> <span class="ot">&lt;-</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">glmmTMB</span>(Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span> </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                      (time_s<span class="sc">|</span>id_bellota), </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> df.t2)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>mm.post<span class="fl">.1</span> <span class="ot">&lt;-</span> </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">glmmTMB</span>(Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span> </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>             <span class="sc">+</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">0</span> <span class="sc">+</span> time_s <span class="sc">|</span> species) <span class="sc">+</span>  <span class="co"># Justificado por variación ínfima en intercepto</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> df.t2)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Parametros pre</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="fu">compare_parameters</span>(mm.pre<span class="fl">.0</span>, mm.pre<span class="fl">.1</span>, </span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>                   <span class="at">ci =</span> <span class="fl">0.95</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>                   <span class="at">select =</span> <span class="st">"{estimate}{stars} [{ci}]"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Parameter      |                   mm.pre.0 |                   mm.pre.1
+------------------------------------------------------------------------
+(Intercept)    |  24.09*** [ 23.49,  24.68] |  23.87*** [ 21.54,  26.19]
+time s         | -18.59*** [-19.20, -17.98] | -18.73*** [-21.55, -15.90]
+Dim 1          |   1.14*** [  0.78,   1.49] |   1.13*** [  0.74,   1.52]
+Dim 2          |   0.47  * [  0.01,   0.92] |  -1.00*** [ -1.54,  -0.47]
+Dim 3          |  -1.43*** [ -1.97,  -0.89] |  -0.68  * [ -1.21,  -0.15]
+time s × Dim 1 |   1.58*** [  1.21,   1.94] |   1.79*** [  1.42,   2.16]
+time s × Dim 2 |   1.19*** [  0.72,   1.66] |  -0.81 ** [ -1.32,  -0.31]
+time s × Dim 3 |  -2.06*** [ -2.62,  -1.51] |  -0.62  * [ -1.12,  -0.12]
+------------------------------------------------------------------------
+Observations   |                       2066 |                       2066</code></pre>
+</div>
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Parametros post</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">compare_parameters</span>(mm.post<span class="fl">.0</span>, mm.post<span class="fl">.1</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">ci =</span> <span class="fl">0.95</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">select =</span> <span class="st">"{estimate}{stars} [{ci}]"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Parameter      |               mm.post.0 |                  mm.post.1
+---------------------------------------------------------------------
+(Intercept)    | 29.67*** [29.24, 30.10] |    29.64*** [28.24, 31.04]
+time s         | -7.84*** [-8.02, -7.66] |    -7.79*** [-8.59, -6.99]
+Dim 1          |  0.62*** [ 0.37,  0.88] |     0.64*** [ 0.33,  0.94]
+Dim 2          |    -0.15 [-0.48,  0.18] |    -0.51  * [-0.93, -0.10]
+Dim 3          | -0.81*** [-1.20, -0.42] |       -0.25 [-0.67,  0.18]
+time s × Dim 1 |  0.29*** [ 0.18,  0.40] |     0.37*** [ 0.25,  0.49]
+time s × Dim 2 |    -0.05 [-0.19,  0.09] |       -0.01 [-0.18,  0.15]
+time s × Dim 3 | -0.32*** [-0.49, -0.16] |    6.63e-03 [-0.16,  0.17]
+---------------------------------------------------------------------
+Observations   |                    2231 |                       2231</code></pre>
+</div>
+</div>
+</section>
+<section id="objetivo" class="level1">
+<h1>Objetivo</h1>
+<p>Describir el efecto de los tres ejes del FAMD sobre la tasa de desecación a nivel de especie.</p>
+</section>
+<section id="metodología" class="level1">
+<h1>Metodología</h1>
+<section id="descripción-de-la-variación-interespecífica-de-los-ejes" class="level2">
+<h2 class="anchored" data-anchor-id="descripción-de-la-variación-interespecífica-de-los-ejes">Descripción de la variación interespecífica de los ejes</h2>
+<p>Con la ayuda de gráficos boxplot y violín se describirá la variación global y entre especies de los ejes del FAMD. Además, se ajustarán modelos para describir qué parte de la media de las dimensiones se debe a la especie.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>lm.d1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(Dim<span class="fl">.1</span> <span class="sc">~</span> species, <span class="at">data =</span> df.traits)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>lm.d2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(Dim<span class="fl">.2</span> <span class="sc">~</span> species, <span class="at">data =</span> df.traits)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>lm.d3 <span class="ot">&lt;-</span> <span class="fu">lm</span>(Dim<span class="fl">.3</span> <span class="sc">~</span> species, <span class="at">data =</span> df.traits)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="describir-la-estructura-de-correlación-dentro-de-la-especie" class="level2">
+<h2 class="anchored" data-anchor-id="describir-la-estructura-de-correlación-dentro-de-la-especie">Describir la estructura de correlación dentro de la especie</h2>
+<p>Aunque una característica fundamental de las dimensiones del FAMD es la ortogonalidad, esto no implica que dentro de los grupos las dimensiones puedan presentar correlación entre sí. Para ello se realizarán análisis de correlación entre las dimensiones a nivel global y dentro de la especie.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>cor.global <span class="ot">&lt;-</span> df.traits <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Dim<span class="fl">.1</span>, Dim<span class="fl">.2</span>, Dim<span class="fl">.3</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>cor.species <span class="ot">&lt;-</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  df <span class="sc">|&gt;</span> </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_modify</span>(<span class="sc">~</span>{</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    cormat <span class="ot">&lt;-</span> <span class="fu">cor</span>(<span class="fu">select</span>(.x, Dim<span class="fl">.1</span>, Dim<span class="fl">.2</span>, Dim<span class="fl">.3</span>))</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">cor12 =</span> cormat[<span class="st">"Dim.1"</span>,<span class="st">"Dim.2"</span>],</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">cor13 =</span> cormat[<span class="st">"Dim.1"</span>,<span class="st">"Dim.3"</span>],</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">cor23 =</span> cormat[<span class="st">"Dim.2"</span>,<span class="st">"Dim.3"</span>]</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  })</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="análisis-del-efecto-heterogeneo-de-las-dimensiones-del-famd-sobre-la-tasa-de-desecación" class="level2">
+<h2 class="anchored" data-anchor-id="análisis-del-efecto-heterogeneo-de-las-dimensiones-del-famd-sobre-la-tasa-de-desecación">Análisis del efecto heterogeneo de las dimensiones del FAMD sobre la tasa de desecación</h2>
+<p>Con el objetivo de evaluar hasta que grado nos encontramos con un efecto heterogeneo de las dimensiones sobre la tasa de desecación se ajustarán modelos donde se permite que las dimensiones tengan una interacción con la especie en los efectos fijos.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>mm.pre.d1.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> Dim<span class="fl">.1</span> <span class="sc">*</span> species <span class="sc">+</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t1</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>mm.post.d1.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> Dim<span class="fl">.1</span> <span class="sc">*</span> species <span class="sc">+</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t2</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>mm.pre.d2.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> Dim<span class="fl">.2</span> <span class="sc">*</span> species <span class="sc">+</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t1</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>mm.post.d2.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> Dim<span class="fl">.2</span> <span class="sc">*</span> species <span class="sc">+</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t2</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>mm.pre.d3.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> Dim<span class="fl">.3</span> <span class="sc">*</span> species <span class="sc">+</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t1</span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>mm.post.d3.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span> time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> Dim<span class="fl">.3</span> <span class="sc">*</span> species <span class="sc">+</span></span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t2</span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Además, se ajustará un modelo global que evalúe la heterogeneidad del efecto de los tres ejes sobre la tasa de desecación.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>m.pre.all.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    time_s<span class="sc">:</span>Dim<span class="fl">.1</span><span class="sc">:</span>species <span class="sc">+</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    time_s<span class="sc">:</span>Dim<span class="fl">.2</span><span class="sc">:</span>species <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    time_s<span class="sc">:</span>Dim<span class="fl">.3</span><span class="sc">:</span>species <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t1</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>m.post.all.het <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span> (Dim<span class="fl">.1</span> <span class="sc">+</span> Dim<span class="fl">.2</span> <span class="sc">+</span> Dim<span class="fl">.3</span>) <span class="sc">+</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    time_s<span class="sc">:</span>Dim<span class="fl">.1</span><span class="sc">:</span>species <span class="sc">+</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    time_s<span class="sc">:</span>Dim<span class="fl">.2</span><span class="sc">:</span>species <span class="sc">+</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    time_s<span class="sc">:</span>Dim<span class="fl">.3</span><span class="sc">:</span>species <span class="sc">+</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> provenance<span class="sc">:</span>species) <span class="sc">+</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.t2</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Los modelos se compararán mediante <code>performance::compare_performance()</code>. Mediante un forest plot se analizará el cambio en el valor medio de los coeficientes y su IC95%. Además, se realizarán predicciones con los modelos para análizar el cambio en los resultados con un model u otro. Se utilizarán valores altos y bajos de la dimensión evaluada para analizar su efecto. Con el objetivo de no extrapolar el efecto fuera del rango observado de ninguna de las especies se definirá como valor alto el decil 90 y como valor bajo el decil 10 de los valores de la dimensión evaluada.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>D1.values.species <span class="ot">&lt;-</span> df.traits <span class="sc">|&gt;</span> </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">low  =</span> <span class="fu">quantile</span>(Dim<span class="fl">.1</span>, .<span class="dv">1</span>), </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">high =</span> <span class="fu">quantile</span>(Dim<span class="fl">.1</span>, .<span class="dv">9</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>D2.values.species <span class="ot">&lt;-</span> df.traits <span class="sc">|&gt;</span> </span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span> </span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">low  =</span> <span class="fu">quantile</span>(Dim<span class="fl">.2</span>, .<span class="dv">1</span>), </span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">high =</span> <span class="fu">quantile</span>(Dim<span class="fl">.2</span>, .<span class="dv">9</span>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>D3.values.species <span class="ot">&lt;-</span> df.traits <span class="sc">|&gt;</span> </span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span> </span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">low  =</span> <span class="fu">quantile</span>(Dim<span class="fl">.3</span>, .<span class="dv">1</span>), </span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">high =</span> <span class="fu">quantile</span>(Dim<span class="fl">.3</span>, .<span class="dv">9</span>)</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>D.values.global <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">Dim =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>,</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">low =</span> <span class="fu">c</span>(</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">max</span>(D1.values.species<span class="sc">$</span>low),</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">max</span>(D2.values.species<span class="sc">$</span>low),</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">max</span>(D3.values.species<span class="sc">$</span>low)</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">high =</span> <span class="fu">c</span>(</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">min</span>(D1.values.species<span class="sc">$</span>high),</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">min</span>(D2.values.species<span class="sc">$</span>high),</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">min</span>(D3.values.species<span class="sc">$</span>high)</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>D.global <span class="ot">&lt;-</span> df.traits <span class="sc">|&gt;</span></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">Dim.1 =</span> <span class="fu">median</span>(Dim<span class="fl">.1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">Dim.2 =</span> <span class="fu">median</span>(Dim<span class="fl">.2</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">Dim.3 =</span> <span class="fu">median</span>(Dim<span class="fl">.3</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>calc_species_contrasts <span class="ot">&lt;-</span> <span class="cf">function</span>(model,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                                    dimension,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                                    values_species,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                                    values_global) {</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stopifnot</span>(dimension <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Dim.1"</span>, <span class="st">"Dim.2"</span>, <span class="st">"Dim.3"</span>))</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  resultados <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(values_species)), <span class="cf">function</span>(i) {</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    sp <span class="ot">&lt;-</span> values_species<span class="sc">$</span>species[i]</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    low <span class="ot">&lt;-</span> values_species<span class="sc">$</span>low[i]</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    high <span class="ot">&lt;-</span> values_species<span class="sc">$</span>high[i]</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Valores centrales de las otras dimensiones</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    at_values <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">species =</span> sp,</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">Dim.1 =</span> values_global<span class="sc">$</span>Dim<span class="fl">.1</span>,</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">Dim.2 =</span> values_global<span class="sc">$</span>Dim<span class="fl">.2</span>,</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">Dim.3 =</span> values_global<span class="sc">$</span>Dim<span class="fl">.3</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sustituimos la dimensión estudiada por low y high</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>    at_values[[dimension]] <span class="ot">&lt;-</span> <span class="fu">c</span>(low, high)</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Pendientes respecto al tiempo</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>    tr <span class="ot">&lt;-</span> <span class="fu">emtrends</span>(</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>      model,</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">specs =</span> dimension,</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>      <span class="at">var =</span> <span class="st">"time_s"</span>,</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>      <span class="at">at =</span> at_values</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># high - low</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>    contr <span class="ot">&lt;-</span> <span class="fu">contrast</span>(</span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>      tr,</span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"revpairwise"</span>,</span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>      <span class="at">adjust =</span> <span class="st">"none"</span></span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.data.frame</span>(contr) <span class="sc">|&gt;</span></span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(</span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a>        <span class="fu">as.data.frame</span>(<span class="fu">confint</span>(contr)) <span class="sc">|&gt;</span></span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>          <span class="fu">select</span>(contrast, asymp.LCL, asymp.UCL),</span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a>        <span class="at">by =</span> <span class="st">"contrast"</span></span>
+<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a>        ) <span class="sc">|&gt;</span></span>
+<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(</span>
+<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a>        <span class="at">species =</span> sp,</span>
+<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a>        <span class="at">dimension =</span> dimension,</span>
+<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a>        <span class="at">low =</span> low,</span>
+<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a>        <span class="at">high =</span> high</span>
+<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(resultados)</span>
+<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>models_het <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">PRE_Dim1 =</span> mm.pre.d1.het,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">PRE_Dim2 =</span> mm.pre.d2.het,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">PRE_Dim3 =</span> mm.pre.d3.het,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">POST_Dim1 =</span> mm.post.d1.het,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">POST_Dim2 =</span> mm.post.d2.het,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">POST_Dim3 =</span> mm.post.d3.het</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>model_info <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">names</span>(models_het),</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">phase =</span> <span class="fu">c</span>(</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"PRE"</span>, <span class="st">"PRE"</span>, <span class="st">"PRE"</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"POST"</span>, <span class="st">"POST"</span>, <span class="st">"POST"</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">dimension =</span> <span class="fu">c</span>(</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Dim.1"</span>, <span class="st">"Dim.2"</span>, <span class="st">"Dim.3"</span>,</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Dim.1"</span>, <span class="st">"Dim.2"</span>, <span class="st">"Dim.3"</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>values_species <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Dim.1"</span> <span class="ot">=</span> D1.values.species,</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Dim.2"</span> <span class="ot">=</span> D2.values.species,</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Dim.3"</span> <span class="ot">=</span> D3.values.species</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>all_contrasts <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(model_info)), <span class="cf">function</span>(i) {</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  model_name <span class="ot">&lt;-</span> model_info<span class="sc">$</span>model[i]</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  phase_i <span class="ot">&lt;-</span> model_info<span class="sc">$</span>phase[i]</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  dimension_i <span class="ot">&lt;-</span> model_info<span class="sc">$</span>dimension[i]</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">calc_species_contrasts</span>(</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> models_het[[model_name]],</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">dimension =</span> dimension_i,</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_species =</span> values_species[[dimension_i]],</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_global =</span> D.global</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">phase =</span> phase_i,</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">model =</span> model_name</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>}) <span class="sc">|&gt;</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>species_order <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Quercus coccifera"</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Quercus ilex"</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Quercus suber"</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Quercus faginea"</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Quercus pyrenaica"</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a> <span class="st">"Quercus pubescens"</span>,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Quercus petraea"</span>,</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Quercus robur"</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>all_contrasts <span class="ot">&lt;-</span> all_contrasts <span class="sc">|&gt;</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">species =</span> <span class="fu">factor</span>(</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>      species,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">rev</span>(species_order)</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">dimension =</span> <span class="fu">factor</span>(</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>      dimension,</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Dim.1"</span>, <span class="st">"Dim.2"</span>, <span class="st">"Dim.3"</span>)</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">phase =</span> <span class="fu">factor</span>(</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>      phase,</span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"PRE"</span>, <span class="st">"POST"</span>)</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>all_contrasts <span class="ot">&lt;-</span> all_contrasts <span class="sc">|&gt;</span></span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">sig =</span> <span class="fu">case_when</span>(</span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>      p.value <span class="sc">&lt;</span> <span class="fl">0.001</span> <span class="sc">~</span> <span class="st">"***"</span>,</span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>      p.value <span class="sc">&lt;</span> <span class="fl">0.01</span>  <span class="sc">~</span> <span class="st">"**"</span>,</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a>      p.value <span class="sc">&lt;</span> <span class="fl">0.05</span>  <span class="sc">~</span> <span class="st">"*"</span>,</span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">""</span></span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(</span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>  all_contrasts,</span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(</span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> estimate,</span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> species</span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(</span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">xintercept =</span> <span class="dv">0</span>,</span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">"dashed"</span></span>
+<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(</span>
+<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a>      <span class="at">xmin =</span> asymp.LCL,</span>
+<span id="cb20-56"><a href="#cb20-56" aria-hidden="true" tabindex="-1"></a>      <span class="at">xmax =</span> asymp.UCL</span>
+<span id="cb20-57"><a href="#cb20-57" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb20-58"><a href="#cb20-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">orientation =</span> <span class="st">"y"</span>,</span>
+<span id="cb20-59"><a href="#cb20-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">width =</span> <span class="dv">0</span></span>
+<span id="cb20-60"><a href="#cb20-60" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-61"><a href="#cb20-61" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-62"><a href="#cb20-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb20-63"><a href="#cb20-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="fl">2.5</span></span>
+<span id="cb20-64"><a href="#cb20-64" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-65"><a href="#cb20-65" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-66"><a href="#cb20-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(</span>
+<span id="cb20-67"><a href="#cb20-67" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb20-68"><a href="#cb20-68" aria-hidden="true" tabindex="-1"></a>      <span class="at">label =</span> sig</span>
+<span id="cb20-69"><a href="#cb20-69" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb20-70"><a href="#cb20-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">nudge_y =</span> .<span class="dv">2</span>,</span>
+<span id="cb20-71"><a href="#cb20-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">4</span></span>
+<span id="cb20-72"><a href="#cb20-72" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-73"><a href="#cb20-73" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-74"><a href="#cb20-74" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(</span>
+<span id="cb20-75"><a href="#cb20-75" aria-hidden="true" tabindex="-1"></a>    phase <span class="sc">~</span> dimension,</span>
+<span id="cb20-76"><a href="#cb20-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">scales =</span> <span class="st">"fixed"</span></span>
+<span id="cb20-77"><a href="#cb20-77" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-78"><a href="#cb20-78" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-79"><a href="#cb20-79" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb20-80"><a href="#cb20-80" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(</span>
+<span id="cb20-81"><a href="#cb20-81" aria-hidden="true" tabindex="-1"></a>      Delta <span class="sc">*</span> <span class="st">" slope (Dim. high − Dim. low)"</span></span>
+<span id="cb20-82"><a href="#cb20-82" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb20-83"><a href="#cb20-83" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="cn">NULL</span>, </span>
+<span id="cb20-84"><a href="#cb20-84" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"x&gt;0 protege de desecacion </span><span class="sc">\n</span><span class="st"> x&lt;0 acelera la desecación"</span></span>
+<span id="cb20-85"><a href="#cb20-85" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-86"><a href="#cb20-86" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-87"><a href="#cb20-87" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb20-88"><a href="#cb20-88" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-89"><a href="#cb20-89" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb20-90"><a href="#cb20-90" aria-hidden="true" tabindex="-1"></a>    <span class="at">strip.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"grey95"</span>),</span>
+<span id="cb20-91"><a href="#cb20-91" aria-hidden="true" tabindex="-1"></a>    <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb20-92"><a href="#cb20-92" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.spacing =</span> <span class="fu">unit</span>(<span class="dv">1</span>, <span class="st">"lines"</span>)</span>
+<span id="cb20-93"><a href="#cb20-93" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="análisis-del-efecto-dentroentre-especies" class="level2">
+<h2 class="anchored" data-anchor-id="análisis-del-efecto-dentroentre-especies">Análisis del efecto dentro/entre especies</h2>
+<p>Para cada uno de los ejes del FAMD se calculará la diferencia entre la media del eje en la especie y cada observación individual.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>df.wb.t1 <span class="ot">&lt;-</span> df.t1 <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">D1_between =</span> <span class="fu">mean</span>(Dim<span class="fl">.1</span>),</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">D1_within =</span> Dim<span class="fl">.1</span> <span class="sc">-</span> D1_between,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">D2_between =</span> <span class="fu">mean</span>(Dim<span class="fl">.2</span>),</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">D2_within =</span> Dim<span class="fl">.2</span> <span class="sc">-</span> D2_between,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">D3_between =</span> <span class="fu">mean</span>(Dim<span class="fl">.3</span>),</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">D3_within =</span> Dim<span class="fl">.3</span> <span class="sc">-</span> D3_between</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>df.wb.t2 <span class="ot">&lt;-</span> df.t2 <span class="sc">|&gt;</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">D1_between =</span> <span class="fu">mean</span>(Dim<span class="fl">.1</span>),</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">D1_within =</span> Dim<span class="fl">.1</span> <span class="sc">-</span> D1_between,</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">D2_between =</span> <span class="fu">mean</span>(Dim<span class="fl">.2</span>),</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">D2_within =</span> Dim<span class="fl">.2</span> <span class="sc">-</span> D2_between,</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">D3_between =</span> <span class="fu">mean</span>(Dim<span class="fl">.3</span>),</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">D3_within =</span> Dim<span class="fl">.3</span> <span class="sc">-</span> D3_between</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Posteriormente, mediante un modelo mixto se analizarán los efectos de las diferencias dentro y entre especies sobre la tasas de desecación. Con este análisis se pretende desgranar si el efecto global cambia sustancialmente a nivel de especie.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>m.wb.t1 <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    (D1_between <span class="sc">+</span> D1_within <span class="sc">+</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>     D2_between <span class="sc">+</span> D2_within <span class="sc">+</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>     D3_between <span class="sc">+</span> D3_within) <span class="sc">+</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.wb.t1</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>m.wb.t2 <span class="ot">&lt;-</span> <span class="fu">glmmTMB</span>(</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  Moisture_content <span class="sc">~</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    time_s <span class="sc">*</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    (D1_between <span class="sc">+</span> D1_within <span class="sc">+</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>     D2_between <span class="sc">+</span> D2_within <span class="sc">+</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>     D3_between <span class="sc">+</span> D3_within) <span class="sc">+</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    (time_s <span class="sc">|</span> id_bellota),</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df.wb.t2</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+</section>
+<section id="resultados" class="level1">
+<h1>Resultados</h1>
+<section id="variación-interespecífica-en-los-ejes-del-famd" class="level2">
+<h2 class="anchored" data-anchor-id="variación-interespecífica-en-los-ejes-del-famd">Variación interespecífica en los ejes del FAMD</h2>
+<p>El análisis del gráfico boxplot no permite identificar sesgos importantes en ninguna de las tres dimensiones del FAMD. Existiendo tendencias en algunas especies a tener valores más altos en una dimensión u otra, el grado de solape es considerable. El único caso más extremo podría ser <em>Q. petraea</em> en la dimensión 3, donde su cuartil 25 es mayor que todos los cuartiles 75 del resto de bellotas, lo que indica una desviación apreciable en los valores típicos de dimensión 3 en esta especie. Aún con esto, este caso particular sigue presentando una cantidad considerable de datos solapados con el resto de especies.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df.traits, <span class="fu">aes</span>(<span class="at">y =</span> species, <span class="at">x =</span> Dim<span class="fl">.1</span>)) <span class="sc">+</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">alpha =</span> .<span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> .<span class="dv">2</span>)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df.traits, <span class="fu">aes</span>(<span class="at">y =</span> species, <span class="at">x =</span> Dim<span class="fl">.2</span>)) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">alpha =</span> .<span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> .<span class="dv">2</span>)</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df.traits, <span class="fu">aes</span>(<span class="at">y =</span> species, <span class="at">x =</span> Dim<span class="fl">.3</span>)) <span class="sc">+</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">alpha =</span> .<span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> .<span class="dv">2</span>)</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>p1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Heterogeneus_effects_acorn_traits_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Heterogeneus_effects_acorn_traits_files/figure-html/unnamed-chunk-14-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>p3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Heterogeneus_effects_acorn_traits_files/figure-html/unnamed-chunk-14-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>El análisis de la proporción de la varianza de la media de las dimensiones del FAMD explicada por la especie indica que indica que entre el 45 y el 31% de la varianza de las dimensiones del FAMD está explicada por la especie. No se trata de una proporción mayoritaria, pero tal vez suficiente para incluir algún sesgo o cambio sustancia en la interpretación de los modelos.</p>
+<ul>
+<li>Dimensión 1. Tamaño de la bellota.</li>
+</ul>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>performance<span class="sc">::</span><span class="fu">r2</span>(lm.d1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># R2 for Linear Regression
+       R2: 0.368
+  adj. R2: 0.358</code></pre>
+</div>
+</div>
+<ul>
+<li>Dimensión 2. Robustez del pericarpo.</li>
+</ul>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>performance<span class="sc">::</span><span class="fu">r2</span>(lm.d2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># R2 for Linear Regression
+       R2: 0.464
+  adj. R2: 0.455</code></pre>
+</div>
+</div>
+<ul>
+<li>Dimensión 3. Tamaño de la cicatriz y propensión al rajado.</li>
+</ul>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>performance<span class="sc">::</span><span class="fu">r2</span>(lm.d3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># R2 for Linear Regression
+       R2: 0.325
+  adj. R2: 0.314</code></pre>
+</div>
+</div>
+</section>
+<section id="estructura-de-correlación-dentro-de-especie" class="level2">
+<h2 class="anchored" data-anchor-id="estructura-de-correlación-dentro-de-especie">Estructura de correlación dentro de especie</h2>
+<p>El análisis de la correlación global entre las dimensiones del FAMD nos indica lo esperado: la ortogonalidad entre las dimensiones se expresa en coeficientes de correlación casi 0 (<span class="math inline">\(x &lt; 10^{-16}\)</span>).</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>cor.global</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>              Dim.1        Dim.2         Dim.3
+Dim.1  1.000000e+00 2.592579e-16 -1.255735e-17
+Dim.2  2.592579e-16 1.000000e+00  5.683786e-16
+Dim.3 -1.255735e-17 5.683786e-16  1.000000e+00</code></pre>
+</div>
+</div>
+<p>Sin embargo, dentro de especie pueden encontrarse algunos coeficientes de correlación mayores. <em>Q. pyrenaica</em> destaca especialmente por un coeficiente de 0.79 para la correlación entre la dimensión 1 y la 2. En esta especie, las bellotas más grandes suelen ser más robustas. Las especies con un valor más alto de correlación entre los ejes después de <em>Q. pyrenaica</em> son <em>Q. coccifera</em> y <em>Q. robur</em>. Ambas presentan correlaciones negativas entre la dimensión 1 y la 2 de alrededor de -0.36.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>cor.species</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 8 × 4
+# Groups:   species [8]
+  species             cor12   cor13   cor23
+  &lt;chr&gt;               &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+1 Quercus coccifera -0.357   0.0920  0.375 
+2 Quercus faginea    0.0435  0.263   0.274 
+3 Quercus ilex       0.0237  0.122   0.382 
+4 Quercus petraea    0.277   0.245   0.0133
+5 Quercus pubescens  0.256   0.290   0.107 
+6 Quercus pyrenaica  0.787  -0.121  -0.253 
+7 Quercus robur     -0.353   0.159   0.193 
+8 Quercus suber      0.457  -0.216  -0.140 </code></pre>
+</div>
+</div>
+<p>La falta de independencia en los ejes podría afectar a la capacidad de identificar los coeficientes si decidiéramos incluir la especie como efecto fijo en los modelos.</p>
+</section>
+<section id="efecto-heterogeneo-sobre-la-tasa-de-desecación" class="level2">
+<h2 class="anchored" data-anchor-id="efecto-heterogeneo-sobre-la-tasa-de-desecación">Efecto heterogeneo sobre la tasa de desecación</h2>
+<p>Existe evidencia de que la relación entre los rasgos de las bellotas y la tasa de desecación no es completamente homogénea entre especies ni entre fases de desecación.</p>
+<p><strong>Fase previa</strong>. La incorporación de heterogeneidad interespecífica en los efectos de los rasgos mejoró sustancialmente el ajuste respecto al modelo que asumía efectos comunes. Entre los modelos que permitían heterogeneidad en un único eje, el mayor apoyo correspondió al modelo que permitía variar entre especies el efecto de Dim1 (AIC = 5734.0; peso de AIC = 0.926), seguido del modelo con heterogeneidad en Dim2 (AIC = 5741.2; peso = 0.025). El modelo con heterogeneidad en Dim3 recibió escaso apoyo (AIC = 5761.6).</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">compare_performance</span>(mm.pre<span class="fl">.0</span>, mm.pre<span class="fl">.1</span>, mm.pre.d1.het, mm.pre.d2.het, mm.pre.d3.het, m.pre.all.het)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># Comparison of Model Performance Indices
+
+Name          |   Model |  AIC (weights) | AICc (weights) |  BIC (weights)
+--------------------------------------------------------------------------
+mm.pre.0      | glmmTMB | 6193.2 (&lt;.001) | 6193.3 (&lt;.001) | 6260.8 (&lt;.001)
+mm.pre.1      | glmmTMB | 5757.2 (&lt;.001) | 5757.4 (&lt;.001) | 5847.3 (&gt;.999)
+mm.pre.d1.het | glmmTMB | 5734.0 (0.926) | 5735.8 (0.911) | 5976.2 (&lt;.001)
+mm.pre.d2.het | glmmTMB | 5741.2 (0.025) | 5743.1 (0.025) | 5983.4 (&lt;.001)
+mm.pre.d3.het | glmmTMB | 5761.6 (&lt;.001) | 5763.4 (&lt;.001) | 6003.8 (&lt;.001)
+m.pre.all.het | glmmTMB | 5739.8 (0.049) | 5741.1 (0.064) | 5942.6 (&lt;.001)
+
+Name          | R2 (cond.) | R2 (marg.) |   ICC |  RMSE | Sigma
+---------------------------------------------------------------
+mm.pre.0      |      0.988 |      0.312 | 0.983 | 0.367 | 0.472
+mm.pre.1      |      0.988 |      0.292 | 0.983 | 0.373 | 0.472
+mm.pre.d1.het |      0.988 |      0.453 | 0.978 | 0.375 | 0.472
+mm.pre.d2.het |      0.988 |      0.484 | 0.977 | 0.374 | 0.472
+mm.pre.d3.het |      0.988 |      0.452 | 0.978 | 0.374 | 0.472
+m.pre.all.het |      0.988 |      0.330 | 0.982 | 0.374 | 0.472</code></pre>
+</div>
+</div>
+<p><strong>Fase posterior</strong>. En la fase posterior, el patrón cambió: el mayor apoyo correspondió al modelo que permitía heterogeneidad interespecífica en el efecto de Dim2 (AIC = 7747.3; peso = 0.860), mientras que el modelo con heterogeneidad en Dim1 recibió apoyo secundario (AIC = 7751.0; peso = 0.140). El modelo con heterogeneidad en Dim3 recibió escaso apoyo (AIC = 7764.8).</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">compare_performance</span>(mm.post<span class="fl">.0</span>, mm.post<span class="fl">.1</span>, mm.post.d1.het, mm.post.d2.het, mm.post.d3.het, m.post.all.het)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># Comparison of Model Performance Indices
+
+Name           |   Model |  AIC (weights) | AICc (weights) |  BIC (weights)
+---------------------------------------------------------------------------
+mm.post.0      | glmmTMB | 8116.4 (&lt;.001) | 8116.5 (&lt;.001) | 8184.9 (&lt;.001)
+mm.post.1      | glmmTMB | 7770.4 (&lt;.001) | 7770.6 (&lt;.001) | 7861.7 (&gt;.999)
+mm.post.d1.het | glmmTMB | 7751.0 (0.140) | 7752.7 (0.140) | 7996.5 (&lt;.001)
+mm.post.d2.het | glmmTMB | 7747.3 (0.860) | 7749.1 (0.860) | 7992.9 (&lt;.001)
+mm.post.d3.het | glmmTMB | 7764.8 (&lt;.001) | 7766.6 (&lt;.001) | 8010.4 (&lt;.001)
+m.post.all.het | glmmTMB | 7775.9 (&lt;.001) | 7777.1 (&lt;.001) | 7981.4 (&lt;.001)
+
+Name           | R2 (cond.) | R2 (marg.) |   ICC |  RMSE | Sigma
+----------------------------------------------------------------
+mm.post.0      |      0.992 |      0.542 | 0.983 | 0.524 | 0.661
+mm.post.1      |      0.992 |      0.546 | 0.982 | 0.527 | 0.661
+mm.post.d1.het |      0.992 |      0.693 | 0.974 | 0.528 | 0.661
+mm.post.d2.het |      0.992 |      0.687 | 0.974 | 0.528 | 0.661
+mm.post.d3.het |      0.992 |      0.676 | 0.976 | 0.528 | 0.661
+m.post.all.het |      0.992 |      0.534 | 0.983 | 0.528 | 0.661</code></pre>
+</div>
+</div>
+<p>Los resultados del análisis del cambio en el efecto de los rasgos por especie indica que existen marcadas diferencias. Los efectos tienden a ser más marcados y heterogéneos en la fase previa, mientras que en la fase posterior son más débiles y consistentes. Los efectos de los rasgos sobre la tasa de desecación difieren marcadamente entre la fase previa y la fase posterior. Durante la fase previa, el tamaño de la bellota (<code>Dim.1</code>) presenta un efecto protector predominante (x&gt;0) en la mayoría de las especies (6 de 8), mientras que en la fase posterior este efecto se encuentra marcadamente reducido. La robustez del pericarpo (<code>Dim.2</code>) tiene un efecto predominantemente acelerador de la desecación (x&lt;0) en la fase previa, alcanzando grados de significancia (<span class="math inline">\(p&lt;0.05\)</span>) en <em>Q. pubescens</em> y <em>Q. pyrenaica</em>. Sin embargo, estos efectos desaparecen mayoritariamente en la fase posterior, excepto para <em>Q. faginea</em> donde presenta efectos protectores de la desecación. Finalmente, el tamaño de la cicatriz y propensión al rajado apenas presenta efectos apreciables en la fase previa o posterior. El único caso significativo fue <em>Q. coccifera</em>, donde presentó un efecto acelerador de la desecación.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Heterogeneus_effects_acorn_traits_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Entre los efectos encontrados, el único que resulta difícil de explicar según nuestras hipótesis <em>a priori</em> es el de la robustez del pericarpo en algunas especies de <em>Quercus</em>. Concretamente, hemos descrito que en especies como <em>Q. pyrenaica</em> y <em>Q. pubescens</em> pericarpos más robustos dan lugar a tasas de desecación más altas. Se pensó en la correlación entre ejes como una posible explicación. Si en <em>Q. pyrenaica</em> la correlación entre el eje 1 y el 2 fuera elevada y negativa podría argumentarse que el modelo está asociando el efecto de tener bellotas pequeñas a la robustez del pericarpo. Sin embargo, el coeficiente de correlación era positivo en ese caso, por lo que en <em>Q. pyrenaica</em> las bellotas con pericarpos robustos se asocian con bellotas grandes.</p>
+<p>Otro elemento explicativo puede estar asociado a la presencia de este efecto acelerador solo en la fase previa. Durante el experimento de desecación es conocido por el grupo que algunas bellotas acumulaban agua entre el pericarpo y los cotiledones. Es posible que pericarpos más robustos estén asociados a mayor acumulación inicial de agua en esta especie. Esto podría observarse graficando el contenido hídrico inicial en función de la dimensión 2. Sin embargo, como puede observarse a continuación, la relación entre estos dos parámetros es heterogénea entre especies y, en el caso particular de <em>Q. pyrenaica</em> negativa.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Moisture_content, Dim<span class="fl">.2</span>, SPM_g_cm2, SCR, species, time) <span class="sc">|&gt;</span> </span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(time <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Dim<span class="fl">.2</span>, <span class="at">y =</span> Moisture_content)) <span class="sc">+</span> </span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>species) <span class="sc">+</span></span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Robustez del pericarpo (Dim.2)"</span>) <span class="sc">+</span></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Contenido hídrico inicial (%)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Heterogeneus_effects_acorn_traits_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>A estas alturas de la tesis empiezo a renunciar a entender algunos de los patrones encontrados en estos datos. Además, sospecho que perderse en estas cosas es intentar explicar ruído, más teniendo en cuenta que estoy intentando explicar unos patrones que, al producirse solo en las primeras 50-90 horas del experimento, probablemente solo expliquen una parte limitada, tal vez despreciable, del destino biológico de nuestras bellotas. Por ejemplo, ¿qué importaría que el pericarpo acelere la tasa de desecación en las primeras 50 horas si eso supusiera que la bellota llega a contenidos hídricos críticos prácticamente a la vez que si no hubieras tenido un cuenta el patrón inicial?</p>
+</section>
+<section id="diferencias-dentro-y-entre-especies" class="level2">
+<h2 class="anchored" data-anchor-id="diferencias-dentro-y-entre-especies">Diferencias dentro y entre especies</h2>
+<p>En conjunto, los modelos <strong>within–between</strong> muestran que los tres ejes del PCA presentan patrones diferenciados en su relación con la desecación y que estos patrones cambian entre las fases PRE y POST. Dim.1 presenta un efecto relativamente consistente, Dim.2 evidencia una marcada divergencia entre los componentes between y within, y Dim.3 parece estar principalmente asociado con diferencias entre especies, especialmente durante la fase posterior</p>
+<p>Dim.1 muestra el efecto más consistente: valores elevados, asociados a bellotas de mayor tamaño, se relacionan con una menor tasa de desecación tanto por diferencias entre especies como, especialmente durante PRE, por diferencias entre bellotas dentro de las especies. Dim.2 presenta el patrón más llamativo: durante PRE, el efecto entre especies es protector, mientras que el efecto dentro de especie es contrario, de modo que las especies con valores medios más altos de Dim.2 tienden a desecarse más lentamente, pero dentro de cada especie las bellotas con valores relativamente altos de Dim.2 muestran una mayor tasa de desecación. Durante POST, este efecto entre especies desaparece, mientras que el efecto within se mantiene. Finalmente, Dim.3 se asocia con una mayor tasa de desecación durante PRE tanto entre especies como dentro de ellas, aunque el efecto entre especies es considerablemente mayor; durante POST, la asociación entre especies persiste, mientras que el efecto within deja de estar claramente respaldado.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Conjuro arcano</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">compare_parameters</span>(m.wb.t1, m.wb.t2, </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">ci =</span> <span class="fl">0.95</span>,</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">select =</span> <span class="st">"{estimate}{stars} [{ci}]"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Parameter           |                    m.wb.t1 |                 m.wb.t2
+--------------------------------------------------------------------------
+(Intercept)         |  24.12*** [ 23.55,  24.69] | 29.67*** [29.24, 30.09]
+time s              | -18.49*** [-19.03, -17.94] | -7.86*** [-8.03, -7.69]
+D1 between          |   1.71*** [  1.12,   2.31] |  0.88*** [ 0.44,  1.32]
+D1 within           |   1.11*** [  0.68,   1.54] |  0.56*** [ 0.24,  0.89]
+D2 between          |   1.92*** [  1.24,   2.60] |     0.35 [-0.18,  0.87]
+D2 within           |  -0.70  * [ -1.31,  -0.09] | -0.63 ** [-1.09, -0.17]
+D3 between          |  -1.51 ** [ -2.50,  -0.52] | -1.26*** [-1.95, -0.58]
+D3 within           |  -0.98 ** [ -1.61,  -0.35] |    -0.40 [-0.87,  0.08]
+time s × D1 between |   1.82*** [  1.25,   2.39] |  0.20  * [ 0.02,  0.37]
+time s × D1 within  |   1.69*** [  1.27,   2.10] |  0.31*** [ 0.18,  0.44]
+time s × D2 between |   2.82*** [  2.17,   3.47] |    -0.09 [-0.30,  0.12]
+time s × D2 within  |  -0.60  * [ -1.18,  -0.02] | -0.23  * [-0.42, -0.05]
+time s × D3 between |  -4.12*** [ -5.07,  -3.17] | -1.12*** [-1.39, -0.84]
+time s × D3 within  |  -0.66  * [ -1.26,  -0.06] |     0.09 [-0.10,  0.28]
+--------------------------------------------------------------------------
+Observations        |                       2066 |                    2231</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusiones" class="level1">
+<h1>Conclusiones</h1>
+<p>El análisis evidencia que el efecto de los rasgos de las bellotas sobre la tasa de desecación es heterogéneo entre especies y, además, cambia entre las fases de desecación (PRE y POST). La especie explica entre el 31 y el 45% de la varianza de las dimensiones del FAMD y, aunque globalmente estas dimensiones son ortogonales, dentro de algunas especies (destacando <em>Q. pyrenaica</em>) aparecen correlaciones entre ejes que pueden sesgar la interpretación de los coeficientes. Los modelos que permiten que el efecto de los rasgos varíe entre especies mejoran sustancialmente el ajuste, con un apoyo máximo para la heterogeneidad en el tamaño de la bellota (Dim.1) durante la fase previa y en la robustez del pericarpo (Dim.2) durante la fase posterior. El tamaño de la bellota ejerce un efecto protector en la mayoría de las especies durante la fase previa, efecto que se desvanece en la fase posterior. La robustez del pericarpo presenta un efecto dual: protector entre especies pero acelerador dentro de especie, significativo en <em>Q. pubescens</em> y <em>Q. pyrenaica</em> durante la fase previa. Por último, el tamaño de la cicatriz y la predisposición al rajado (Dim.3) aceleran la desecación principalmente a través de diferencias entre especies, aunque su efecto recibe escaso apoyo a nivel de interacción especie×tiempo y solo es significativo en <em>Q. coccifera</em>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Eje</th>
+<th>Interpretación</th>
+<th>Fase</th>
+<th>Efecto sobre la tasa de desecación</th>
+<th>Heterogeneidad entre especies</th>
+<th>Within vs between</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Dim.1</strong></td>
+<td>Tamaño de la bellota</td>
+<td><strong>PRE</strong></td>
+<td><strong>Protector</strong> (↓ tasa) en 6/8 especies</td>
+<td><strong>Alta en apoyo del modelo</strong> (peso AIC = 0.926), con dirección consistente entre especies</td>
+<td><strong>Within y between protectores</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Dim.1</strong></td>
+<td>Tamaño de la bellota</td>
+<td><strong>POST</strong></td>
+<td><strong>Marcadamente reducido</strong></td>
+<td>Moderada; apoyo secundario (peso AIC = 0.140)</td>
+<td>Efectos debilitados</td>
+</tr>
+<tr class="odd">
+<td><strong>Dim.2</strong></td>
+<td>Robustez del pericarpo</td>
+<td><strong>PRE</strong></td>
+<td><strong>Contrario según el nivel de análisis</strong>: protector entre especies, acelerador dentro de especie (significativo en <em>Q. pubescens</em> y <em>Q. pyrenaica</em>)</td>
+<td>Moderada; apoyo secundario (peso AIC = 0.025)</td>
+<td><strong>Between protector, within perjudicial</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Dim.2</strong></td>
+<td>Robustez del pericarpo</td>
+<td><strong>POST</strong></td>
+<td><strong>Acelerador dentro de especie</strong>; entre especies ≈ 0</td>
+<td><strong>Alta</strong>; mayor apoyo del modelo (peso AIC = 0.860)</td>
+<td><strong>Between ≈ 0, within perjudicial</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Dim.3</strong></td>
+<td>Tamaño relativo de la cicatriz / predisposición a rajas</td>
+<td><strong>PRE</strong></td>
+<td><strong>Acelerador</strong> (↑ tasa); solo <em>Q. coccifera</em> significativo</td>
+<td>Baja; escaso apoyo del modelo (AIC = 5761.6)</td>
+<td><strong>Between y within perjudiciales</strong>, con efecto between mucho mayor</td>
+</tr>
+<tr class="even">
+<td><strong>Dim.3</strong></td>
+<td>Tamaño relativo de la cicatriz / predisposición a rajas</td>
+<td><strong>POST</strong></td>
+<td><strong>Acelerador</strong>, principalmente entre especies</td>
+<td>Baja; escaso apoyo del modelo (AIC = 7764.8)</td>
+<td><strong>Principalmente between</strong>; within ≈ 0</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
