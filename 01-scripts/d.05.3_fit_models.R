@@ -138,14 +138,12 @@ if (RUN_FIT) {
 
   cat("\n################ Diagnostico de convergencia ################\n")
   diag_tabla <- function(fit) {
-    mat <- posterior::as_draws_matrix(
-      brms::as_draws_df(fit, variable = "^b_", regex = TRUE)
-    )
+    arr <- brms::as_draws_array(fit, variable = "^b_", regex = TRUE)
     tibble(
-      param    = colnames(mat),
-      Rhat     = unname(posterior::rhat(mat)),
-      Bulk_ESS = unname(posterior::ess_bulk(mat)),
-      Tail_ESS = unname(posterior::ess_tail(mat))
+      param    = dimnames(arr)[[3]],
+      Rhat     = unname(posterior::rhat(arr)),
+      Bulk_ESS = unname(posterior::ess_bulk(arr)),
+      Tail_ESS = unname(posterior::ess_tail(arr))
     ) |>
       dplyr::mutate(estado = ifelse(
         Rhat < 1.01 & Bulk_ESS > 400 & Tail_ESS > 400,
@@ -175,7 +173,7 @@ if (RUN_FIT) {
   hyp_phylo <- paste(
     "sd_phylo_species__Intercept^2 /",
     "(sd_phylo_species__Intercept^2 + sd_codigo__Intercept^2 +",
-    " sd_id_bellota__Intercept^2 + sigma^2)"
+    " sd_id_bellota__Intercept^2 + sigma^2) > 0"
   )
   print(hypothesis(m3, hyp_phylo, class = NULL))
 
