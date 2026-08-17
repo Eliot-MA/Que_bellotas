@@ -3,25 +3,15 @@
 # Modelos finales para describir el efecto de los rasgos de las bellotas
 # sobre la tasa de desecacion con correccion filogenetica (brms).
 #
-# SOLO SE PRESENTAN: por defecto no se ejecuta ningun ajuste (RUN_FIT = FALSE).
-# Cuando la filogenia (d.05.2) y la justificacion del modelo dentro/entre
-# especies (d.05.1) esten validadas, pon RUN_FIT <- TRUE y ejecuta este
-# script (desde d.05.model_traits.R o en solitario).
-#
-# Modelos candidatos (a ajustar en cada fase de desecacion, t<94h y t>94h):
-#   M1: filogenia + procedencia + bellota
-#   M2: filogenia + especie libre + procedencia + bellota
-#   M3: descomposicion dentro/entre especies + filogenia  (MODELO RECOMENDADO)
-#
-# Salidas (si RUN_FIT = TRUE):
-#   00-data/phylo/m1_phylo, m2_phylo_spp, m3_phylo_wb  (brmsfit, con cache)
-#   07-img/trace_m1.png, trace_m2.png, trace_m3.png  (trazas de las cadenas)
+# TIRADA COMPLETA: iter=4000, warmup=2000, chains=4, cores=4
+# Configuracion: max_treedepth=14, adapt_delta=0.99
+# Tiempo estimado: ~6 horas
 # ============================================================
 
 RUN_FIT <- TRUE
-SMOKE_TEST <- TRUE   # TRUE = ajuste rapido (1000 iter) para validar el pipeline
-N_CORES <- 1          # 1 evita el cuelgue conocido de rstan en Windows; sube a 4 si va estable
-REFRESH <- 10         # progreso visible en consola (0 = silencio total)
+SMOKE_TEST <- FALSE  # FALSE = tirada completa (4000 iter, 4 cadenas)
+N_CORES <- 4          # 4 cadenas en paralelo
+REFRESH <- 10         # progreso visible en consola
 
 suppressPackageStartupMessages(library(tidyverse))
 
@@ -66,29 +56,32 @@ A <- readRDS("00-data/phylo/oak_vcv.rds")
 stopifnot(all(levels(df.t1$species) %in% colnames(A)))
 
 # brms exige que los niveles de A coincidan con los del factor
-A <- A[levels(df.t1$species), levels(df.t1$species)]
+# Usar niveles comunes de ambas fases
+common_species <- intersect(levels(df.t1$species), levels(df.t2$species))
+A <- A[common_species, common_species]
 
 # brms no permite usar el mismo factor dos veces con distinta covarianza:
 # copia dedicada al termino filogenetico
-df.wb.t1$phylo_species <- factor(df.wb.t1$species)
+df.wb.t1$phylo_species <- factor(df.wb.t1$species, levels = common_species)
+df.wb.t2$phylo_species <- factor(df.wb.t2$species, levels = common_species)
 
 # ---- 2. Especificacion de los modelos (presentacion) ----
 form1 <- "Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
           (1 + time_s | gr(phylo_species, cov = A)) +
           (1 + time_s | codigo) +
-          (1 + time_s | id_bellota)"
+          (1 | id_bellota)"
 
 form2 <- "Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
           (1 + time_s | gr(phylo_species, cov = A)) +
           (1 + time_s | species) +
           (1 + time_s | codigo) +
-          (1 + time_s | id_bellota)"
+          (1 | id_bellota)"
 
 form3 <- "Moisture_content ~ time_s * (D1_within + D2_within + D3_within +
                                        D1_between + D2_between + D3_between) +
           (1 + time_s | gr(phylo_species, cov = A)) +
           (1 + time_s | codigo) +
-          (1 + time_s | id_bellota)"
+          (1 | id_bellota)"
 
 cat("\n===== MODELOS PRESENTADOS (sin ejecutar) =====\n\n")
 cat("M1 (filogenia + procedencia + bellota):\n")
@@ -126,57 +119,93 @@ if (RUN_FIT) {
       prior = priors,
       iter = iter_n, warmup = warmup_n, chains = chains_n,
       cores = N_CORES,
-      control = list(adapt_delta = 0.95, max_treedepth = 12),
+      control = list(adapt_delta = 0.99, max_treedepth = 14),
       seed = seed, refresh = REFRESH,
       file = file.path("00-data/phylo", nm)
     )
   }
 
-  m1 <- fit_model(form1, "m1_phylo",     df.wb.t1, seed = 123)
-  m2 <- fit_model(form2, "m2_phylo_spp", df.wb.t1, seed = 124)
-  m3 <- fit_model(form3, "m3_phylo_wb",  df.wb.t1, seed = 125)
+  # Cargar PRE ya ajustado
+  pre_file <- "00-data/phylo/m3_phylo_wb_pre.rds"
+  if (file.exists(pre_file)) {
+    m3_pre <- readRDS(pre_file)
+    cat("\nModelo PRE cargado de:", pre_file, "\n")
+  } else if (exists("m3")) {
+    # Si existe 'm3' en el entorno (de la ejecucion anterior), usarlo
+    m3_pre <- m3
+    saveRDS(m3_pre, pre_file)
+    cat("\nModelo PRE recuperado de la sesion y guardado en:", pre_file, "\n")
+  } else {
+    stop("No se encontro el modelo PRE. Ejecuta primero la fase PRE.")
+  }
 
-  cat("\n################ Diagnostico de convergencia ################\n")
+  # Ajustar solo POST
+  m3_post <- fit_model(form3, "m3_phylo_wb_post", df.wb.t2, seed = 126)
+
+  cat("\n################ Diagnostico de convergencia (M3 PRE) ################\n")
   diag_tabla <- function(fit) {
-    arr <- brms::as_draws_array(fit, variable = "^b_", regex = TRUE)
+    draws <- brms::as_draws_df(fit, variable = "^b_", regex = TRUE)
+    b_cols <- grep("^b_", colnames(draws), value = TRUE)
+    n_chains <- max(draws$.chain)
+    n_iter <- nrow(draws) / n_chains
+    results <- lapply(b_cols, function(col) {
+      chain_vals <- split(draws[[col]], draws$.chain)
+      mat <- do.call(cbind, chain_vals)
+      list(
+        param = col,
+        Rhat = posterior::rhat(mat),
+        Bulk_ESS = posterior::ess_bulk(mat),
+        Tail_ESS = posterior::ess_tail(mat)
+      )
+    })
     tibble(
-      param    = dimnames(arr)[[3]],
-      Rhat     = unname(posterior::rhat(arr)),
-      Bulk_ESS = unname(posterior::ess_bulk(arr)),
-      Tail_ESS = unname(posterior::ess_tail(arr))
+      param = sapply(results, `[[`, "param"),
+      Rhat = sapply(results, `[[`, "Rhat"),
+      Bulk_ESS = sapply(results, `[[`, "Bulk_ESS"),
+      Tail_ESS = sapply(results, `[[`, "Tail_ESS")
     ) |>
       dplyr::mutate(estado = ifelse(
         Rhat < 1.01 & Bulk_ESS > 400 & Tail_ESS > 400,
         "ok", "REVISAR"
       ))
   }
-  for (nm in c("m1", "m2", "m3")) {
-    cat("\n-- ", toupper(nm), " --\n", sep = "")
-    print(diag_tabla(get(nm)), n = Inf)
-  }
+  cat("\n-- M3 PRE (t < 94h) --\n")
+  print(diag_tabla(m3_pre), n = Inf)
+
+  cat("\n################ Diagnostico de convergencia (M3 POST) ################\n")
+  cat("\n-- M3 POST (t > 94h) --\n")
+  print(diag_tabla(m3_post), n = Inf)
 
   dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
-  for (nm in c("m1", "m2", "m3")) {
-    ggplot2::ggsave(file.path("07-img", paste0("trace_", nm, ".png")),
-      bayesplot::mcmc_trace(get(nm), regex_pars = "b_"),
-      width = 12, height = 8, dpi = 150)
-  }
-  cat("\nTraceplots guardados en 07-img/trace_m1.png, trace_m2.png y trace_m3.png\n")
+  ggplot2::ggsave("07-img/trace_m3_pre.png",
+    bayesplot::mcmc_trace(m3_pre, regex_pars = "b_"),
+    width = 12, height = 8, dpi = 150)
+  ggplot2::ggsave("07-img/trace_m3_post.png",
+    bayesplot::mcmc_trace(m3_post, regex_pars = "b_"),
+    width = 12, height = 8, dpi = 150)
+  cat("\nTraceplots guardados en 07-img/trace_m3_pre.png y trace_m3_post.png\n")
 
-  cat("\n################ M3 (recomendado) ################\n")
-  print(summary(m3))
+  cat("\n################ M3 PRE (recomendado) ################\n")
+  print(summary(m3_pre))
 
-  cat("\n################ Comparacion LOO ################\n")
-  loo_compare(loo(m1), loo(m2), loo(m3))
+  cat("\n################ M3 POST ################\n")
+  print(summary(m3_post))
 
-  cat("\n################ Senal filogenetica (M3) ################\n")
+  # cat("\n################ Comparacion LOO ################\n")
+  # loo_compare(loo(m1), loo(m2), loo(m3))
+
+  cat("\n################ Senal filogenetica (M3 PRE) ################\n")
   hyp_phylo <- paste(
     "sd_phylo_species__Intercept^2 /",
     "(sd_phylo_species__Intercept^2 + sd_codigo__Intercept^2 +",
     " sd_id_bellota__Intercept^2 + sigma^2) > 0"
   )
-  print(hypothesis(m3, hyp_phylo, class = NULL))
+  print(hypothesis(m3_pre, hyp_phylo, class = NULL))
 
-  saveRDS(list(m1 = m1, m2 = m2, m3 = m3), "00-data/phylo/brms_phylo_models.rds")
-  cat("\nModelos guardados en 00-data/phylo/brms_phylo_models.rds\n")
+  cat("\n################ Senal filogenetica (M3 POST) ################\n")
+  print(hypothesis(m3_post, hyp_phylo, class = NULL))
+
+  saveRDS(list(pre = m3_pre, post = m3_post), "00-data/phylo/m3_final.rds")
+  cat("\nModelos M3 finales guardados en 00-data/phylo/m3_final.rds\n")
 }
+
