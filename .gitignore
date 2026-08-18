@@ -54,4 +54,5 @@ rsconnect/
 00-data/*
 
 # Others
+99-other_resources/
 Estimating Phylogenetic Multilevel Models with brms.pdf

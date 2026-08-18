@@ -12,6 +12,7 @@ format:
       - margin=2.5cm
     fontsize: 11pt
     keep-md: false
+bibliography: ../09-bib/bibliografía.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -65,10 +66,9 @@ La recomendación es ajustar los modelos en el marco bayesiano con el paquete
 estructura de covarianza viene dada por una **matriz filogenética** `A`
 obtenida del árbol de las especies.
 
-La referencia metodológica es el documento
-*"Estimating Phylogenetic Multilevel Models with brms"* (vignette de
-P. Bürkner, que acompaña a `brms`). La estrategia central que se extrae de
-dicha vignette es:
+La referencia metodológica es la vignette de Bürkner
+@buerkner2025phylo que acompaña a `brms`. La estrategia central que se extrae
+de dicha vignette es:
 
 1. Obtener el árbol filogenético (`phylo`) de las especies.
 2. Construir la matriz de varianza-covarianza filogenética con
@@ -140,6 +140,22 @@ Esta información modifica el planteamiento del modelo en varios puntos:
    variación entre procedencias dentro de una misma especie. De lo contrario,
    esa variación se confunde con el efecto de especie (filogenético o no) o
    infla la varianza a nivel de bellota.
+
+   **Nota sobre la independencia espacial:** Al incluir `codigo` como efecto
+   aleatorio con estructura independiente, asumimos que todas las procedencias
+   son independientes entre sí. Esto es una simplificación, ya que
+   procedencias geográficamente cercanas probablemente comparten condiciones
+   ambientales similares (clima, suelo, altitud) que podrían correlacionarse
+   espacialmente. Una alternativa más realista sería modelar la correlación
+   espacial entre procedencias (p. ej. con un efecto espacial o una matriz de
+   distancia geográfica). Sin embargo, con solo 16 procedencias y 8 especies,
+   incluir simultáneamente correlación filogenética y espacial resultaría
+   excesivamente complejo para los datos disponibles, incrementando
+   drásticamente el número de parámetros y el riesgo de problemas de
+   identificación. La simplificación a efectos aleatorios independientes es
+   por tanto una decisión pragmática que asume que la mayor parte de la
+   correlación espacial queda capturada por la composición de especies en cada
+   procedencia (que ya está controlada por el término filogenético).
 2. **`procedencia` no es anidada.** Al compartirse nombres de procedencia entre
    especies, no debe especificarse `procedencia` como factor anidado en especie.
    Un efecto cruzado `(1 + time | procedencia)` sería concebible, pero con solo
@@ -151,7 +167,7 @@ Esta información modifica el planteamiento del modelo en varios puntos:
    necesita una copia de la variable de especie (p. ej.
    `phylo_species = species`) dedicada al término con `cov = A`, mientras que
    `species` queda para el efecto libre no filogenético (siguiendo la
-   recomendación de la vignette).
+   recomendación de la vignette @buerkner2025phylo).
 4. **Señal filogenética.** La fórmula de la CCI/λ debe incorporar la varianza
    del nivel de procedencia: `sd_phylo² / (sd_phylo² + sd_codigo² + sd_bellota² + sigma²)`.
 
@@ -194,7 +210,7 @@ conviene documentar las alternativas consideradas.
 
 Se consideró generar el árbol con el paquete `V.PhyloMaker2`, que inserta una
 lista de especies en el mega-árbol de plantas vasculares GBOTB
-(Smith & Brown 2018; Jin & Qian 2019, 2022). GBOTB es un árbol "backbone" de
+[@smith2018seed; @jin2019vphylo; @jin2022vphylo2]. GBOTB es un árbol "backbone" de
 ~74.000 especies de plantas vasculares: bien resuelto en niveles taxonómicos
 altos (órdenes, familias, géneros), pero a nivel intra-genérico suele estar
 sin resolver.
@@ -231,7 +247,7 @@ S3). Los resultados matizan y precisan el razonamiento anterior:
    con la semilla de la ejecución (y difiere de la de S1/S3).
 5. Las 5 especies `prune` heredan la topología interna de GBOTB, donde
    *suber* queda entre los robles blancos, contradiciendo la filogenia genómica
-   de referencia (Hipp et al. 2020).
+   de referencia (@hipp2020oak).
 
 ```r
 # S1 y S3 (idénticos): robur, ilex y pubescens politómicas en el nodo de Quercus
@@ -337,7 +353,7 @@ esas aristas quedaron sin longitud.
 ## Solución: longitudes de rama por el método de Grafen
 
 Al disponer únicamente de la topología, se asignaron longitudes con el método
-de **Grafen (1989)**, implementado en `ape::compute.brlen(..., method = "Grafen")`.
+de Grafen @grafen1989phylo, implementado en `ape::compute.brlen(..., method = "Grafen")`.
 
 En qué se basa:
 
@@ -390,16 +406,39 @@ kable(round(A, 3), caption = "Matriz de varianza-covarianza filogenética (A = v
 
 1. **Posición de *Quercus suber*:** en el árbol de OToL, `suber` aparece como
    hermana de los robles blancos. Sin embargo, filogenias genómicas recientes
-   (Hipp et al. 2020) sitúan a `suber` en el subgénero *Cerris*, junto a
+   (@hipp2020oak) sitúan a `suber` en el subgénero *Cerris*, junto a
    `ilex` y `coccifera`. Esta discrepancia refleja que OToL sintetiza distintas
    fuentes y la resolución a este nivel puede ser inestable.
 2. **Longitudes de Grafen:** son un heurístico. Para el artículo convendría
-   sustituirlas por una filogenia de robles **datada** (p. ej. Hipp et al.
-   2020) o, al menos, realizar un análisis de sensibilidad con métodos
+   sustituirlas por una filogenia de robles **datada** (p. ej. @hipp2020oak)
+   o, al menos, realizar un análisis de sensibilidad con métodos
    alternativos de longitudes.
 3. **Número de especies:** con solo 8 especies, la señal filogenética se estima
    con incertidumbre alta; el término de bellota puede absorber parte de la
    variación entre especies. Los resultados deben interpretarse con cautela.
+
+   Esta limitación es particularmente relevante porque los métodos
+   comparativos filogenéticos dependen de comportamientos asintóticos que
+   asumen muestras grandes. @hadfield2010qgt advierten explícitamente que
+   "las inferencias estadísticas en filogenias pequeñas deben tratarse con
+   extrema precaución", ya que tanto los tests de ratio de verosimilitud
+   como la información de Fisher dependen de la distribución χ²
+   asintótica, cuya aproximación es poco fiable con pocos grados de
+   libertad filogenéticos. Con 8 especies, el número de contrastes
+   independientes es extremadamente limitado (máximo 7 en un árbol
+   binario), lo que implica que las estimaciones de parámetros como la
+   señal filogenética (λ o CCI) y los efectos de rasgos entre especies
+   están sujetas a una incertidumbre sustancial que puede no estar bien
+   capturada por los intervalos de credibilidad.
+   
+   Adicionalmente, trabajos recientes (@collar2009ou) muestran que en
+   filogenias pequeñas (<100 tips), los tests de modelo (como la
+   comparación Brownian vs. Ornstein-Uhlenbeck) presentan tasas de error
+   Tipo I inaceptablemente altas, favoreciendo falsamente modelos más
+   complejos. Aunque nuestro enfoque bayesiano mitiga parcialmente estos
+   problemas al evitar tests de hipótesis clásicos, la información
+   asintótica subyacente sigue siendo relevante para la interpretación
+   de los resultados.
 
 # Especificación del modelo `brms` (script `01-scripts/d.07.1-brms_phylo_model.R`)
 
@@ -429,7 +468,7 @@ form1 <- bf(
 
 ## Modelo M2: filogenia + especie libre + procedencia + bellota
 
-Siguiendo la recomendación de la vignette para datos con observaciones
+Siguiendo la recomendación de la vignette @buerkner2025phylo para datos con observaciones
 repetidas, se añade un término de especie "libre" que separa el componente
 filogenético del efecto específico no filogenético:
 
@@ -443,6 +482,81 @@ form2 <- bf(
 )
 ```
 
+## Modelo M3: descomposición within/between + filogenia (RECOMENDADO)
+
+El modelo M3 es el que responde directamente a la pregunta de investigación:
+¿los rasgos influyen **dentro** o **entre** especies? Para ello, los ejes FAMD
+se descomponen en componentes within y between:
+
+```r
+# Descomposición within/between (script d.05.1)
+df.wb <- df.t1 |>
+  group_by(species) |>
+  mutate(
+    D1_within  = Dim.1 - mean(Dim.1),
+    D1_between = mean(Dim.1),
+    D2_within  = Dim.2 - mean(Dim.2),
+    D2_between = mean(Dim.2),
+    D3_within  = Dim.3 - mean(Dim.3),
+    D3_between = mean(Dim.3)
+  ) |>
+  ungroup()
+
+# Fórmula M3
+form3 <- bf(
+  Moisture_content ~ time_s * (D1_within + D2_within + D3_within +
+                               D1_between + D2_between + D3_between) +
+    (1 + time_s | gr(phylo_species, cov = A)) +  # filogenético
+    (1 + time_s | codigo) +                       # procedencia
+    (1 | id_bellota)                              # bellota (solo intercepto)
+)
+```
+
+**Justificación de la descomposición within/between:**
+
+La técnica empleada se conoce como *within-group centering* (@vandepol2009within)
+y consiste en separar cada predictor en su componente within (desviación de la
+media de la especie) y between (media de la especie). En el contexto
+filogenético, esta descomposición es fundamental porque permite distinguir
+formalmente entre dos procesos biológicos distintos (@devillemorael2014qgt):
+
+- **Efectos between** (media de especie): reflejan procesos adaptativos a largo
+  plazo. Si una especie tiene un valor medio de rasgo mayor que otra y
+  sistematicamente deseca más lento, esto sugiere que la selección natural ha
+  favorecido ese rasgo a nivel de linaje.
+- **Efectos within** (desviación de la media): reflejan plasticidad fenotípica,
+  variación ambiental o respuestas facultativas. Si una bellota concreta se
+  desvía de la media de su especie y esto afecta su tasa de desecación, se
+  trata de un efecto de nivel individual, no evolutivo.
+
+Sin esta separación, un modelo que use los rasgos originales (como M1/M2)
+produce estimadores que **confunden** ambos procesos. Como muestran
+@vandepol2009within, cuando los efectos within y between difieren en magnitud
+o dirección, el modelo estándar produce estimadores sesgados que no
+representan fielmente ninguno de los dos procesos. En nuestro caso, la
+descomposición permite responder directamente a la pregunta: ¿los rasgos de
+bellota influyen en la desecación a través de la selección entre especies
+(proceso evolutivo) o a través de la variación individual dentro de especies
+(proceso ecológico)? Un análisis más detallado de esta justificación se
+encuentra en el documento `08-reports/Heterogeneus_effects_acorn_traits.qmd`.
+
+**Diferencias clave con M1/M2:**
+
+- Los predictores son **within** (efecto de desviarse de la media de la
+  especie) y **between** (media de la especie), no los rasgos originales.
+- `(1 | id_bellota)` en vez de `(1 + time_s | id_bellota)`: la pendiente
+  within-bellota se absorbe en el error (justificación abajo).
+- No incluye `(1 + time_s | species)` como M2 (con solo 8 especies, demasiado
+  ambicioso).
+
+**Justificación de la simplificación `(1 | id_bellota)`:**
+
+El modelo completo con `(1 + time_s | id_bellota)` generaba ~2900 parámetros,
+produciendo ~60 violaciones de `max_treedepth=12`. El análisis de componentes
+mostró que la pendiente within-bellota es pequeña (var=0.0015) comparada con
+el intercepto (var=150). Eliminar la pendiente reduce los parámetros a ~2420
+y el treedepth al 17%, sin afectar a los efectos fijos (correlación r=0.999).
+
 ## Priors y muestreo
 
 ```r
@@ -454,18 +568,194 @@ priors <- c(
   prior(lkj(2), class = "cor")
 )
 
-m1 <- brm(
-  form1, data = df.t1, data2 = list(A = A),
+# Configuración final (tras pruebas de optimización)
+m3 <- brm(
+  form3, data = df.wb, data2 = list(A = A),
   family = gaussian(), prior = priors,
   iter = 4000, warmup = 2000, chains = 4, cores = 4,
-  control = list(adapt_delta = 0.95, max_treedepth = 12),
+  control = list(adapt_delta = 0.99, max_treedepth = 14),
   seed = 123
 )
 ```
 
+**Justificación detallada de los priors:**
+
+En inferencia bayesiana, un *prior* es la distribución de probabilidad que
+asumimos **antes** de ver los datos para cada parámetro del modelo. Los priors
+se clasifican en:
+
+- **Informativos:** reflejan conocimiento previo específico sobre el parámetro.
+  Ejemplo: `normal(50, 5)` para un intercepto si sabemos que el contenido de
+  humedad ronda el 50% con poca variación.
+- **Débilmente informativos (*weakly informative*):** imponen restricciones
+  razonables pero no dominan la inferencia. Ejemplo: `normal(0, 10)` para un
+  coeficiente permite valores entre -20 y 20 con baja probabilidad, pero no
+  fuerza el resultado hacia ningún valor concreto.
+- **No informativos (planos):** `flat` sobre los reales; no restringen el
+  parámetro en absoluto. Pueden causar problemas de convergencia porque
+  permiten valores extremadamente improbables.
+
+Bürkner (@buerkner2025phylo) destaca que el uso de priors informativos o
+débilmente informativos no es estrictamente necesario para la convergencia,
+pero **ayuda significativamente a la velocidad de muestreo** en modelos
+filogenéticos complejos. Los priors actúan como *regularización*: evitan que
+el muestreador explore regiones del espacio paramétrico donde la verosimilitud
+es prácticamente cero, acelerando la convergencia. En nuestro caso, dado que
+el ajuste del modelo M3 fue costoso (20–24 h), la elección de priors
+débilmente informativos fue una decisión estratégica para reducir el tiempo
+de muestreo sin comprometer la objetividad de los resultados.
+
+### Prior del intercepto: `normal(40, 20)`
+
+El contenido de humedad (`Moisture_content`) se mide en porcentaje y ronda
+valores entre 0% y 100%. Un intercepto de 40% con desviación estándar de 20
+permite valores entre 0 y 80 con probabilidad razonable. Este prior es
+**débilmente informativo**: refleja el conocimiento de que la humedad inicial
+de las bellotas está en ese rango, pero no fuerza el resultado. Sin este
+prior, el muestreador podría explorar valores negativos de humedad o
+valores superiores al 100%, lo cual es biológicamente imposible y ralentiza
+la convergencia.
+
+### Prior de los coeficientes: `normal(0, 10)`
+
+Los coeficientes de los efectos fijos (incluyendo las interacciones con
+`time_s`) representan cambios en el contenido de humedad por unidad de cambio
+en el predictor. Un prior `normal(0, 10)` permite que los coeficientes varíen
+ampliamente (hasta ±20 con probabilidad razonable) pero penaliza valores
+extremos. Esto es coherente con la escala de la variable respuesta: un
+coeficiente de 10 implicaría un cambio de 10 puntos porcentuales de humedad
+por unidad de predictor, lo cual sería un efecto extremadamente grande.
+
+### Prior de las desviaciones estándar: `student_t(3, 0, 10)`
+
+Las desviaciones estándar de los efectos aleatorios (`sd_phylo`, `sd_codigo`,
+`sd_bellota`) y el residuo (`sigma`) están restringidas a ser positivas. El
+prior `student_t(3, 0, 10)` (cola pesada con 3 grados de libertad) es la
+elección recomendada por @buerkner2025phylo porque:
+
+1. **Colas pesadas:** la distribución Student-t con 3 gl permite valores
+   grandes sin asignarles probabilidad despreciable, lo cual es útil cuando
+   no se conoce bien la escala de las desviaciones.
+2. **Centrado en 0:** refleja la suposición de que las desviaciones estándar
+   son pequeñas pero no nulas.
+3. **Mejor convergencia que Cauchy:** como señala @buerkner2025phylo, este
+   prior "a menudo conduce a una mejor convergencia que un prior half-Cauchy,
+   mientras sigue siendo relativamente débilmente informativo".
+
+El parámetro de escala 10 es el mínimo que brms usa por defecto; se ajusta
+automáticamente si la desviación estándar de la respuesta es mayor.
+
+### Prior de correlaciones: `lkj(2)`
+
+El prior LKJ (@lewandowski2009lkj) se usa para las
+correlaciones entre efectos aleatorios dentro del mismo nivel (p. ej. la
+correlación entre intercepto y pendiente filogenéticos). Con `ζ = 2`:
+
+- La **matriz de identidad** (correlaciones = 0) es el **modo** de la
+  distribución, es decir, el valor más probable a priori.
+- Las correlaciones extremas (±1) son penalizadas, pero no imposibles.
+- Es equivalente a una distribución beta(2, 2) aplicada a cada correlación.
+
+Si se usara `lkj(1)` (el valor por defecto de brms), todas las matrices de
+correlación serían igualmente probables a priori, lo cual podría permitir
+correlaciones espurias en modelos complejos. Con `lkj(2)` favorecemos
+moderadamente la independencia entre efectos, lo que ayuda a la convergencia
+sin introducir sesgo sustancial.
+
+::: {.callout-note}
+## Aclaraciones conceptuales sobre priors
+
+**¿Qué es una distribución Cauchy / half-Cauchy?**
+
+La distribución Cauchy es una distribución de cola pesada (más pesada que la
+normal) que no tiene media ni varianza definidas (son infinitas). La
+*half-Cauchy* es simplemente la distribución Cauchy truncada en cero (solo
+valores positivos), usada para parámetros que deben ser positivos como
+desviaciones estándar. Gelman et al. (2006) recomendaban `half-Cauchy(0, 2.5)`
+como prior para desviaciones estándar. Sin embargo, Bürkner observó que
+`Student-t(3, 0, 10)` conduce a mejor convergencia porque: (1) Cauchy tiene
+colas tan pesadas que el muestreador puede explorar valores extremadamente
+grandes (ej. σ = 1000), desperdiciando iteraciones; (2) Student-t(3) tiene
+colas pesadas pero no tanto, permitiendo valores grandes sin ser excesivamente
+permisiva.
+
+**La matriz de identidad y las correlaciones = 0**
+
+La matriz de identidad es una matriz cuadrada con 1s en la diagonal y 0s
+fuera de ella:
+
+```
+     [,1] [,2] [,3]        Diagonal = 1: correlación de un
+[1,]    1    0    0        parámetro consigo misma (siempre = 1)
+[2,]    0    1    0
+[3,]    0    0    1        Fuera de diagonal = 0: no hay correlación
+                           entre parámetros distintos
+```
+
+Cuando decimos que LKJ(2) "favorece la matriz de identidad", significa que
+lo más probable a priori es que los efectos aleatorios sean **independientes**
+entre sí. Por ejemplo, que el intercepto filogenético y la pendiente
+filogenética no estén correlacionados.
+
+**¿Cómo penaliza LKJ(2) las correlaciones extremas?**
+
+Para un caso simple con 2 efectos (intercepto + pendiente), la matriz de
+correlación es 2×2 con un solo parámetro libre ρ (la correlación entre
+ambos):
+
+```
+     [,1]    [,2]        ρ = correlación entre intercepto
+[1,]    1      ρ         y pendiente (varía de -1 a +1)
+[2,]    ρ      1
+```
+
+Bajo LKJ(ζ), la distribución de ρ depende de ζ:
+
+| ζ | ρ = 0 (independencia) | ρ = ±0.9 (extrema) |
+|---|----------------------|---------------------|
+| 1 | Uniforme (igual prob.) | Misma prob. que ρ = 0 |
+| **2** | **Modo (más probable)** | **Probabilidad reducida** |
+| 3 | Aún más probable | Aún menos probable |
+
+Con `ζ = 2`, la distribución de ρ tiene forma de campana centrada en 0:
+ρ = 0 es el valor más probable, ρ = ±0.9 es posible pero menos probable, y
+ρ = ±1 (correlación perfecta) tiene probabilidad cero.
+
+**¿Qué es una distribución beta(2, 2)?**
+
+La distribución beta(α, β) define probabilidades sobre el intervalo [0, 1].
+Sus parámetros α y β controlan la forma:
+
+```
+beta(1, 1)  →  Uniforme (todos los valores igual de probables)
+beta(2, 2)  →  Campana centrada en 0.5 (valores extremos menos probables)
+beta(0.5, 0.5)  →  U-shaped (valores extremos MÁS probables)
+```
+
+Para LKJ(2), la correlación ρ se transforma a [0, 1] como (ρ + 1)/2, y la
+distribución resultante es beta(2, 2): centrada en 0 (que corresponde a ρ = 0,
+independencia), con colas que decaen hacia ±1 (correlaciones extremas son
+improbables) y simétrica (no favorece correlaciones positivas sobre negativas).
+:::
+
+### Resumen de la estrategia de priors
+
+| Parámetro | Prior | Tipo | Justificación |
+|-----------|-------|------|---------------|
+| Intercepto | `normal(40, 20)` | Débilmente informativo | Rango razonable de humedad (0–80%) |
+| Coeficientes | `normal(0, 10)` | Débilmente informativo | Penaliza efectos extremos (>10 puntos) |
+| Desviaciones | `student_t(3, 0, 10)` | Débilmente informativo | Colas pesadas, mejor convergencia que Cauchy |
+| Residuo σ | `student_t(3, 0, 10)` | Débilmente informativo | Mismas razones que las desviaciones |
+| Correlaciones | `lkj(2)` | Débilmente informativo | Favorece independencia, penaliza correlaciones extremas |
+
+En conjunto, estos priors representan una estrategia **conservadora**: no
+imponen resultados concretos, pero restringen el espacio paramétrico a
+valores biológicamente plausibles, acelerando el muestreo en un modelo con
+~2400 parámetros que de otro modo requeriría considerablemente más tiempo.
+
 ## Señal filogenética
 
-Siguiendo la vignette, la señal filogenética (análoga al λ de Pagel, aquí como
+Siguiendo la vignette @buerkner2025phylo, la señal filogenética (análoga al λ de Pagel, aquí como
 CCI) se calcula como la proporción de varianza atribuible al nivel
 filogenético:
 
@@ -475,54 +765,294 @@ hyp_phylo <- paste(
   "(sd_phylo_species__Intercept^2 + sd_codigo__Intercept^2 +",
   " sd_id_bellota__Intercept^2 + sigma^2)"
 )
-hypothesis(m1, hyp_phylo, class = NULL)
+hypothesis(m3, hyp_phylo, class = NULL)
 ```
 
-# Estado del proceso y próximos pasos
+**Equivalencia entre λ de Pagel y CCI/ICC:**
 
-1. **Filogenia y matriz `A`:** completadas y guardadas en
-   `00-data/phylo/` (`oak_tree.rds`, `oak_tree.nwk`, `oak_vcv.rds`).
-2. **Ajuste de prueba (M1 y M2):** el primer lanzamiento se interrumpió por
-   exceder el tiempo máximo de la sesión (la compilación del modelo Stan
-   arrancó correctamente, confirmando que la sintaxis `gr(species, cov = A)` +
-   `data2 = list(A = A)` es válida en la versión instalada de `brms`), pero el
-   muestreo no llegó a completarse.
-3. **Pendiente:**
-   - completar el ajuste de M1 y M2 (más iteraciones, 4 cadenas);
-   - verificar convergencia (R-hat, ESS) y diagnósticos;
-   - comparar M1 vs M2 con LOO/WAIC;
-   - contrastar con el modelo `glmmTMB` original;
-   - **análisis de sensibilidad** de la filogenia (Grafen vs longitudes
-     iguales vs filogenia datada de robles).
+El parámetro estimado por esta fórmula es matemáticamente equivalente al λ de
+Pagel (@grafen1989phylo) bajo un modelo de movimiento browniano. Para entender
+esta equivalencia, conviene definir los conceptos implicados:
+
+- **Movimiento browniano (BM):** es un modelo estocástico de evolución de
+  rasgos en el que los cambios en el valor del rasgo a lo largo de las ramas
+  del árbol filogenético se modelan como un proceso de Wiener. Bajo BM, dos
+  especies más emparentadas (con ancestro común más reciente) tienden a tener
+  valores de rasgo más similares que especies distantes. La varianza acumulada
+  es proporcional al tiempo evolutivo transcurrido.
+
+- **λ de Pagel:** es un parámetro de escala que comprime o estira las longitudes
+  de rama del árbol para evaluar cuánta de la covarianza filogenética observada
+  es real. Varía de 0 (sin señal filogenética, todas las especies
+  independientes) a 1 (señal completa, movimiento browniano perfecto). Cuando
+  λ = 0.5, por ejemplo, la covarianza filogenética se reduce a la mitad.
+
+- **Correlación intraclase (ICC):** en el contexto de modelos multinivel, la
+  ICC mide la proporción de varianza total explicada por un nivel de agrupación.
+  En nuestro caso, la ICC filogenética es `sd_phylo² / (sd_phylo² + sd_otros²)`,
+  que estima qué fracción de la varianza del contenido de humedad se debe a
+  la similitud filogenética entre especies.
+
+Bajo el modelo de movimiento browniano, λ y la ICC filogenética son
+**matemáticamente equivalentes**: ambos quantifican la misma cosa (la
+proporción de varianza debida a la filogenia), solo que desde marcos
+conceptuales distintos (evolución comparativa vs. diseño multinivel). Esta
+equivalencia está documentada tanto en la vignette de @buerkner2025phylo como
+en @devillemorael2014qgt, quienes muestran que el modelo filogenético mixto
+de brms produce estimaciones consistentes con el λ de Pagel cuando se
+especifica correctamente la estructura de covarianza.
+
+# Desarrollo del ajuste bayesiano
+
+El ajuste del modelo M3 no fue inmediato. Se necesitaron múltiples iteraciones
+para resolver problemas técnicos y optimizar la configuración del algoritmo.
+
+## Problema 1: cuelgue en Windows con múltiples cadenas
+
+El primer intento de ajuste con `cores = 4` quedó colgado indefinidamente. En
+Windows, `brms` usa `parallel::mclapply()` que no funciona correctamente con
+más de 1 núcleo. La solución fue:
+
+```r
+# Opción A: 1 sola cadena (lento pero funcional)
+m3 <- brm(..., chains = 1, cores = 1)
+
+# Opción B: 4 cadenas secuenciales (recomendado)
+options(mc.cores = 1)
+m3 <- brm(..., chains = 4, cores = 1)
+```
+
+**Decisión:** se usó la opción B (4 cadenas secuenciales) para mantener la
+diagnóstica de convergencia entre cadenas.
+
+## Problema 2: parámetros en exceso
+
+El modelo completo con `(1 + time_s | id_bellota)` generaba ~2900 parámetros,
+produciendo ~60 violaciones de `max_treedepth=12` (21% de iteraciones). El
+análisis de componentes reveló:
+
+| Componente | Varianza | Proporción |
+|------------|----------|------------|
+| Intercepto bellota | 150.2 | 99.9% |
+| Pendiente bellota | 0.0015 | 0.1% |
+
+La pendiente within-bellota era despreciable. Simplificar a `(1 | id_bellota)`
+eliminó ~480 parámetros sin afectar los efectos fijos (correlación r=0.999).
+
+## Optimización del algoritmo: plan de 48 horas
+
+Se diseñó un plan de pruebas sistemático para encontrar la configuración óptima:
+
+### Fase 1: Prueba de configuración (4 horas)
+
+```r
+# Configuración mínima para verificar que el modelo compila y samplea
+m_test <- brm(
+  form3, data = df.wb, data2 = list(A = A),
+  family = gaussian(), prior = priors,
+  iter = 200, warmup = 100, chains = 2,
+  control = list(adapt_delta = 0.95, max_treedepth = 12),
+  seed = 123
+)
+```
+
+**Resultado:** compiló y sampleó correctamente. Se confirmó la viabilidad.
+
+### Fase 2: Tirada completa PRE (24 horas)
+
+```r
+m3_pre <- brm(
+  form3, data = df.wb.pre, data2 = list(A = A),
+  family = gaussian(), prior = priors,
+  iter = 4000, warmup = 2000, chains = 4,
+  control = list(adapt_delta = 0.99, max_treedepth = 14),
+  seed = 123
+)
+```
+
+### Fase 3: Tirada completa POST (24 horas)
+
+```r
+m3_post <- brm(
+  form3, data = df.wb.post, data2 = list(A = A),
+  family = gaussian(), prior = priors,
+  iter = 4000, warmup = 2000, chains = 4,
+  control = list(adapt_delta = 0.99, max_treedepth = 14),
+  seed = 123
+)
+```
+
+## Tabla comparativa de configuraciones
+
+| Configuración | Parámetros | Treedepth | Divergencias | Tiempo |
+|---------------|------------|-----------|--------------|--------|
+| Completo (`(1+time\|bellota)`) | ~2900 | 60% violaciones | 0 | ~24h |
+| Simplificado (`(1\|bellota)`) | ~2420 | 17% violaciones | 0 | ~18h |
+| **Final** (`adapt=0.99, td=14`) | ~2420 | **0.07%** | **0.12%** | ~20h |
+
+La configuración final (`adapt_delta=0.99, max_treedepth=14`) eliminó casi
+todas las violaciones de treedepth y mantuvo las divergencias por debajo del
+0.2%.
+
+# Resultados del modelo M3
+
+## Fase PRE (t < 94 h)
+
+### Efectos fijos
+
+| Parámetro | Estimada | IC 90% | Significativo |
+|-----------|----------|--------|---------------|
+| Intercepto | 49.4 | (48.1 – 50.7) | ✅ |
+| time_s | -2.45 | (-2.87 – -2.04) | ✅ |
+| D1_within | 1.11 | (0.80 – 1.43) | ✅ |
+| D2_within | -1.06 | (-1.47 – -0.66) | ✅ |
+| D3_within | -0.65 | (-1.07 – -0.24) | ✅ |
+| D1_between | 0.67 | (-2.00 – 3.26) | ❌ |
+| D2_between | 0.20 | (-3.37 – 3.67) | ❌ |
+| D3_between | -1.04 | (-5.13 – 2.93) | ❌ |
+| time_s:D1_within | 1.77 | (1.54 – 2.00) | ✅ |
+| time_s:D2_within | -0.91 | (-1.22 – -0.59) | ✅ |
+| time_s:D3_within | -0.54 | (-0.86 – -0.23) | ✅ |
+| time_s:D1_between | 0.24 | (-0.54 – 1.03) | ❌ |
+| time_s:D2_between | 0.04 | (-0.78 – 0.87) | ❌ |
+| time_s:D3_between | -0.25 | (-1.17 – 0.68) | ❌ |
+
+**Interpretación:** Los efectos **within** son significativos e interactúan con
+el tiempo. Los efectos **between** no son significativos (CIs incluyen 0).
+
+### Señal filogenética
+
+| Estimada | IC 90% |
+|----------|--------|
+| 0.16 | 0 – 0.58 |
+
+Señal filogenética **baja** (16%), con alta incertidumbre.
+
+### Diagnósticos de convergencia
+
+| Métrica | Resultado | Criterio |
+|---------|-----------|----------|
+| Treedepth | 6/8000 (0.07%) | < 30% ✅ |
+| Divergencias | 10/8000 (0.12%) | < 20 ✅ |
+| Rhat máximo | 1.01 | < 1.05 ✅ |
+| ESS mínimo | 697 (time_s:D3_within) | > 400 ✅ |
+
+**Convergencia excelente.**
+
+## Fase POST (t > 94 h)
+
+### Efectos fijos
+
+| Parámetro | Estimada | IC 90% | Significativo |
+|-----------|----------|--------|---------------|
+| Intercepto | 49.4 | (48.1 – 50.7) | ✅ |
+| time_s | -2.45 | (-2.87 – -2.04) | ✅ |
+| D1_within | 0.61 | (0.29 – 0.92) | ✅ |
+| D2_within | -0.61 | (-1.07 – -0.15) | ✅ |
+| D3_within | -0.15 | (-0.62 – 0.33) | ❌ |
+| D1_between | 1.02 | (-1.65 – 3.73) | ❌ |
+| D2_between | 0.57 | (-2.91 – 4.33) | ❌ |
+| D3_between | -2.00 | (-6.34 – 2.01) | ❌ |
+| time_s:D1_within | 0.39 | (0.32 – 0.46) | ✅ |
+| time_s:D2_within | -0.01 | (-0.10 – 0.08) | ❌ |
+| time_s:D3_within | 0.01 | (-0.08 – 0.10) | ❌ |
+| time_s:D1_between | -0.04 | (-0.31 – 0.23) | ❌ |
+| time_s:D2_between | -0.04 | (-0.31 – 0.23) | ❌ |
+| time_s:D3_between | 0.04 | (-0.24 – 0.32) | ❌ |
+
+**Interpretación:** Los efectos within se **atenuaron** respecto a PRE.
+Solo D1_within mantiene interacción significativa con el tiempo.
+
+### Diagnósticos de convergencia
+
+| Métrica | Resultado | Criterio |
+|---------|-----------|----------|
+| Treedepth | 1/8000 (0.01%) | < 30% ✅ |
+| Divergencias | 10/8000 (0.12%) | < 20 ✅ |
+| Rhat máximo | 1.02 | < 1.05 ✅ |
+| ESS mínimo | 219 (D3_within) | < 400 ⚠️ |
+
+**Convergencia buena**, con algunos parámetros con ESS bajo (D3_within=219).
+
+## Comparativa PRE vs POST
+
+| Parámetro | PRE (t < 94h) | POST (t > 94h) | Cambio |
+|-----------|---------------|----------------|--------|
+| D1_within | 1.11 ✅ | 0.61 ✅ | -45% |
+| D2_within | -1.06 ✅ | -0.61 ✅ | -42% |
+| D3_within | -0.65 ✅ | -0.15 ❌ | Eliminado |
+| time_s:D1_within | 1.77 ✅ | 0.39 ✅ | -78% |
+| time_s:D2_within | -0.91 ✅ | -0.01 ❌ | Eliminado |
+| time_s:D3_within | -0.54 ✅ | 0.01 ❌ | Eliminado |
+| Señal filogenética | 0.16 | 0.28 | +75% |
+| Sigma | 0.68 | 1.15 | +69% |
+
+**Hallazgo principal:** Los efectos de los rasgos son **dependientes de la
+fase**: significativos en la fase inicial (PRE), atenuados o eliminados en la
+fase posterior (POST). Esto sugiere que los rasgos influyen principalmente en
+el secado superficial rápido, no en la pérdida de agua interna posterior.
+
+## Señal filogenética
+
+| Fase | Estimada | IC 90% |
+|------|----------|--------|
+| PRE | 0.16 | 0 – 0.58 |
+| POST | 0.28 | 0 – 0.72 |
+
+Señal filogenética **baja** en ambas fases, con IC amplios que se solapan.
+
+# Comparación con el modelo frecuentista
+
+El modelo glmmTMB frecuentista (`d.05.1`) mostraba efectos **between**
+significativos, mientras que el M3 bayesiano no. La diferencia se explica por
+la estructura del modelo:
+
+| Característica | glmmTMB (frecuentista) | M3 (bayesiano) |
+|----------------|------------------------|----------------|
+| Efectos between | ✅ Significativos | ❌ No significativos |
+| Efectos filogenéticos | ❌ No incluidos | ✅ Incluidos |
+| Efecto codigo | ✅ Incluido | ✅ Incluido |
+| Efecto species | ❌ No incluido | ✅ Incluido (filogenético) |
+
+**Explicación:** En glmmTMB, al no incluir la filogenia ni `species` como
+aleatorio, la varianza que M3 atribuye a estos niveles se confunde con los
+efectos between. El M3 **absorbe** esa varianza en los términos aleatorios,
+dejando los efectos between sin señal.
+
+**Implicación:** Los efectos between que parecían significativos en glmmTMB
+eran probablemente **confundidos** con diferencias filogenéticas o de especie.
+El modelo M3, al controlar por estos factores, muestra que los rasgos no
+tienen efecto between significativo.
+
+# Estado del proceso
+
+## Completado
+
+- [x] Filogenia y matriz `A` obtenidas (OToL + Grafen)
+- [x] Modelo M3 ajustado y guardado (`00-data/phylo/m3_final.rds`)
+- [x] Convergencia verificada (Rhat, ESS, treedepth, divergencias)
+- [x] Comparación PRE vs POST realizada
+- [x] Comparación con glmmTMB frecuentista documentada
+
+## Pendiente
+
+- [ ] Ajustar M1 y M2 (si se desea completar la comparación de modelos)
+- [ ] Análisis de sensibilidad de la filogenia (Grafen vs longitudes iguales
+      vs filogenia datada de robles)
+- [ ] Figuras de publicación (efectos marginales, forest plots)
+- [ ] Tabla comparativa para el paper
 
 # Archivos generados
 
 | Archivo                                         | Contenido                                             |
 |-------------------------------------------------|-------------------------------------------------------|
 | `01-scripts/d.07.0-phylo_tree.R`                | Obtención del árbol en OToL y construcción de `A`     |
-| `01-scripts/d.07.1-brms_phylo_model.R`          | Ajuste de M1 y M2 con `brms`                          |
+| `01-scripts/d.05.3_fit_models.R`                | Ajuste del modelo M3 con brms                         |
 | `00-data/phylo/oak_tree.rds` / `.nwk`           | Árbol filogenético (topología + longitudes de Grafen) |
 | `00-data/phylo/oak_vcv.rds`                     | Matriz de varianza-covarianza filogenética `A`        |
+| `00-data/phylo/m3_final.rds`                    | Modelos M3 PRE y POST ajustados                       |
+| `00-data/phylo/m3_phylo_wb_pre.rds`             | Modelo M3 PRE (brmsfit)                               |
+| `00-data/phylo/m3_phylo_wb_post.rds`            | Modelo M3 POST (brmsfit)                              |
+| `07-img/trace_m3_pre.png`                       | Traceplots de cadenas M3 PRE                          |
+| `07-img/trace_m3_post.png`                      | Traceplots de cadenas M3 POST                         |
 | `08-reports/d.07_brms_filogenias.qmd`           | Este documento                                        |
-
-# Referencias
-
-- Bürkner, P.-C. *Estimating Phylogenetic Multilevel Models with brms*
-  (vignette de `brms`, versión 2025-09-09). Documento PDF incluido en el
-  repositorio.
-- de Villemeruil, P. & Nakagawa, S. (2014). General quantitative genetic
-  methods for comparative biology. En *Modern Phylogenetic Comparative Methods*,
-  Springer.
-- Hadfield, J. D. & Nakagawa, S. (2010). General quantitative genetic methods
-  for comparative biology: phylogenies, taxonomies, and multi-trait models.
-  *Journal of Evolutionary Biology*, 23, 494–508.
-- Grafen, A. (1989). The phylogenetic regression. *Philosophical Transactions
-  of the Royal Society B*, 326, 119–157.
-- Smith, S. A. & Brown, J. W. (2018). Constructing a broadly inclusive seed
-  plant phylogeny. *American Journal of Botany*, 105(3), 302–314.
-- Jin, Y. & Qian, H. (2019). V.PhyloMaker: an R package that can generate very
-  large phylogenies for vascular plants. *Ecography*, 42(8), 1353–1359.
-- Jin, Y. & Qian, H. (2022). V.PhyloMaker2: an updated and enlarged R package.
-  *Plant Diversity*, 44(4), 335–339.
-- Hipp, A. L. et al. (2020). Genomic landscape of the global oak phylogeny.
-  *New Phytologist*, 226(4), 1198–1212.
