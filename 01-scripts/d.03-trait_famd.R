@@ -38,6 +38,36 @@ df |>
     prop = n/30
   )
 
+## 1.1b. Correlograma de variables incluidas en el FAMD ----
+library(corrplot)
+
+df.corr <- df |>
+  dplyr::select(dry_weight, volume_cm3, SVR, SPM_g_cm2, 
+                SCR, SSR, pericarp_rupture) |>
+  mutate(pericarp_rupture = as.numeric(as.character(pericarp_rupture)))
+
+mat.corr <- cor(df.corr, method = "pearson", use = "pairwise.complete.obs")
+
+rownames(mat.corr) <- colnames(mat.corr) <- c("mass", "volume", "SVR", 
+                                                "SPM", "SCR", "SSR", 
+                                                "pericarp rupture")
+
+write.csv2(mat.corr, "00-data/correlation_matrix_traits.csv")
+
+dir.create("07-img/FAMD_outputs", showWarnings = FALSE)
+
+png("07-img/FAMD_outputs/00_correlogram_traits.png", width = 800, height = 700)
+corrplot(mat.corr, 
+         method = "color", 
+         type = "upper", 
+         addCoef.col = "black",
+         tl.col = "black", 
+         tl.srt = 45,
+         number.cex = 0.8,
+         mar = c(0, 0, 2, 0))
+dev.off()
+cat("Correlograma guardado en 07-img/FAMD_outputs/00_correlogram_traits.png\n")
+
 ## 1.2. Calculate and save famd ----
 
 library(FactoMineR)  # Para FAMD
