@@ -64,15 +64,18 @@ emergence per acorn and sampling time) needed for the MC50 analyses.
 ```
 s.01-load_sensitivity_exp.R       master: sources children + exports final CSV
 ├── s.01.1-load_raw.R             raw phase CSVs -> long tidy records        [done]
-├── s.01.2-dry_weight_table.R     calibration table, FW0->DW model per
+├── s.01.2-error_correction.R     manual-review patches + drop list, with
+│                                 audit trail exported by the master         [done]
+├── s.01.3-dry_weight_table.R     calibration table, FW0->DW model per
 │                                 species (form + structure selected by
 │                                 diagnostics/CV), DW for every acorn        [done]
-└── s.01.3-germination_table.R    moisture content + outcomes -> df.analysis [done]
+└── s.01.4-germination_table.R    moisture content + outcomes -> df.analysis [done]
 ```
 
-Final export: `00-data/sensitivity_germination_long.csv` (one row per acorn).
+Final exports: `00-data/sensitivity_germination_long.csv` (one row per acorn)
+and `00-data/error_correction_log.csv` (audit trail of the manual corrections).
 
-s.01.2 additionally writes its own transparency artifacts (agreed exception to
+s.01.3 additionally writes its own transparency artifacts (agreed exception to
 the master-only-export rule): diagnostic plots to `07-img/dw_model_diagnostics/`
 and decision/validation tables plus a selection log to
 `00-data/tablas_resumen/` (`dw_*` files).

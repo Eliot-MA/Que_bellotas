@@ -1,5 +1,5 @@
 ###############################################################################
-## s.01.2 - Per-acorn table and FW0 -> DW allometric model                   ##
+## s.01.3 - Per-acorn table and FW0 -> DW allometric model                   ##
 ##                                                                           ##
 ## Builds one row per acorn from the individual records produced by          ##
 ## s.01.1 and fits the allometric model that provides a dry weight value     ##
@@ -439,7 +439,7 @@ dw_models <- df.acorns |>
 
 # --- 7. Quality-control summary ---------------------------------------------
 
-cat("\n=== s.01.2 dry_weight_table ===\n")
+cat("\n=== s.01.3 dry_weight_table ===\n")
 cat("Acorns:", nrow(df.acorns), "\n")
 cat("Selected form:", model_form, "| structure:", model_structure, "\n")
 

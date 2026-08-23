@@ -1,7 +1,7 @@
 ###############################################################################
-## s.01.3 - Analysis-ready germination table                                 ##
+## s.01.4 - Analysis-ready germination table                                 ##
 ##                                                                           ##
-## Joins the dry-weight results of s.01.2 with the germination outcomes and  ##
+## Joins the dry-weight results of s.01.3 with the germination outcomes and  ##
 ## computes the moisture content (MC) that will serve as predictor in the    ##
 ## sensitivity (MC50-type) analyses downstream.                              ##
 ##                                                                           ##
@@ -20,8 +20,8 @@
 # --- 0. Guard ---------------------------------------------------------------
 
 if (!exists("df.acorns")) {
-  stop("df.acorns not found. Run/source s.01.1-load_raw.R and ",
-       "s.01.2-dry_weight_table.R first.")
+  stop("df.acorns not found. Run/source s.01.1-load_raw.R, ",
+       "s.01.2-error_correction.R and s.01.3-dry_weight_table.R first.")
 }
 
 # --- 1. Build analysis table -------------------------------------------------
@@ -39,18 +39,33 @@ df.analysis <- df.acorns |>
     mc = case_when(
       is.na(dw_final) | is.na(mc_fresh_weight) | mc_fresh_weight <= 0 ~ NA_real_,
       TRUE ~ (mc_fresh_weight - dw_final) / fw0 * 100
+    ),
+
+    # Suspect-moisture audit (manual review protocol, E.F.).
+    # NOTE on "negative": when fw_sampling is close to the dry weight,
+    # prediction error can push DW above FW, giving a small negative MC
+    # near zero. Uncorrectable sheet errors of this kind are already
+    # removed by s.01.2-error_correction; any remaining negative values
+    # are prediction artifacts and stay flagged for the analysis stage.
+    flag_weird_mc = case_when(
+      is.na(mc)          ~ "mc_unavailable",
+      mc > 100           ~ "impossibly_high",
+      fw_sampling > fw0  ~ "hydrated_acorn",
+      mc > 65            ~ "very_high",
+      mc < 0             ~ "negative",
+      TRUE               ~ "ok"
     )
   ) |>
   select(acorn_id, phase, species, provenance,
          sampling_time, fw0, fw_sampling,
          dw_observed, dw_model_pred, dw_final, dw_source,
-         mc, mc_fresh_weight,
+         mc, mc_fresh_weight, flag_weird_mc,
          germinated, emerged, moho, observations,
          flag_no_fw_at_removal, flag_no_fw0)
 
 # --- 2. Quality-control summary ----------------------------------------------
 
-cat("=== s.01.3 germination_table ===\n")
+cat("=== s.01.4 germination_table ===\n")
 cat("Acorns:", nrow(df.analysis), "\n")
 
 cat("\nMoisture content availability:\n")
@@ -74,3 +89,6 @@ print(with(df.analysis, table(germinated = factor(germinated,
                               emerged = factor(emerged,
                                                levels = c(0, 1)),
                               useNA = "ifany")))
+
+cat("\nSuspect-moisture flags:\n")
+print(table(df.analysis$species, df.analysis$flag_weird_mc))
