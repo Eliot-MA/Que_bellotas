@@ -80,6 +80,27 @@ the master-only-export rule): diagnostic plots to `07-img/dw_model_diagnostics/`
 and decision/validation tables plus a selection log to
 `00-data/tablas_resumen/` (`dw_*` files).
 
+```
+s.02-germination_glm.R           germination GLMs: MC x species response,
+│                                drying-batch screening, dredge selection,
+│                                DHARMa checks; Q. robur excluded (lot-level
+│                                viability failure)                     [done]
+└── figures                      RO-exclusion justification, phase-stratified
+                                 and batch-marginalized predictive curves
+
+s.03-mc50_critical_moisture.R    MC50 per species, marginalized over batches
+│                                on the link scale: delta method (primary)
+│                                vs stratified-bootstrap percentile CI
+│                                (validation)                           [done]
+└── figures                      forest plots: dual-CI transparency report
+                                 and article figure coloured by bioclimate
+```
+
+Both scripts follow the same transparency pattern agreed for s.01.3: each
+exports its own tables to `00-data/tablas_resumen/` (`glm_*`, `mc50_*`) and
+its own figures to `07-img/germ_glm_diagnostics/` and
+`07-img/mc50_estimation/`.
+
 ### Desiccation-rate experiment
 
 ```
