@@ -111,11 +111,11 @@ p_ro_check <- ggplot(df.germ, aes(mc, germinated)) +
        y = "Germination (0/1)",
        title = "Species-level germination response to moisture content",
        caption = paste0(
-         "Raw germination outcomes (jittered) with binomial logistic fits per ",
-         "species. All species show the expected positive response to moisture ",
-         "except Quercus robur, whose germination remained marginal across the ",
-         "entire MC range - consistent with a lot-level viability failure ",
-         "independent of desiccation sensitivity. Q. robur was therefore ",
+         "Raw germination outcomes (jittered) with binomial logistic fits per \n",
+         "species. All species show the expected positive response to moisture \n",
+         "except Quercus robur, whose germination remained marginal across the \n",
+         "entire MC range - consistent with a lot-level viability failure \n",
+         "independent of desiccation sensitivity. Q. robur was therefore \n",
          "excluded from all germination GLMs.")) +
   theme_bw(base_size = 12)
 
