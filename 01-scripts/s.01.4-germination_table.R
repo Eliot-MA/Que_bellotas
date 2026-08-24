@@ -5,7 +5,7 @@
 ## computes the moisture content (MC) that will serve as predictor in the    ##
 ## sensitivity (MC50-type) analyses downstream.                              ##
 ##                                                                           ##
-## Moisture content convention (decided with E.F.):                          ##
+## Moisture content convention (decided with E.M.):                          ##
 ##   MC (%) = (FW - DW) / FW0 * 100                                          ##
 ##   - FW0 denominator everywhere                            ##
 ##   - numerator FW = fresh weight at the relevant measurement moment:       ##
@@ -41,7 +41,7 @@ df.analysis <- df.acorns |>
       TRUE ~ (mc_fresh_weight - dw_final) / fw0 * 100
     ),
 
-    # Suspect-moisture audit (manual review protocol, E.F.).
+    # Suspect-moisture audit (manual review protocol, E.M.).
     # NOTE on "negative": when fw_sampling is close to the dry weight,
     # prediction error can push DW above FW, giving a small negative MC
     # near zero. Uncorrectable sheet errors of this kind are already

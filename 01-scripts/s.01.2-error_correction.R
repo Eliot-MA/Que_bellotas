@@ -1,7 +1,7 @@
 ###############################################################################
 ## s.01.2 - Error correction from the manual sheet review                    ##
 ##                                                                           ##
-## Applies the corrections documented during E.F.'s manual revision of the   ##
+## Applies the corrections documented during E.M.'s manual revision of the   ##
 ## laboratory sheets to the individual records produced by s.01.1. This      ##
 ## step MUST run before s.01.3-dry_weight_table.R: several patches touch     ##
 ## fw0, which feeds the calibration of the FW0 -> DW allometric model.       ##

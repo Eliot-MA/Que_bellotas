@@ -450,7 +450,7 @@ cat("\nAllometric models (", model_form, ") per species:\n", sep = "")
 print(as.data.frame(dw_models), row.names = FALSE)
 
 cat("\nConsistency checks:\n")
-# Known design fact (E.F., confirmed 2026): the PE batch did not hold enough
+# Known design fact (E.M., confirmed 2026): the PE batch did not hold enough
 # acorns to reach the nominal 400 weigh-ins, so ~33 PE acorns legitimately
 # lack FW0 (plus 1 FA). This is an experimental shortfall, NOT a data error;
 # these acorns cannot receive a predicted DW and stay flagged downstream.
