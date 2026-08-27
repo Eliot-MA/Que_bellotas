@@ -227,7 +227,7 @@ género.
 ### Verificación empírica {#sec-verificacion-gbotb}
 
 Para documentar qué ocurre realmente, el apéndice del script
-`01-scripts/d.07.0-phylo_tree.R` ejecuta `V.PhyloMaker2::phylo.maker()` con las
+`01-scripts/d.05.2.phylo_data.R` ejecuta `V.PhyloMaker2::phylo.maker()` con las
 8 especies en los tres escenarios de inserción que ofrece el paquete (S1, S2 y
 S3). Los resultados matizan y precisan el razonamiento anterior:
 
@@ -293,7 +293,7 @@ Ventajas de esta elección:
 - **Transparencia**: la topología proviene de un consenso de literatura
   publicada, no de decisiones ad hoc.
 
-# Construcción del árbol (script `01-scripts/d.07.0-phylo_tree.R`)
+# Construcción del árbol (script `01-scripts/d.05.2.phylo_data.R`)
 
 ## Resolución de nombres (TNRS)
 
@@ -440,7 +440,7 @@ kable(round(A, 3), caption = "Matriz de varianza-covarianza filogenética (A = v
    asintótica subyacente sigue siendo relevante para la interpretación
    de los resultados.
 
-# Especificación del modelo `brms` (script `01-scripts/d.07.1-brms_phylo_model.R`)
+# Especificación del modelo `brms` (script `01-scripts/d.05.3_fit_models.R`)
 
 La estructura general sigue el modelo original, sustituyendo la independencia
 entre especies por una covarianza filogenética, y añadiendo el término de
@@ -1046,7 +1046,7 @@ tienen efecto between significativo.
 
 | Archivo                                         | Contenido                                             |
 |-------------------------------------------------|-------------------------------------------------------|
-| `01-scripts/d.07.0-phylo_tree.R`                | Obtención del árbol en OToL y construcción de `A`     |
+| `01-scripts/d.05.2.phylo_data.R`                | Obtención del árbol en OToL y construcción de `A`     |
 | `01-scripts/d.05.3_fit_models.R`                | Ajuste del modelo M3 con brms                         |
 | `00-data/phylo/oak_tree.rds` / `.nwk`           | Árbol filogenético (topología + longitudes de Grafen) |
 | `00-data/phylo/oak_vcv.rds`                     | Matriz de varianza-covarianza filogenética `A`        |

@@ -53,17 +53,23 @@ glmm.dw.gamm <- glmmTMB(dry_weight ~ species + (1|species:provenance),
 
 # compare_performance(glmm.dw.gaus, glmm.dw.gamm)
 # gamma chosen
-easystats::model_dashboard(glmm.dw.gamm,
-                           output_dir = "06-html/",
-                           output_file = "modeldashboard_dryweight.html")
+tryCatch(
+  easystats::model_dashboard(glmm.dw.gamm,
+                             output_dir = "06-html/",
+                             output_file = "modeldashboard_dryweight.html"),
+  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+)
 
 ## 2. Specific pericarp mass ----
 glmm.spm <- glmmTMB(SPM_g_cm2 ~ species + (1|species:provenance),
                     data = df)
 
-easystats::model_dashboard(glmm.spm,
-                           output_dir = "06-html/",
-                           output_file = "modeldashboard_spm.html")
+tryCatch(
+  easystats::model_dashboard(glmm.spm,
+                             output_dir = "06-html/",
+                             output_file = "modeldashboard_spm.html"),
+  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+)
 
 ## 3. Scar area ----
 glmm.scar <- glmmTMB(scar_area_mm2 ~ species*surface_cm2 + (1|species:provenance),
@@ -73,9 +79,12 @@ options(na.action = "na.fail")
 dd <- dredge(glmm.scar)
 glmm.scar1 <- get.models(dd, subset = 1)[[1]]
 
-easystats::model_dashboard(glmm.scar1,
-                           output_dir = "06-html/",
-                           output_file = "modeldashboard_scar.html")
+tryCatch(
+  easystats::model_dashboard(glmm.scar1,
+                             output_dir = "06-html/",
+                             output_file = "modeldashboard_scar.html"),
+  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+)
 
 ## 4. Seed coat ratio ----
 glmm.scr <- glmmTMB(pericarp_dry_weight ~ dry_weight*species + 
@@ -85,9 +94,12 @@ glmm.scr <- glmmTMB(pericarp_dry_weight ~ dry_weight*species +
 dd <- dredge(glmm.scr)
 glmm.scr1 <- get.models(dd, subset = 1)[[1]]
 
-easystats::model_dashboard(glmm.scr1,
-                           output_dir = "06-html/",
-                           output_file = "modeldashboard_scr.html")
+tryCatch(
+  easystats::model_dashboard(glmm.scr1,
+                             output_dir = "06-html/",
+                             output_file = "modeldashboard_scr.html"),
+  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+)
 
 ## 5. Pericarp rupture ----
 df.cracks <- df |> 
@@ -97,9 +109,12 @@ glmm.cracks <- glmmTMB(pericarp_rupture ~ species + (1|species:provenance),
                       data = df.cracks , 
                       family = binomial(link = "logit"))
 
-easystats::model_dashboard(glmm.cracks,
-                           output_dir = "06-html/",
-                           output_file = "modeldashboard_cracks.html")
+tryCatch(
+  easystats::model_dashboard(glmm.cracks,
+                             output_dir = "06-html/",
+                             output_file = "modeldashboard_cracks.html"),
+  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+)
 
 # 2. Generate table ----
 ## 1. Calculate marginal means ----
@@ -152,6 +167,23 @@ tiene_covariable <- function(modelo, factor_var = "species") {
 tiene_interaccion <- function(modelo, factor_var = "species") {
   terminos <- attr(terms(modelo), "term.labels")
   any(grepl(paste0("(^|:)", factor_var, "(:|$)"), terminos) & grepl(":", terminos))
+}
+
+# Emmeans para modelos con interacción factor × covariable:
+# evalúa el factor en los percentiles 25, 50 y 75 de la covariable continua.
+emmeans_covariable_auto <- function(modelo, factor_var = "species", tipo = "response") {
+  mf <- model.frame(modelo)
+  preds <- names(mf)[-1]  # excluye la respuesta
+  # Identificar la covariable numérica (excluye el factor y agrupamientos)
+  candidatos <- setdiff(preds, factor_var)
+  covar_var  <- candidatos[vapply(mf[candidatos], is.numeric, logical(1))]
+  if (length(covar_var) == 0) stop("No se encontró covariable numérica en el modelo")
+  covar_var <- covar_var[1]
+
+  pct <- quantile(mf[[covar_var]], probs = c(0.25, 0.50, 0.75))
+  fml <- as.formula(paste("~", factor_var, "|", covar_var))
+  emm <- emmeans(modelo, fml, at = setNames(list(pct), covar_var), type = tipo)
+  cld(emm, Letters = letters)
 }
 
 procesar_modelo <- function(modelo, meta_row, factor_var = "species") {
@@ -268,3 +300,304 @@ tabla_publicacion
 
 write.csv2(x = tabla_final, file = "00-data/emm_traits_long.csv")
 write.csv2(x = tabla_publicacion, file = "00-data/paper_traits.csv")
+
+# ===========================================================================
+# TABLAS RESUMEN: table_traitmodel_summary y table_traitmodel_effects
+# ===========================================================================
+# Se generan a partir de los modelos ya ajustados (lista `modelos`) y del
+# `metadata` definidos arriba. No se reajustan ni modifican los modelos.
+#
+# Paquetes necesarios (adición a los ya cargados):
+#   - parameters: model_parameters() para extraer coeficientes fijos
+#   - car:        Anova() para tests globales de Wald (chi² tipo II)
+
+library(parameters)
+library(car)
+
+# --- Funciones auxiliares reutilizables ---
+
+# Cadena legible con las varianzas de los efectos aleatorios
+.format_re <- function(model) {
+  re <- tryCatch(VarCorr(model)$cond, error = function(e) NULL)
+  if (is.null(re) || length(re) == 0) return(NA_character_)
+  parts <- vapply(names(re), function(g) {
+    mat <- re[[g]]
+    paste0(g, ": σ² = ", format(mat[1, 1], digits = 4))
+  }, character(1))
+  paste(parts, collapse = "; ")
+}
+
+# Número de grupos de la variable de agrupación (species:provenance)
+.count_groups <- function(model) {
+  mod_data <- tryCatch({
+    if (!is.null(model$frame)) model$frame else model.frame(model)
+  }, error = function(e) NULL)
+  if (is.null(mod_data)) return(NA_integer_)
+  if (all(c("species", "provenance") %in% names(mod_data))) {
+    return(length(unique(interaction(mod_data$species, mod_data$provenance))))
+  }
+  NA_integer_
+}
+
+# Codificación de significancia
+.sig_code <- function(p) {
+  dplyr::case_when(
+    is.na(p) ~ NA_character_,
+    p < 0.001 ~ "***",
+    p < 0.01  ~ "**",
+    p < 0.05  ~ "*",
+    TRUE      ~ "ns"
+  )
+}
+
+# Niveles de referencia de factores en el modelo
+.get_refs <- function(model) {
+  mf <- model.frame(model)
+  preds <- names(mf)[-1]  # excluye la respuesta
+  refs <- character(0)
+  for (nm in preds) {
+    if (is.factor(mf[[nm]])) {
+      refs[nm] <- levels(mf[[nm]])[1]
+    }
+  }
+  refs
+}
+
+# Tipo de estadístico del resumen del modelo (t para gaussian, z para otros)
+.get_stat_type <- function(model) {
+  s <- tryCatch(summary(model), error = function(e) NULL)
+  if (is.null(s) || is.null(s$coefficients$cond)) return("z")
+  if ("t value" %in% colnames(s$coefficients$cond)) "t" else "z"
+}
+
+# --- 1. table_traitmodel_summary ---
+# Una fila por modelo con métricas de ajuste y estructura.
+# Columnas:
+#   model         → nombre del objeto R
+#   response      → variable respuesta (nombre legible)
+#   model_type    → clase del modelo (todos GLMM aquí)
+#   family        → familia y enlace del modelo
+#   n             → observaciones utilizadas
+#   n_groups      → unidades de agrupación (species:provenance)
+#   r2_marginal   → R² marginal (performance::r2)
+#   r2_conditional→ R² condicional (performance::r2)
+#   AIC / BIC     → criterios de información
+#   random_effects→ estructura de efectos aleatorios formateada
+#   singular      → TRUE/FALSE si el modelo es singular
+
+families_text <- sapply(modelos, function(m) {
+  f <- family(m)
+  paste0(f$family, "(", f$link, ")")
+})
+
+table_traitmodel_summary <- purrr::imap_dfr(modelos, function(mod, nm) {
+  idx <- match(nm, metadata$modelo)
+
+  n_obs <- nobs(mod)
+  n_grp <- .count_groups(mod)
+
+  # R² marginal y condicional
+  # No aplica directamente para GLMM no gaussianos; r2() lo intenta y
+  # devuelve NA si no es posible de forma fiable.
+  r2_vals <- tryCatch(performance::r2(mod), error = function(e) {
+    warning("[table_traitmodel_summary] r2() falló para ", nm, ": ",
+            conditionMessage(e))
+    list(R2_marginal = NA_real_, R2_conditional = NA_real_)
+  })
+
+  aic_val <- tryCatch(AIC(mod), error = function(e) NA_real_)
+  bic_val <- tryCatch(BIC(mod), error = function(e) NA_real_)
+
+  re_str   <- .format_re(mod)
+  singular <- tryCatch(performance::check_singularity(mod), error = function(e) NA)
+
+  tibble(
+    model            = nm,
+    response         = metadata$response[idx],
+    model_type       = "GLMM",
+    family           = families_text[idx],
+    n                = n_obs,
+    n_groups         = n_grp,
+    r2_marginal      = r2_vals$R2_marginal,
+    r2_conditional   = r2_vals$R2_conditional,
+    AIC              = aic_val,
+    BIC              = bic_val,
+    random_effects   = re_str,
+    singular         = singular
+  )
+})
+
+# --- 2. table_traitmodel_effects ---
+# Una fila por coeficiente individual (contrastes respecto al nivel de
+# referencia) y una fila por test global de cada término del modelo.
+#
+# Coeficientes individuales (term_type = "coefficient"):
+#   Extraídos con parameters::model_parameters(effects = "fixed", ci = 0.95).
+#   estimate = β, SE = error estándar, CI_low/CI_high = IC 95%,
+#   statistic = t o z según el modelo, p = p-value.
+#
+# Tests globales (term_type = "global_test"):
+#   Extraídos con car::Anova(type = "II", test.statistic = "Chisq").
+#   statistic = χ² de Wald, df = grados de libertad, p = p-value.
+#
+# Inferencia: se conserva el método de cada modelo.
+#   - Coeficientes individuales: Wald (t para gaussian, z para otros)
+#   - Tests globales: Wald χ² tipo II (car::Anova)
+
+table_traitmodel_effects <- purrr::imap_dfr(modelos, function(mod, nm) {
+  idx <- match(nm, metadata$modelo)
+  resp <- metadata$response[idx]
+
+  # --- 2a. Coeficientes individuales de efectos fijos ---
+  coef_df <- tryCatch({
+    params <- parameters::model_parameters(mod, effects = "fixed", ci = 0.95)
+    pf <- as.data.frame(params)
+    refs <- .get_refs(mod)
+    stype <- .get_stat_type(mod)
+
+    # Estadístico: puede llamarse "Statistic", "t" o "z" según versión
+    stat_col <- intersect(c("Statistic", "t", "z"), names(pf))
+    stat_val <- if (length(stat_col) > 0) pf[[stat_col[1]]] else rep(NA_real_, nrow(pf))
+
+    # Grados de libertad: solo significativos para t (Inf → NA)
+    df_col <- intersect(c("df_error", "df"), names(pf))
+    df_val <- if (length(df_col) > 0) {
+      d <- pf[[df_col[1]]]
+      ifelse(is.infinite(d), NA_real_, d)
+    } else {
+      rep(NA_real_, nrow(pf))
+    }
+
+    # Nivel de referencia solo para terms categóricos principales
+    ref_vals <- vapply(pf$Parameter, function(par) {
+      if (grepl("^species", par) && !grepl(":", par)) {
+        paste0("ref: ", refs["species"])
+      } else {
+        NA_character_
+      }
+    }, character(1))
+
+    tibble(
+      model          = nm,
+      response       = resp,
+      term           = pf$Parameter,
+      term_type      = "coefficient",
+      estimate       = pf$Coefficient,
+      SE             = pf$SE,
+      CI_low         = pf$CI_low,
+      CI_high        = pf$CI_high,
+      statistic      = stat_val,
+      statistic_type = stype,
+      df             = df_val,
+      p              = pf$p,
+      significance   = .sig_code(pf$p),
+      reference      = ref_vals
+    )
+  }, error = function(e) {
+    warning("[table_traitmodel_effects] Extracción de coeficientes falló para ",
+            nm, ": ", conditionMessage(e))
+    tibble(model = nm, response = resp, term = NA_character_,
+           term_type = "coefficient",
+           estimate = NA_real_, SE = NA_real_, CI_low = NA_real_,
+           CI_high = NA_real_, statistic = NA_real_,
+           statistic_type = NA_character_, df = NA_real_,
+           p = NA_real_, significance = NA_character_,
+           reference = NA_character_)
+  })
+
+  # --- 2b. Tests globales por término (Wald χ² tipo II) ---
+  anova_df <- tryCatch({
+    anova_res <- car::Anova(mod, type = "II", test.statistic = "Chisq")
+    af <- as.data.frame(anova_res)
+
+    # Identificar columnas (pueden variar según versión de car)
+    chisq_col <- grep("Chisq|chisq|LR", names(af), value = TRUE)[1]
+    p_col     <- grep("Pr\\(|p\\.value", names(af), value = TRUE)[1]
+    df_col    <- grep("^Df$|^df$", names(af), value = TRUE)[1]
+
+    if (is.na(chisq_col) || is.na(p_col)) {
+      stop("No se encontraron columnas de Chisq/p en la salida de car::Anova()")
+    }
+
+    tibble(
+      model          = nm,
+      response       = resp,
+      term           = rownames(af),
+      term_type      = "global_test",
+      estimate       = NA_real_,
+      SE             = NA_real_,
+      CI_low         = NA_real_,
+      CI_high        = NA_real_,
+      statistic      = af[[chisq_col]],
+      statistic_type = "Chisq",
+      df             = if (!is.na(df_col)) af[[df_col]] else NA_real_,
+      p              = af[[p_col]],
+      significance   = .sig_code(af[[p_col]]),
+      reference      = NA_character_
+    )
+  }, error = function(e) {
+    warning("[table_traitmodel_effects] car::Anova falló para ", nm, ": ",
+            conditionMessage(e))
+    tibble(model = nm, response = resp, term = NA_character_,
+           term_type = "global_test",
+           estimate = NA_real_, SE = NA_real_, CI_low = NA_real_,
+           CI_high = NA_real_, statistic = NA_real_,
+           statistic_type = NA_character_, df = NA_real_,
+           p = NA_real_, significance = NA_character_,
+           reference = NA_character_)
+  })
+
+  dplyr::bind_rows(coef_df, anova_df)
+})
+
+# --- Imprimir tablas ---
+cat("\n==== table_traitmodel_summary ====\n")
+print(table_traitmodel_summary)
+cat("\n==== table_traitmodel_effects ====\n")
+print(table_traitmodel_effects)
+
+write.csv(table_traitmodel_summary, file = "00-data/table_traitmodel_summary.csv")
+write.csv(table_traitmodel_effects, file = "00-data/table_traitmodel_effects.csv")
+
+# --- 3. paper_table_traitmodel_effects ---
+# Versión condensada de table_traitmodel_effects para el artículo.
+# Una fila por término del modelo (no por coeficiente individual).
+# Columnas:
+#   response  → variable respuesta (nombre legible)
+#   formula   → fórmula del modelo en notación compacta
+#   term      → nombre del término (species, cov, species:cov)
+#   test      → resultado formateado: Chisq(df) = valor***
+
+paper_table_traitmodel_effects <- purrr::imap_dfr(modelos, function(mod, nm) {
+  idx <- match(nm, metadata$modelo)
+  resp <- metadata$response[idx]
+
+  anova_res <- car::Anova(mod, type = "II", test.statistic = "Chisq")
+  af <- as.data.frame(anova_res)
+  anova_terms <- rownames(af)
+
+  # Fórmula compacta: × para interacciones, + para términos aditivos
+  response_var <- deparse(formula(mod)[[2]])
+  formula_terms <- gsub(":", " × ", anova_terms)
+  formula_str <- paste(response_var, "~", paste(formula_terms, collapse = " + "))
+
+  # Formatear resultado: Chisq(df) = valor***
+  test_strs <- vapply(seq_len(nrow(af)), function(i) {
+    chisq_val <- af[["Chisq"]][i]
+    df_val    <- af[["Df"]][i]
+    p_val     <- af[["Pr(>Chisq)"]][i]
+    stars     <- .sig_code(p_val)
+    paste0("Chisq(", df_val, ") = ", format(chisq_val, digits = 4), stars)
+  }, character(1))
+
+  tibble(
+    response = resp,
+    formula  = formula_str,
+    term     = anova_terms,
+    test     = test_strs
+  )
+})
+
+cat("\n==== paper_table_traitmodel_effects ====\n")
+print(paper_table_traitmodel_effects)
+write.csv(paper_table_traitmodel_effects, file = "00-data/paper_table_traitmodel_effects.csv", row.names = FALSE)
