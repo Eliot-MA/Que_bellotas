@@ -319,4 +319,199 @@ for (nm in names(modelos_especie)) {
   cat("Efectos marginales guardados en 07-img/marginal_", nm, ".png\n", sep = "")
 }
 
+# ============================================================
+# Figura principal: tasas de desecacion pre/post por especie
+# ============================================================
+# Pendientes de desecacion (MC%/h) por especie estimadas con emtrends a partir
+# de mm.pre y mm.post. Tasa = -pendiente (valor positivo). Especies ordenadas
+# de arriba a abajo por bioclima (templado, sub-mediterraneo, mediterraneo),
+# colores Okabe-Ito por bioclima (mismo codigo que el grafico de MC50).
+# PRE = triangulos, POST = circulos, barra = IC95 de emtrends.
+# Comparaciones multiples dentro de PRE y dentro de POST: se anaden letras de
+# diferencias significativas encima de cada punto, asignadas por el metodo de
+# INTERVALOS DE CONFIANZA: dos especies no comparten letra si el IC95 de su
+# diferencia por pares excluye el cero. La familia de comparaciones se protege
+# con el test global de la interaccion time:species (procedimiento de Fisher).
+suppressPackageStartupMessages(library(emmeans))
+suppressPackageStartupMessages(library(car))   # Anova() para el test global
+
+# --- 4.1 Pendientes de desecacion con emtrends (por fase) ---
+get_desiccation_rates <- function(model, phase) {
+  emmeans::emtrends(model, ~ species, var = "time") |>
+    as.data.frame() |>
+    mutate(
+      phase     = phase,
+      rate      = -time.trend,      # valor positivo: MC%/h
+      rate_low  = -asymp.UCL,       # invertir intervalo junto con el signo
+      rate_high = -asymp.LCL
+    ) |>
+    dplyr::select(species, phase, rate, rate_low, rate_high)
+}
+
+rates <- bind_rows(
+  get_desiccation_rates(mm.pre, "PRE"),
+  get_desiccation_rates(mm.post, "POST")
+)
+
+# --- 4.2 Post-hoc de comparaciones multiples dentro de cada fase ---
+# Metodo por INTERVALOS DE CONFIANZA. Para cada fase se obtienen los IC95 de
+# las diferencias por pares entre pendientes (confint(pairs(emtrends))); dos
+# especies comparten letra solo si el IC de su diferencia incluye el cero
+# (no significativo). El procedimiento se protege con el test global de la
+# interaccion time:species (Anova tipo II) antes de declarar diferencias.
+ic_cld <- function(order, ci_df, alpha = 0.05) {
+  n <- length(order)
+  sigmat <- matrix(FALSE, n, n, dimnames = list(order, order))
+  for (i in seq_len(nrow(ci_df))) {
+    gr <- strsplit(as.character(ci_df$contrast[i]), " - ")[[1]]
+    if (gr[1] %in% order && gr[2] %in% order &&
+        (ci_df$asymp.LCL[i] > 0 | ci_df$asymp.UCL[i] < 0)) {
+      sigmat[gr[1], gr[2]] <- TRUE
+      sigmat[gr[2], gr[1]] <- TRUE
+    }
+  }
+  out <- setNames(rep(NA_character_, n), order)
+  pool <- c(letters, LETTERS)
+  k <- 1
+  remaining <- order
+  while (length(remaining) > 0) {
+    L <- pool[k]; k <- k + 1
+    group <- character(0)
+    for (sp in remaining) {
+      if (length(group) == 0 || all(!sigmat[sp, group])) group <- c(group, sp)
+    }
+    out[group] <- vapply(group, function(g) {
+      if (is.na(out[g])) L else paste0(out[g], L)
+    }, character(1))
+    remaining <- setdiff(remaining, group)
+  }
+  out
+}
+
+# Test global de la interaccion time:species (proteccion del procedimiento)
+global_tests <- bind_rows(
+  Anova(mm.pre,  type = "II") |> as.data.frame() |> rownames_to_column("term") |> mutate(phase = "PRE"),
+  Anova(mm.post, type = "II") |> as.data.frame() |> rownames_to_column("term") |> mutate(phase = "POST")
+) |>
+  filter(term == "time:species") |>
+  mutate(sig = `Pr(>Chisq)` < 0.05)
+
+cat("Test global time:species por fase:\n")
+print(global_tests |> dplyr::select(phase, Chisq, Df, `Pr(>Chisq)`, sig))
+
+# IC95 de las diferencias por pares por fase (columnas LCL/UCL por pareja)
+pairs_ci <- function(model) {
+  et <- emmeans::emtrends(model, ~ species, var = "time")
+  ci <- as.data.frame(confint(pairs(et, adjust = "none")))
+  ci
+}
+
+ic_cld_per_phase <- function(model) {
+  et  <- emmeans::emtrends(model, ~ species, var = "time")
+  ci  <- as.data.frame(confint(pairs(et, adjust = "none")))
+  ord <- as.data.frame(et)$species[order(-as.data.frame(et)$time.trend)]  # por tasa
+  tibble(species = ord, letters = unname(ic_cld(ord, ci)))
+}
+
+rates_letters <- bind_rows(
+  ic_cld_per_phase(mm.pre) |> mutate(phase = "PRE"),
+  ic_cld_per_phase(mm.post) |> mutate(phase = "POST")
+)
+
+# Tabla con los IC95 de las diferencias por pares (material suplementario)
+ic_pairs_table <- bind_rows(
+  pairs_ci(mm.pre)  |> mutate(phase = "PRE"),
+  pairs_ci(mm.post) |> mutate(phase = "POST")
+)
+write.csv(ic_pairs_table, "00-data/desiccation_pairs_ci.csv", row.names = FALSE)
+cat("Tabla de IC de comparaciones por pares guardada en 00-data/desiccation_pairs_ci.csv\n")
+
+rates <- rates |>
+  left_join(rates_letters, by = c("species", "phase"))
+
+# --- 4.3 Bioclima y orden del eje Y ---
+bioclimate <- tribble(
+  ~species,                     ~bioclimate,
+  "Quercus coccifera",          "Mediterranean",
+  "Quercus ilex",               "Mediterranean",
+  "Quercus suber",              "Mediterranean",
+  "Quercus faginea",            "Sub-Mediterranean",
+  "Quercus pyrenaica",          "Sub-Mediterranean",
+  "Quercus pubescens",          "Sub-Mediterranean",
+  "Quercus petraea",            "Temperate",
+  "Quercus robur",              "Temperate"
+)
+
+short_names <- c(
+  "Quercus coccifera" = "Q. coccifera",
+  "Quercus ilex"      = "Q. ilex",
+  "Quercus suber"     = "Q. suber",
+  "Quercus faginea"   = "Q. faginea",
+  "Quercus pyrenaica" = "Q. pyrenaica",
+  "Quercus pubescens" = "Q. pubescens",
+  "Quercus petraea"   = "Q. petraea",
+  "Quercus robur"     = "Q. robur"
+)
+
+# Orden del eje y: de arriba a abajo Templado -> Sub-mediterraneo -> Mediterraneo;
+# dentro de cada bioclima por la tasa de desecacion de la fase PRE (ascendente).
+rate_pre <- rates |>
+  filter(phase == "PRE") |>
+  dplyr::select(species, rate)
+
+plot_tab <- rates |>
+  left_join(bioclimate, by = "species") |>
+  left_join(rate_pre, by = "species", suffix = c("", "_pre")) |>
+  mutate(name = unname(short_names[species])) |>
+  arrange(factor(bioclimate, levels = c("Mediterranean",
+                                        "Sub-Mediterranean",
+                                        "Temperate")), rate_pre) |>
+  mutate(name = factor(name, levels = unique(name)))
+
+# --- 4.4 Generar figura ---
+p_prepost <- ggplot(plot_tab, aes(x = rate, y = name, colour = bioclimate)) +
+  geom_errorbar(aes(xmin = rate_low, xmax = rate_high),
+                width = 0.28, linewidth = 0.9) +
+  geom_point(aes(shape = phase), size = 3.4) +
+  geom_text(aes(label = letters),
+            vjust = -1.4, size = 3.2, colour = "black", show.legend = FALSE) +
+  scale_shape_manual(values = c("PRE" = 17, "POST" = 16),
+                     name = "Phase") +
+  scale_colour_manual(
+    values = c("Mediterranean"     = "#D55E00",   # Okabe-Ito vermilion
+               "Sub-Mediterranean" = "#E69F00",   # Okabe-Ito orange
+               "Temperate"         = "#0072B2"),  # Okabe-Ito blue
+    name = "Bioclimate"
+  ) +
+  labs(
+    x = expression("Desiccation rate (MC%/h)"),
+    y = NULL,
+    caption = paste0(
+      "Desiccation rate estimated with emtrends from piecewise species models\n",
+      "(PRE t < 94 h; POST t > 94 h). Points: mean rate; whiskers: 95% CI.\n",
+      "Rates expressed as positive values (moisture loss per hour).\n",
+      "Letters: groups from pairwise 95% CIs within each phase (shared letter = no significant difference).\n",
+      "Colours denote the characteristic bioclimate of each species."
+    )
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    panel.grid.major.x = element_line(colour = "grey90", linewidth = 0.3),
+    axis.text.y = element_text(face = "italic", size = 11),
+    axis.title.x = element_text(size = 12, margin = margin(t = 4)),
+    legend.position = "right",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9.5),
+    plot.caption = element_text(size = 8.5, colour = "grey30",
+                                hjust = 0, margin = margin(t = 6))
+  )
+
+ggsave("07-img/paper_prepost_desiccation.png", p_prepost,
+       width = 160, height = 110, units = "mm", dpi = 600)
+cat("Figura de tasas pre/post guardada en 07-img/paper_prepost_desiccation.png\n")
+
+# Tabla suplementaria de tasas de desecacion por especie (+ letras post-hoc)
+write.csv(plot_tab, "00-data/desiccation_rates_prepost.csv", row.names = FALSE)
+cat("Tabla de tasas guardada en 00-data/desiccation_rates_prepost.csv\n")
+
 
