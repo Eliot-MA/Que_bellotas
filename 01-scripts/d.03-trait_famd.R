@@ -231,6 +231,10 @@ library(FactoMineR)
 library(ggplot2)
 library(dplyr)
 
+# Okabe-Ito colores (dos que contrastan: azul #0072B2 y naranja #E69F00)
+okabe_blue  <- "#0072B2"
+okabe_orange <- "#E69F00"
+
 # Individuos
 ind <- as.data.frame(famd.traits$ind$coord)
 
@@ -238,6 +242,11 @@ ind <- as.data.frame(famd.traits$ind$coord)
 # var <- as.data.frame(famd.traits$var$coord)
 var <- famd.traits$quanti.var$coord
 var <- as.data.frame(var)
+
+# Estandarizar nombres de variables
+rownames(var)[rownames(var) == "SPM_g_cm2"] <- "SPM"
+rownames(var)[rownames(var) == "volume_cm3"] <- "volume"
+rownames(var)[rownames(var) == "dry_weight"] <- "mass"
 
 # 3.2 Añadir Dim3 como color en individuos ----
 # ind$Dim3 <- ind$Dim3
@@ -282,6 +291,13 @@ geom_hex(
   ) +
   
 # -------------------
+# colores okabe-ito para los hexágonos
+# -------------------
+scale_fill_manual(
+  values = c(low = okabe_blue, high = okabe_orange)
+) +
+  
+# -------------------
 # individuos
 # -------------------
 geom_point(
@@ -315,13 +331,12 @@ ggrepel::geom_text_repel(
 # -------------------
 # estética
 # -------------------
-scale_color_viridis_c() +
-  theme_minimal() +
+theme_minimal() +
   
   labs(
     x = "Dim 1",
     y = "Dim 2",
-    color = "Dim 3"
+    fill = "Dim 3 bin"
   )
 
 ggsave("07-img/FAMD_outputs/paper_famd.png", p, width = 7, height = 6)
