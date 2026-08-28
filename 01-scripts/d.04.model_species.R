@@ -426,8 +426,113 @@ ic_pairs_table <- bind_rows(
 write.csv(ic_pairs_table, "00-data/desiccation_pairs_ci.csv", row.names = FALSE)
 cat("Tabla de IC de comparaciones por pares guardada en 00-data/desiccation_pairs_ci.csv\n")
 
+# ---------------------------------------------------------------------------
+# 4.2b Comparaciones SELECTIVAS (inter-bioclima)
+# ---------------------------------------------------------------------------
+# Solo se comparan especies de DISTINTO bioclima (Mediterraneo, Sub-Mediterraneo,
+# Templado). No se comparan especies del mismo bioclima (p. ej. Q. robur vs
+# Q. petraea), ya que la hipotesis es bioclimatica. Sobre esta familia reducida
+# de contrastes se controla la multiplicidad con Sidak (adjust = "sidak"):
+#   - Tukey no es aplicable: emmeans solo permite "tukey" para el conjunto
+#     completo de comparaciones por pares y lo degrada a Sidak para listas
+#     arbitrarias de contrastes.
+#   - Sidak es el ajuste estandar para un conjunto preespecificado de
+#     contrastes (hipotesis a priori), menos conservador que Bonferroni.
+# Las letras se asignan por el mismo criterio de ICs: dos especies no comparten
+# letra si el IC95 (Sidak) de su diferencia selectiva excluye el cero.
+bioclimate_short <- c(   # codigo corto por especie para construir los pares
+  "Quercus coccifera" = "Med",
+  "Quercus ilex"      = "Med",
+  "Quercus suber"     = "Med",
+  "Quercus faginea"   = "SubMed",
+  "Quercus pyrenaica" = "SubMed",
+  "Quercus pubescens" = "SubMed",
+  "Quercus petraea"   = "Temp",
+  "Quercus robur"     = "Temp"
+)
+
+# Construye la lista de contrastes selectivos (especies de distinto bioclima)
+build_selective_contrasts <- function(species_levels) {
+  idx <- setNames(seq_along(species_levels), species_levels)
+  clist <- list()
+  for (pr in combn(species_levels, 2, simplify = FALSE)) {
+    if (bioclimate_short[[pr[1]]] != bioclimate_short[[pr[2]]]) {
+      v <- rep(0, length(species_levels))
+      v[idx[[pr[1]]]] <- +1
+      v[idx[[pr[2]]]] <- -1
+      clist[[paste0(pr[1], " - ", pr[2])]] <- v
+    }
+  }
+  clist
+}
+
+# CLD por IC a partir de un conjunto de pares declarados significativos
+cld_from_significant_pairs <- function(order, sig_pairs) {
+  n <- length(order)
+  sigmat <- matrix(FALSE, n, n, dimnames = list(order, order))
+  for (pr in sig_pairs) {
+    gr <- strsplit(pr, " - ")[[1]]
+    if (gr[1] %in% order && gr[2] %in% order) {
+      sigmat[gr[1], gr[2]] <- TRUE
+      sigmat[gr[2], gr[1]] <- TRUE
+    }
+  }
+  out <- setNames(rep(NA_character_, n), order)
+  pool <- c(letters, LETTERS)
+  k <- 1
+  remaining <- order
+  while (length(remaining) > 0) {
+    L <- pool[k]; k <- k + 1
+    group <- character(0)
+    for (s in remaining) {
+      if (length(group) == 0 || all(!sigmat[s, group])) group <- c(group, s)
+    }
+    out[group] <- vapply(group, function(x) {
+      if (is.na(out[x])) L else paste0(out[x], L)
+    }, character(1))
+    remaining <- setdiff(remaining, group)
+  }
+  out
+}
+
+# Letras selectivas por fase: solo comparaciones inter-bioclima con ajuste Sidak
+selective_cld_per_phase <- function(model) {
+  et   <- emmeans::emtrends(model, ~ species, var = "time")
+  sp   <- levels(et@grid$species)
+  cn   <- build_selective_contrasts(sp)
+  ci   <- as.data.frame(confint(contrast(et, method = cn, adjust = "sidak")))
+  sigp <- ci$contrast[ci$asymp.LCL > 0 | ci$asymp.UCL < 0]
+  ord  <- sp[order(-as.data.frame(et)$time.trend)]   # por tasa
+  tibble(species = ord, letters = unname(cld_from_significant_pairs(ord, sigp)))
+}
+
+rates_letters_sel <- bind_rows(
+  selective_cld_per_phase(mm.pre)  |> mutate(phase = "PRE"),
+  selective_cld_per_phase(mm.post) |> mutate(phase = "POST")
+)
+
+# Tabla adicional con los IC95 de las comparaciones selectivas (Sidak)
+selective_pairs_from_model <- function(model, phase) {
+  et <- emmeans::emtrends(model, ~ species, var = "time")
+  ci <- as.data.frame(confint(contrast(
+    et, method = build_selective_contrasts(levels(et@grid$species)),
+    adjust = "sidak")))
+  ci$phase <- phase
+  ci
+}
+selective_pairs_table <- bind_rows(
+  selective_pairs_from_model(mm.pre,  "PRE"),
+  selective_pairs_from_model(mm.post, "POST")
+)
+write.csv(selective_pairs_table, "00-data/desiccation_selective_pairs_ci.csv",
+          row.names = FALSE)
+cat("Tabla de IC de comparaciones selectivas (Sidak) guardada en 00-data/desiccation_selective_pairs_ci.csv\n")
+
+# Anadir ambas columnas de letras a rates
 rates <- rates |>
-  left_join(rates_letters, by = c("species", "phase"))
+  left_join(rates_letters,    by = c("species", "phase")) |>
+  left_join(rates_letters_sel, by = c("species", "phase"),
+            suffix = c("", "_sel"))
 
 # --- 4.3 Bioclima y orden del eje Y ---
 bioclimate <- tribble(
@@ -468,47 +573,203 @@ plot_tab <- rates |>
                                         "Temperate")), rate_pre) |>
   mutate(name = factor(name, levels = unique(name)))
 
-# --- 4.4 Generar figura ---
-p_prepost <- ggplot(plot_tab, aes(x = rate, y = name, colour = bioclimate)) +
-  geom_errorbar(aes(xmin = rate_low, xmax = rate_high),
-                width = 0.28, linewidth = 0.9) +
-  geom_point(aes(shape = phase), size = 3.4) +
-  geom_text(aes(label = letters),
-            vjust = -1.4, size = 3.2, colour = "black", show.legend = FALSE) +
-  scale_shape_manual(values = c("PRE" = 17, "POST" = 16),
-                     name = "Phase") +
-  scale_colour_manual(
-    values = c("Mediterranean"     = "#D55E00",   # Okabe-Ito vermilion
-               "Sub-Mediterranean" = "#E69F00",   # Okabe-Ito orange
-               "Temperate"         = "#0072B2"),  # Okabe-Ito blue
-    name = "Bioclimate"
-  ) +
-  labs(
-    x = expression("Desiccation rate (MC%/h)"),
-    y = NULL,
-    caption = paste0(
-      "Desiccation rate estimated with emtrends from piecewise species models\n",
-      "(PRE t < 94 h; POST t > 94 h). Points: mean rate; whiskers: 95% CI.\n",
-      "Rates expressed as positive values (moisture loss per hour).\n",
-      "Letters: groups from pairwise 95% CIs within each phase (shared letter = no significant difference).\n",
-      "Colours denote the characteristic bioclimate of each species."
-    )
-  ) +
-  theme_classic(base_size = 12) +
-  theme(
-    panel.grid.major.x = element_line(colour = "grey90", linewidth = 0.3),
-    axis.text.y = element_text(face = "italic", size = 11),
-    axis.title.x = element_text(size = 12, margin = margin(t = 4)),
-    legend.position = "right",
-    legend.title = element_text(size = 10),
-    legend.text = element_text(size = 9.5),
-    plot.caption = element_text(size = 8.5, colour = "grey30",
-                                hjust = 0, margin = margin(t = 6))
-  )
+# --- 4.3b Comparison intervals (flechas de comparacion) ---
+# Los comparison intervals de emmeans se basan en invertir las comparaciones por
+# pares: dos medias no difieren significativamente <=> sus intervalos se solapan.
+# Su construccion es una aproximacion (solo exacta para <= 6 medias) y produce
+# intervalos ABIERTOS (NA) en las especies extremas: la mas lenta no se acota
+# hacia tasas mas bajas y la mas rapida no se acota hacia tasas mas altas.
+# Aqui replicamos el algoritmo interno de emmeans ('.plot.srg') para poder
+# construirlos con cualquier familia de pares (completa o selectiva).
+comparison_intervals <- function(est, id1, id2, diff, LCL, UCL) {
+  # est: estimaciones por especie (orden = niveles); id1/id2: indices de especie
+  # de cada contraste; diff/LCL/UCL: estimacion e IC95 de cada contraste.
+  neach <- length(est); npairs <- length(diff)
+  del     <- (UCL - LCL) / 4
+  overlap <- 2 * pmin(-LCL, UCL) / (UCL - LCL)
+  involved <- lapply(seq_len(neach), function(x) union(which(id2 == x), which(id1 == x)))
+  mind <- sapply(involved, function(ii) min(del[ii]))
+  iden <- diag(rep(1, 2 * neach))
+  lmat <- rmat <- matrix(0, nrow = npairs, ncol = neach)
+  y <- numeric(npairs); v1 <- 1 - overlap
+  for (i in which(!is.na(v1))) {
+    wgt <- 3 + 20 * max(0, 0.5 - (1 - v1[i])^2)
+    if (diff[i] > 0) lmat[i, id1[i]] <- rmat[i, id2[i]] <- wgt * v1[i]
+    else            rmat[i, id1[i]] <- lmat[i, id2[i]] <- wgt * v1[i]
+    y[i] <- wgt * abs(diff[i])
+  }
+  X  <- rbind(cbind(lmat, rmat), iden)
+  yy <- c(y, rep(mind, 2)); yy[is.na(yy)] <- 0
+  soln <- qr.coef(qr(X), yy); soln[is.na(soln)] <- 0
+  ll <- soln[seq_len(neach)]; rl <- soln[neach + seq_len(neach)]
+  rng <- suppressWarnings(range(est, na.rm = TRUE)); diffr <- diff(rng)
+  ii <- which(est - ll < rng[1]); ll[ii] <- est[ii] - rng[1] + 0.02 * diffr
+  ii <- which(est + rl > rng[2]); rl[ii] <- rng[2] - est[ii] + 0.02 * diffr
+  ll[est < rng[1] + 1e-04 * diffr] <- NA   # lado abierto (tasa minima)
+  rl[est > rng[2] - 1e-04 * diffr] <- NA   # lado abierto (tasa maxima)
+  list(lcmpl = est - ll, rcmpl = est + rl)
+}
 
+# Obtiene los comparison intervals por fase y familia de pares.
+#  - familia == "complete": usa pairs() con adjust "tukey" (igual que plot()).
+#  - familia == "selective": usa las comparaciones inter-bioclima con adjust "sidak".
+comparison_intervals_per_phase <- function(model, familia = c("complete", "selective")) {
+  familia <- match.arg(familia)
+  et <- emmeans::emtrends(model, ~ species, var = "time")
+  sp <- levels(et@grid$species)
+  est <- as.data.frame(et)$time.trend
+  idx <- setNames(seq_along(sp), sp)
+
+  if (familia == "complete") {
+    ps <- as.data.frame(confint(pairs(et), level = 0.95, adjust = "tukey"))
+    prs <- combn(sp, 2, simplify = FALSE)
+    id1 <- sapply(prs, function(p) idx[[p[1]]]); id2 <- sapply(prs, function(p) idx[[p[2]]])
+  } else {
+    clist <- list(); id1 <- integer(); id2 <- integer()
+    for (pr in combn(sp, 2, simplify = FALSE)) if (bioclimate_short[[pr[1]]] != bioclimate_short[[pr[2]]]) {
+      v <- rep(0, length(sp)); v[idx[[pr[1]]]] <- 1; v[idx[[pr[2]]]] <- -1
+      clist[[paste0(pr[1], " - ", pr[2])]] <- v
+      id1 <- c(id1, idx[[pr[1]]]); id2 <- c(id2, idx[[pr[2]]])
+    }
+    ps <- as.data.frame(confint(contrast(et, method = clist, adjust = "sidak")))
+  }
+  k <- ncol(ps)
+  ci <- comparison_intervals(est, id1, id2, ps[[attr(ps, "estName")]], ps[[k - 1]], ps[[k]])
+
+  # Escala de tasa POSITIVA (endreversando el signo del emtrend).
+  # Un lado abierto (NA) en emmeans es un comparison interval abierto en una
+  # especie extrema: se codifica como -Inf (tasas mas lentas) o +Inf (mas rapidas).
+  lpos <- -ci$rcmpl; hpos <- -ci$lcmpl
+  comp_low  <- ifelse(is.na(lpos), -Inf, lpos)
+  comp_high <- ifelse(is.na(hpos), +Inf, hpos)
+  tibble(species = sp, comp_low = comp_low, comp_high = comp_high)
+}
+
+compints_full <- bind_rows(
+  comparison_intervals_per_phase(mm.pre,  "complete") |> mutate(phase = "PRE"),
+  comparison_intervals_per_phase(mm.post, "complete") |> mutate(phase = "POST")
+)
+compints_sel <- bind_rows(
+  comparison_intervals_per_phase(mm.pre,  "selective") |> mutate(phase = "PRE"),
+  comparison_intervals_per_phase(mm.post, "selective") |> mutate(phase = "POST")
+)
+# unir a la tabla de trazado
+plot_tab <- plot_tab |>
+  left_join(compints_full, by = c("species", "phase"), suffix = c("", "_full")) |>
+  left_join(compints_sel,  by = c("species", "phase"), suffix = c("", "_sel"))
+
+# --- 4.4 Generar figura ---
+make_prepost_plot <- function(tab, letters_col, caption_note,
+                              comp_low_col = NULL, comp_high_col = NULL,
+                              dodge_w = 0.45) {
+  p <- ggplot(tab, aes(x = rate, y = name, colour = bioclimate)) +
+    geom_errorbar(aes(xmin = rate_low, xmax = rate_high, y = name, group = phase),
+                  width = 0.28, linewidth = 0.9,
+                  position = position_dodge(width = dodge_w)) +
+    geom_point(aes(shape = phase, y = name, group = phase), size = 3.4,
+               position = position_dodge(width = dodge_w)) +
+    geom_text(aes(label = .data[[letters_col]], y = name, group = phase),
+              vjust = -1.4, size = 3.2, colour = "black", show.legend = FALSE,
+              position = position_dodge(width = dodge_w)) +
+    scale_shape_manual(values = c("PRE" = 17, "POST" = 16),
+                       name = "Phase") +
+    scale_colour_manual(
+      values = c("Mediterranean"     = "#D55E00",   # Okabe-Ito vermilion
+                 "Sub-Mediterranean" = "#E69F00",   # Okabe-Ito orange
+                 "Temperate"         = "#0072B2"),  # Okabe-Ito blue
+      name = "Bioclimate"
+    ) +
+    labs(
+      x = expression("Desiccation rate (MC%/h)"),
+      y = NULL,
+      caption = paste0(
+        "Desiccation rate estimated with emtrends from piecewise species models\n",
+        "(PRE t < 94 h; POST t > 94 h). Points: mean rate; whiskers: 95% CI.\n",
+        "Rates expressed as positive values (moisture loss per hour).\n",
+        caption_note,
+        "Colours denote the characteristic bioclimate of each species."
+      )
+    ) +
+    theme_classic(base_size = 12) +
+    theme(
+      panel.grid.major.x = element_line(colour = "grey90", linewidth = 0.3),
+      axis.text.y = element_text(face = "italic", size = 11),
+      axis.title.x = element_text(size = 12, margin = margin(t = 4)),
+      legend.position = "right",
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 9.5),
+      plot.caption = element_text(size = 8.5, colour = "grey30",
+                                  hjust = 0, margin = margin(t = 6))
+    )
+
+  if (!is.null(comp_low_col) && !is.null(comp_high_col)) {
+    cl <- tab[[comp_low_col]]; ch <- tab[[comp_high_col]]
+    rate <- tab$rate; nm <- tab$name
+    # limites del panel a partir de todos los valores finitos
+    allv <- c(rate, tab$rate_low, tab$rate_high, cl[is.finite(cl)], ch[is.finite(ch)])
+    xlo <- min(allv, na.rm = TRUE); xhi <- max(allv, na.rm = TRUE)
+    span <- diff(c(xlo, xhi)); xlo <- xlo - 0.04 * span; xhi <- xhi + 0.04 * span
+    # flechas a los lados: lado abierto (Inf) se extiende hasta el limite del panel
+    arrow_tbl <- data.frame(
+      name = nm,
+      phase = rep(tab$phase, 2),
+      x_start = rep(rate, 2),
+      x_end   = c(ifelse(is.finite(cl), cl, xlo), ifelse(is.finite(ch), ch, xhi)),
+      stringsAsFactors = FALSE
+    )
+    p <- p +
+      geom_segment(data = arrow_tbl,
+                   aes(x = x_start, xend = x_end, y = name, yend = name, group = phase),
+                   colour = "grey25", linewidth = 0.55,
+                   position = position_dodge(width = dodge_w),
+                   arrow = arrow(length = unit(0.09, "cm"), type = "closed")) +
+      coord_cartesian(xlim = c(xlo, xhi))
+  }
+  p
+}
+
+# Figura principal: letras de comparaciones por pares con IC95 sin ajuste
+p_prepost <- make_prepost_plot(
+  plot_tab, "letters",
+  c("Letters: groups from pairwise 95% CIs within each phase (shared letter = no significant difference).\n")
+)
 ggsave("07-img/paper_prepost_desiccation.png", p_prepost,
        width = 160, height = 110, units = "mm", dpi = 600)
 cat("Figura de tasas pre/post guardada en 07-img/paper_prepost_desiccation.png\n")
+
+# Figura con comparaciones SELECTIVAS (inter-bioclima, ajuste Sidak)
+p_prepost_sel <- make_prepost_plot(
+  plot_tab, "letters_sel",
+  c("Letters: groups from selective inter-bioclimate comparisons (only species of different bioclimate),\n",
+    "95% CIs adjusted by Sidak within each phase (shared letter = no significant difference).\n")
+)
+ggsave("07-img/paper_prepost_desiccation_comp_sel.png", p_prepost_sel,
+       width = 160, height = 110, units = "mm", dpi = 600)
+cat("Figura de tasas pre/post (comparaciones selectivas) guardada en 07-img/paper_prepost_desiccation_comp_sel.png\n")
+
+# --- Version alternativa: comparison intervals (conjunto completo, tukey) ---
+p_prepost_compint <- make_prepost_plot(
+  plot_tab, "letters",
+  c("Letters: groups from pairwise 95% CIs within each phase (shared letter = no significant difference).\n",
+    "Grey arrows: comparison intervals (inverse of pairwise comparisons, Tukey); overlapping intervals = no significant difference.\n",
+    "Open ends (arrows to the plot edge) indicate an extremal species with no comparison beyond it.\n"),
+  comp_low_col = "comp_low", comp_high_col = "comp_high"
+)
+ggsave("07-img/paper_prepost_desiccation_compint.png", p_prepost_compint,
+       width = 160, height = 110, units = "mm", dpi = 600)
+cat("Figura con comparison intervals guardada en 07-img/paper_prepost_desiccation_compint.png\n")
+
+# --- Version alternativa: comparison intervals selectivos (inter-bioclima, Sidak) ---
+p_prepost_sel_compint <- make_prepost_plot(
+  plot_tab, "letters_sel",
+  c("Letters: groups from selective inter-bioclimate comparisons (only species of different bioclimate),\n",
+    "95% CIs adjusted by Sidak within each phase (shared letter = no significant difference).\n",
+    "Grey arrows: comparison intervals from the same selective comparisons (Sidak); overlapping intervals = no significant difference.\n"),
+  comp_low_col = "comp_low_sel", comp_high_col = "comp_high_sel"
+)
+ggsave("07-img/paper_prepost_desiccation_comp_sel_compint.png", p_prepost_sel_compint,
+       width = 160, height = 110, units = "mm", dpi = 600)
+cat("Figura con comparison intervals selectivos guardada en 07-img/paper_prepost_desiccation_comp_sel_compint.png\n")
 
 # Tabla suplementaria de tasas de desecacion por especie (+ letras post-hoc)
 write.csv(plot_tab, "00-data/desiccation_rates_prepost.csv", row.names = FALSE)
