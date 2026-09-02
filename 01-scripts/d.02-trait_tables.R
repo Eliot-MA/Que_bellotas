@@ -1,6 +1,9 @@
+GEN_DASH <- "N"
+stopifnot("GEN_DASH must be 'Y' or 'N'" = GEN_DASH %in% c("Y", "N"))
+
 df.bellotas <- read.csv(file = "00-data/df.bellotas.csv")
 
-library(tidyverse) 
+library(tidyverse)
 library(emmeans)     # Calculo de medias marginales y tendencias
 library(performance) # Comprobación de supuestos
 library(multcomp)    # Asignación de letras de significancia estadística
@@ -53,23 +56,27 @@ glmm.dw.gamm <- glmmTMB(dry_weight ~ species + (1|species:provenance),
 
 # compare_performance(glmm.dw.gaus, glmm.dw.gamm)
 # gamma chosen
-tryCatch(
-  easystats::model_dashboard(glmm.dw.gamm,
-                             output_dir = "06-html/",
-                             output_file = "modeldashboard_dryweight.html"),
-  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
-)
+if (GEN_DASH == "Y") {
+  tryCatch(
+    easystats::model_dashboard(glmm.dw.gamm,
+                               output_dir = "06-html/",
+                               output_file = "modeldashboard_dryweight.html"),
+    error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+  )
+}
 
 ## 2. Specific pericarp mass ----
 glmm.spm <- glmmTMB(SPM_g_cm2 ~ species + (1|species:provenance),
                     data = df)
 
-tryCatch(
-  easystats::model_dashboard(glmm.spm,
-                             output_dir = "06-html/",
-                             output_file = "modeldashboard_spm.html"),
-  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
-)
+if (GEN_DASH == "Y") {
+  tryCatch(
+    easystats::model_dashboard(glmm.spm,
+                               output_dir = "06-html/",
+                               output_file = "modeldashboard_spm.html"),
+    error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+  )
+}
 
 ## 3. Scar area ----
 glmm.scar <- glmmTMB(scar_area_mm2 ~ species*surface_cm2 + (1|species:provenance),
@@ -79,12 +86,14 @@ options(na.action = "na.fail")
 dd <- dredge(glmm.scar)
 glmm.scar1 <- get.models(dd, subset = 1)[[1]]
 
-tryCatch(
-  easystats::model_dashboard(glmm.scar1,
-                             output_dir = "06-html/",
-                             output_file = "modeldashboard_scar.html"),
-  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
-)
+if (GEN_DASH == "Y") {
+  tryCatch(
+    easystats::model_dashboard(glmm.scar1,
+                               output_dir = "06-html/",
+                               output_file = "modeldashboard_scar.html"),
+    error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+  )
+}
 
 ## 4. Seed coat ratio ----
 glmm.scr <- glmmTMB(pericarp_dry_weight ~ dry_weight*species + 
@@ -94,12 +103,14 @@ glmm.scr <- glmmTMB(pericarp_dry_weight ~ dry_weight*species +
 dd <- dredge(glmm.scr)
 glmm.scr1 <- get.models(dd, subset = 1)[[1]]
 
-tryCatch(
-  easystats::model_dashboard(glmm.scr1,
-                             output_dir = "06-html/",
-                             output_file = "modeldashboard_scr.html"),
-  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
-)
+if (GEN_DASH == "Y") {
+  tryCatch(
+    easystats::model_dashboard(glmm.scr1,
+                               output_dir = "06-html/",
+                               output_file = "modeldashboard_scr.html"),
+    error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+  )
+}
 
 ## 5. Pericarp rupture ----
 df.cracks <- df |> 
@@ -109,12 +120,14 @@ glmm.cracks <- glmmTMB(pericarp_rupture ~ species + (1|species:provenance),
                       data = df.cracks , 
                       family = binomial(link = "logit"))
 
-tryCatch(
-  easystats::model_dashboard(glmm.cracks,
-                             output_dir = "06-html/",
-                             output_file = "modeldashboard_cracks.html"),
-  error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
-)
+if (GEN_DASH == "Y") {
+  tryCatch(
+    easystats::model_dashboard(glmm.cracks,
+                               output_dir = "06-html/",
+                               output_file = "modeldashboard_cracks.html"),
+    error = function(e) warning("model_dashboard omitido (", conditionMessage(e), ")")
+  )
+}
 
 # 2. Generate table ----
 ## 1. Calculate marginal means ----
@@ -601,3 +614,9 @@ paper_table_traitmodel_effects <- purrr::imap_dfr(modelos, function(mod, nm) {
 cat("\n==== paper_table_traitmodel_effects ====\n")
 print(paper_table_traitmodel_effects)
 write.csv(paper_table_traitmodel_effects, file = "00-data/paper_table_traitmodel_effects.csv", row.names = FALSE)
+
+if (GEN_DASH == "Y") {
+  cat("\n>> Dashboards generados correctamente en 06-html/\n")
+} else {
+  cat("\n>> Dashboards NO generados (GEN_DASH = \"N\")\n")
+}
