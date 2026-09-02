@@ -75,7 +75,7 @@ library(factoextra)
 
 
 # Exclude id and species variables
-df.famd <- df |> select(-id_bellota, -species, -provenance, -prov_code)
+df.famd <- df |> dplyr::select(-id_bellota, -species, -provenance, -prov_code)
 
 # Calculate famd
 famd.traits <- FAMD(df.famd, graph = FALSE)
@@ -206,7 +206,7 @@ write.csv2(x = tabla_famd, file = "00-data/famd_long.csv")
 
 # Paso 1: quedarte solo con contribuciones + coordenadas
 tabla_contrib <- tabla_famd %>%
-  select(variable, dimension, contrib, coord)
+  dplyr::select(variable, dimension, contrib, coord)
 
 # Paso 2: codificar el signo
 # Aquí tienes varias opciones. La más limpia es añadir el signo como string:
@@ -219,7 +219,7 @@ tabla_contrib <- tabla_contrib %>%
 
 # Paso 3: pasar a formato ancho
 tabla_wide <- tabla_contrib %>%
-  select(variable, dimension, contrib_signo) %>%
+  dplyr::select(variable, dimension, contrib_signo) %>%
   pivot_wider(names_from = dimension, values_from = contrib_signo)
 
 write.csv2(x = tabla_wide, file = "00-data/paper_famd.csv")

@@ -11,7 +11,7 @@ df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |> 
   left_join(y = df.famd, by = "id_bellota") |> 
-  drop_na(Dim.1, Dim.2, Dim.3) |> 
+  drop_na(Moisture_content, Dim.1, Dim.2, Dim.3) |> 
   rename(time = tiempo_acumulado_horas) |> 
   mutate(
     log.t = log(time+1), 

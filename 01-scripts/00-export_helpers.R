@@ -73,7 +73,16 @@ plot_check_model <- function(models, sufijo, dir = "07-img") {
     }
     archivo <- file.path(dir, paste0("check_model_", sufijo, "_", nm, ".png"))
     png(archivo, width = 2000, height = 1600, res = 150)
-    print(plot(res))
+    if (!is.character(attr(res, "theme"))) {
+      attr(res, "theme") <- "see::theme_lucid"
+    }
+    p <- tryCatch(plot(res), error = function(e) e)
+    if (inherits(p, "error")) {
+      dev.off()
+      warning("plot(check_model) fallo para ", nm, ": ", conditionMessage(p))
+      next
+    }
+    print(p)
     dev.off()
     cat("check_model guardado en ", archivo, "\n", sep = "")
   }
