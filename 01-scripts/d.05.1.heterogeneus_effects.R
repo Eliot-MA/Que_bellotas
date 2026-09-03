@@ -110,6 +110,82 @@ write.csv(cor.species, "00-data/heterogeneity_cor_species.csv", row.names = FALS
 cat("Guardadas: 00-data/heterogeneity_cor_global.csv y 00-data/heterogeneity_cor_species.csv\n")
 
 # ============================================================
+# 2b. Correlacion entre rasgos funcionales originales dentro de especies
+# ============================================================
+# Leer datos originales con rasgos funcionales
+df.traits_orig <- read.csv("00-data/desiccation_traits_long.csv") |>
+  dplyr::select(id_bellota, especie, peso_seco, Volumen_estimado_cm3, 
+                Relacion_SV, SPM_g_cm2, Seed_Coat_Ratio, 
+                Ratio_A.cicatriz_A.bellota, rajas_pericarpo) |>
+  rename(species = especie,
+         mass = peso_seco,
+         volume = Volumen_estimado_cm3,
+         SVR = Relacion_SV,
+         SPM = SPM_g_cm2,
+         SCR = Seed_Coat_Ratio,
+         SSR = Ratio_A.cicatriz_A.bellota,
+         pericarp_rupture = rajas_pericarpo) |>
+  mutate(pericarp_rupture = as.numeric(as.character(pericarp_rupture))) |>
+  distinct()
+
+species_order <- c("Quercus coccifera", "Quercus ilex", "Quercus suber",
+                   "Quercus faginea", "Quercus pyrenaica", "Quercus pubescens",
+                   "Quercus petraea", "Quercus robur")
+
+# Calcular correlaciones entre rasgos funcionales por especie
+cor_traits_orig <- df.traits_orig |>
+  group_by(species) |>
+  group_modify(~ {
+    d <- dplyr::select(.x, mass, volume, SVR, SPM, SCR, SSR, pericarp_rupture)
+    mat <- cor(d, use = "pairwise.complete.obs")
+    # Extraer pares unicos (triangular inferior)
+    pairs <- combn(colnames(mat), 2, simplify = FALSE)
+    results <- lapply(pairs, function(p) {
+      ct <- cor.test(d[[p[1]]], d[[p[2]]])
+      tibble(
+        trait1 = p[1],
+        trait2 = p[2],
+        cor    = ct$estimate,
+        p      = ct$p.value
+      )
+    })
+    bind_rows(results)
+  }) |>
+  ungroup() |>
+  mutate(sig = case_when(
+    p < 0.001 ~ "***",
+    p < 0.01  ~ "**",
+    p < 0.05  ~ "*",
+    TRUE ~ ""
+  ))
+
+write.csv(cor_traits_orig, "00-data/heterogeneity_cor_original_traits_by_species.csv", row.names = FALSE)
+cat("Guardada: 00-data/heterogeneity_cor_original_traits_by_species.csv\n")
+
+# Grafico: heatmap de correlaciones entre rasgos originales por especie
+cor_plot_orig <- cor_traits_orig |>
+  mutate(
+    pair = paste(trait1, trait2, sep = " - "),
+    species = factor(species, levels = species_order)
+  )
+
+p_cor_traits_orig <- ggplot(cor_plot_orig, aes(x = pair, y = species, fill = cor)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = paste0(round(cor, 2), sig)), size = 3) +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0,
+                       limits = c(-1, 1), name = "r") +
+  labs(x = "Par de rasgos", y = NULL,
+       title = "Correlacion entre rasgos funcionales originales por especie",
+       caption = "* p < 0.05, ** p < 0.01, *** p < 0.001") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
+        strip.background = element_rect(fill = "grey95"),
+        strip.text = element_text(face = "bold"))
+
+ggsave("07-img/heterogeneity_cor_original_traits_heatmap.png", p_cor_traits_orig, width = 12, height = 7, dpi = 300)
+cat("Figura guardada: 07-img/heterogeneity_cor_original_traits_heatmap.png\n")
+
+# ============================================================
 # 3. Efecto heterogeneo de los rasgos: modelos y comparacion
 # ============================================================
 # 3a. Modelos base: sin especie ("ingenuo") vs especie en el random
@@ -264,10 +340,6 @@ all_contrasts <- lapply(seq_len(nrow(model_info)), function(i) {
     dplyr::mutate(phase = model_info$phase[i], model = model_info$model[i])
 }) |>
   dplyr::bind_rows()
-
-species_order <- c("Quercus coccifera", "Quercus ilex", "Quercus suber",
-                   "Quercus faginea", "Quercus pyrenaica", "Quercus pubescens",
-                   "Quercus petraea", "Quercus robur")
 
 all_contrasts <- all_contrasts |>
   dplyr::mutate(
@@ -430,3 +502,11 @@ save_models(list(
 ))
 
 cat("\n===== d.05.1.heterogeneus_effects.R completado =====\n")
+
+
+#==
+
+check_model(m.wb.t2)
+
+#==
+
