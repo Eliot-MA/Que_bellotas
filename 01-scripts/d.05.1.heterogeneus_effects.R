@@ -21,12 +21,15 @@
 # Si se ejecuta en solitario, los reconstruye con la misma receta.
 # ============================================================
 
+GEN_DASH <- "Y"
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(glmmTMB)
   library(parameters)
   library(performance)
   library(emmeans)
+  library(easystats)
 })
 if (!requireNamespace("patchwork", quietly = TRUE)) install.packages("patchwork")
 suppressPackageStartupMessages(library(patchwork))
@@ -501,12 +504,35 @@ save_models(list(
   "m.wb.t2"         = m.wb.t2
 ))
 
+if (GEN_DASH == "Y") {
+  dir.create("06-html", showWarnings = FALSE)
+  modelos_dash <- list(
+    mm.pre.0        = mm.pre.0,
+    mm.pre.1        = mm.pre.1,
+    mm.post.0       = mm.post.0,
+    mm.post.1       = mm.post.1,
+    mm.pre.d1.het   = mm.pre.d1.het,
+    mm.pre.d2.het   = mm.pre.d2.het,
+    mm.pre.d3.het   = mm.pre.d3.het,
+    m.pre.all.het   = m.pre.all.het,
+    mm.post.d1.het  = mm.post.d1.het,
+    mm.post.d2.het  = mm.post.d2.het,
+    mm.post.d3.het  = mm.post.d3.het,
+    m.post.all.het  = m.post.all.het,
+    m.wb.t1         = m.wb.t1,
+    m.wb.t2         = m.wb.t2
+  )
+  for (nm in names(modelos_dash)) {
+    tryCatch(
+      easystats::model_dashboard(modelos_dash[[nm]],
+                                 output_dir = "06-html/",
+                                 output_file = paste0("modeldashboard_", nm, ".html")),
+      error = function(e) warning("model_dashboard omitido (", nm, "): ", conditionMessage(e))
+    )
+  }
+}
+
 cat("\n===== d.05.1.heterogeneus_effects.R completado =====\n")
 
 
-#==
-
-check_model(m.wb.t2)
-
-#==
 
