@@ -35,7 +35,7 @@ df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
   left_join(y = df.famd, by = "id_bellota") |>
-  tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
+  tidyr::drop_na(Moisture_content, Dim.1, Dim.2, Dim.3) |>
   rename(time = tiempo_acumulado_horas) |>
   mutate(
     time_s     = as.vector(scale(time)),

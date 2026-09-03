@@ -100,7 +100,7 @@ conflicts <- df.acorns |>
 # and a directly observed dry weight.
 dw.calibration <- df.acorns |>
   filter(!is.na(fw0), !is.na(dw_observed)) |>
-  select(acorn_id, phase, species, provenance, fw0, dw_observed)
+  dplyr::select(acorn_id, phase, species, provenance, fw0, dw_observed)
 
 cat("=== calibration table ===\n")
 print(
@@ -293,12 +293,12 @@ strategy_summary <- imap_dfr(cv_results, \(res, st) {
   mutate(preference = match(strategy,
                             c("per_species", "interaction", "general"))) |>
   arrange(round(cv_rmse_overall, 8), preference) |>
-  select(-preference)
+  dplyr::select(-preference)
 
 # Per-species CV errors behind the summary above (kept for reporting).
 strategy_species_rmse <- imap_dfr(cv_results, \(res, st)
   mutate(res$species_rmse, strategy = st)) |>
-  select(strategy, species, rmse)
+  dplyr::select(strategy, species, rmse)
 
 # Formal test of whether species modifies the FW0-DW relationship.
 anova_p <- tryCatch(
@@ -416,7 +416,7 @@ df.modeled <- switch(model_structure,
 )
 
 df.acorns <- df.modeled |>
-  select(acorn_id, phase, species, provenance,
+  dplyr::select(acorn_id, phase, species, provenance,
          fw0, sampling_time, fw_sampling,
          dw_observed, dw_model_pred, dw_final, dw_lwr, dw_upr,
          germinated, emerged, moho, observations,
@@ -471,7 +471,7 @@ if (nrow(conflicts) > 0) {
 cat("\nAgreement between model predictions and measurements (calibration table):\n")
 agreement <- dw.calibration |>
   left_join(
-    select(df.acorns, acorn_id, dw_pred_check = dw_model_pred,
+    dplyr::select(df.acorns, acorn_id, dw_pred_check = dw_model_pred,
            dw_lwr, dw_upr),
     by = "acorn_id"
   ) |>
@@ -500,7 +500,7 @@ dir.create(tbl_dir, recursive = TRUE, showWarnings = FALSE)
 
 calib_check <- dw.calibration |>
   left_join(
-    select(df.acorns, acorn_id, dw_pred = dw_model_pred, dw_lwr, dw_upr),
+    dplyr::select(df.acorns, acorn_id, dw_pred = dw_model_pred, dw_lwr, dw_upr),
     by = "acorn_id"
   ) |>
   mutate(

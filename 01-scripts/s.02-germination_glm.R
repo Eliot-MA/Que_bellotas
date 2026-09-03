@@ -207,7 +207,7 @@ selected_coefficients <- bind_rows(
 cat("\n--- Coefficients: best WITH phase ---\n")
 print(as.data.frame(selected_coefficients |>
                       filter(model == "best_with_phase") |>
-                      select(-model)))
+                      dplyr::select(-model)))
 
 cat("\nPer-species phase_2 shifts (best WITH phase):\n")
 print(as.data.frame(selected_coefficients |>

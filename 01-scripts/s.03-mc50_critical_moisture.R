@@ -176,9 +176,9 @@ print(as.data.frame(boot_tab))
 # --- 5. Side-by-side summary --------------------------------------------------------
 
 delta_side <- delta_tab |>
-  select(species, mc50, se_delta, ci_lo_delta = ci_lo, ci_hi_delta = ci_hi)
+  dplyr::select(species, mc50, se_delta, ci_lo_delta = ci_lo, ci_hi_delta = ci_hi)
 boot_side <- boot_tab |>
-  select(species, boot_mean, se_boot,
+  dplyr::select(species, boot_mean, se_boot,
          ci_lo_boot = ci_lo, ci_hi_boot = ci_hi,
          n_valid, pct_invalid)
 

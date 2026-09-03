@@ -80,7 +80,7 @@ clean_names <- function(df) {
 standardise_phase <- function(df, phase_id, id_offset = 0L) {
   df |>
     clean_names() |>
-    select(-any_of(c("especie", "procedencia", "codigo", "numero_bellota"))) |>
+    dplyr::select(-any_of(c("especie", "procedencia", "codigo", "numero_bellota"))) |>
     rename(acorn_id = id_bellota) |>
     pivot_longer(
       cols          = matches("^(fecha|peso|hora|minuto|observaciones) t\\d+$"),
@@ -102,7 +102,7 @@ standardise_phase <- function(df, phase_id, id_offset = 0L) {
       )
     ) |>
     rename(fresh_weight = peso, dry_weight = `peso seco`) |>
-    select(-fecha, -hora, -minuto)
+    dplyr::select(-fecha, -hora, -minuto)
 }
 
 # --- 3. Standardise and combine phases --------------------------------------
@@ -136,7 +136,7 @@ df.germ.records <- df.germ.records |>
     match_fun = list(`>=`, `<=`, `==`)
   ) |>
   rename(species = Especie, provenance = Procedencia) |>
-  select(-`Id-bellota-p`, -`Id-bellota-f`, -Fase) |>
+  dplyr::select(-`Id-bellota-p`, -`Id-bellota-f`, -Fase) |>
   relocate(species, provenance, .after = phase)
 
 # --- 5. Recode germination records -------------------------------------------
@@ -158,7 +158,7 @@ df.germ.records <- df.germ.records |>
     Germinada = if_else(Germinada %in% "Moho", NA_character_, Germinada),
     Emergida  = if_else(Emergida  %in% "Moho", NA_character_, Emergida)
   ) |>
-  select(-moho)
+  dplyr::select(-moho)
 
 # 5.2. Binary encoding: "SI" -> 1, "NO" or missing -> 0.
 #      Blank cells mean the acorn was simply not recorded as germinated
@@ -201,7 +201,7 @@ df.germ.records <- df.germ.records |>
     Emergida  = if_else(n_records == 2 & n_t0 == 1 & time == "0",
                         NA_character_, Emergida)
   ) |>
-  select(-n_records, -n_t0)
+  dplyr::select(-n_records, -n_t0)
 
 # 5.4. Final numeric types and column order
 df.germ.records <- df.germ.records |>
@@ -209,7 +209,7 @@ df.germ.records <- df.germ.records |>
     germinated = as.numeric(Germinada),
     emerged    = as.numeric(Emergida)
   ) |>
-  select(
+  dplyr::select(
     acorn_id, time, phase, species, provenance, datetime,
     fresh_weight, dry_weight, germinated, emerged,
     observations_dry_weight, observations_germination

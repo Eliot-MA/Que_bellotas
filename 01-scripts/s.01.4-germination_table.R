@@ -56,7 +56,7 @@ df.analysis <- df.acorns |>
       TRUE               ~ "ok"
     )
   ) |>
-  select(acorn_id, phase, species, provenance,
+  dplyr::select(acorn_id, phase, species, provenance,
          sampling_time, fw0, fw_sampling,
          dw_observed, dw_model_pred, dw_final, dw_source,
          mc, mc_fresh_weight, flag_weird_mc,
