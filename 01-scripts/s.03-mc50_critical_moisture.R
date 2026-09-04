@@ -79,6 +79,14 @@ cat(sprintf("Proportional batch weight w2 (phase_2) = %.4f\n", w2))
 # Var(g) = grad' V grad reduces to the classic two-term closed form when only
 # intercept and slope are involved:
 #   Var(g) = Var(b0)/b1^2 + b0^2 Var(b1)/b1^4 - 2 b0 Cov(b0,b1)/b1^3
+# Extended delta method: returns point estimates, SEs, CIs, AND gradient vectors
+# for each species. Gradients are needed downstream to compute covariances between
+# MC50 estimates of different species (required for pairwise contrasts).
+#
+# Reference for delta-method CI on ED50/MC50 (ratio of coefficients):
+#   Faraggi D, Izikson P, Reiser B (2003). Confidence intervals for the 50 per
+#   cent response dose. Statistics in Medicine, 22(12), 1977-1988.
+#   doi:10.1002/sim.1368
 mc50_delta <- function(fit, data, w2) {
   cf  <- coef(fit)
   V   <- vcov(fit)
@@ -103,7 +111,8 @@ mc50_delta <- function(fit, data, w2) {
            mc50     = g,
            se_delta = se,
            ci_lo    = g - qnorm(0.975) * se,
-           ci_hi    = g + qnorm(0.975) * se)
+           ci_hi    = g + qnorm(0.975) * se,
+           grad     = list(grad))   # store gradient for pairwise covariances
   }))
 }
 
@@ -111,6 +120,115 @@ delta_tab <- mc50_delta(fit_mc50, df.mc, w2)
 
 cat("\n=== Delta-method MC50 (primary) ===\n")
 print(as.data.frame(delta_tab))
+
+# --- 3b. Pairwise contrasts of MC50 (multiple comparisons) --------------------------
+#
+# The MC50 for each species is a ratio of linear functions of the model
+# coefficients: MC50_s = -A_s / B_s.  To compare MC50 between species i and j we
+# need Var(MC50_i - MC50_j), which requires the covariance between the two ratio
+# estimators.  This covariance is obtained from the full variance-covariance matrix
+# of the model coefficients via the delta method (Faraggi et al. 2003):
+#
+#   Cov(MC50_i, MC50_j) = grad_i' %*% V %*% grad_j
+#
+# where grad_s is the gradient of MC50_s with respect to every coefficient in the
+# model, and V is vcov(fit).  This is the same approach used internally by the
+# drc::EDcomp function for comparing ED50 between dose-response curves.
+#
+# Multiple-testing protection: Sidak adjustment is appropriate for a
+# pre-specified family of pairwise contrasts (analogous to a priori hypotheses;
+# see → d.04.model_species.R:435-441 for rationale).
+
+# Covariance between MC50 of two species from their gradient vectors
+cov_mc50 <- function(grad_i, grad_j, V) {
+  as.numeric(t(grad_i) %*% V %*% grad_j)
+}
+
+# All-pairs comparison table: for every unordered pair (i, j) compute the
+# difference MC50_i - MC50_j, its SE (using the full covariance structure),
+# and the unadjusted 95% CI.
+pairwise_mc50 <- function(delta_tab, V) {
+  sp <- delta_tab$species
+  grads <- setNames(delta_tab$grad, sp)
+  mc50s <- setNames(delta_tab$mc50, sp)
+  n <- length(sp)
+
+  pairs <- t(combn(sp, 2))
+  bind_rows(lapply(seq_len(nrow(pairs)), function(k) {
+    i <- pairs[k, 1]; j <- pairs[k, 2]
+    d  <- mc50s[[i]] - mc50s[[j]]
+    vi <- delta_tab$se_delta[delta_tab$species == i]^2
+    vj <- delta_tab$se_delta[delta_tab$species == j]^2
+    covij <- cov_mc50(grads[[i]], grads[[j]], V)
+    se <- sqrt(vi + vj - 2 * covij)
+    tibble(pair = paste(i, "-", j),
+           difference = d, se = se,
+           ci_lo = d - qnorm(0.975) * se,
+           ci_hi = d + qnorm(0.975) * se)
+  }))
+}
+
+V_coefs <- vcov(fit_mc50)
+pw_tab  <- pairwise_mc50(delta_tab, V_coefs)
+
+cat("\n=== Pairwise MC50 differences (unadjusted) ===\n")
+print(as.data.frame(pw_tab))
+
+# Sidak-adjusted p-values for the family of pairwise contrasts
+pw_tab <- pw_tab |>
+  mutate(z = abs(difference) / se,
+         p_raw = 2 * pnorm(-z),
+         m = nrow(pw_tab),                           # number of tests
+         p_sidak = 1 - (1 - p_raw)^m,               # Sidak adjustment
+         sig_005 = p_sidak < 0.05)
+
+cat("\n=== Pairwise MC50 differences (Sidak-adjusted) ===\n")
+print(as.data.frame(pw_tab |> dplyr::select(pair, difference, se, p_raw, p_sidak, sig_005)))
+
+# --- 3c. Compact-letter display (CLD) from Sidak-adjusted pairwise CI -----------
+#
+# Two species share a letter when the Sidak-adjusted 95% CI of their difference
+# includes zero (i.e. not significantly different).  Algorithm follows the same
+# greedy approach used in d.04.model_species.R:362-388.
+
+cld_from_sidak <- function(species_order, pw) {
+  n <- length(species_order)
+  sigmat <- matrix(FALSE, n, n,
+                   dimnames = list(species_order, species_order))
+
+  for (k in seq_len(nrow(pw))) {
+    gr <- strsplit(pw$pair[k], " - ")[[1]]
+    if (pw$sig_005[k] && gr[1] %in% species_order && gr[2] %in% species_order) {
+      sigmat[gr[1], gr[2]] <- TRUE
+      sigmat[gr[2], gr[1]] <- TRUE
+    }
+  }
+
+  out <- setNames(rep(NA_character_, n), species_order)
+  pool <- c(letters, LETTERS)
+  k <- 1
+  remaining <- species_order
+  while (length(remaining) > 0) {
+    L <- pool[k]; k <- k + 1
+    group <- character(0)
+    for (sp in remaining) {
+      if (length(group) == 0 || all(!sigmat[sp, group]))
+        group <- c(group, sp)
+    }
+    out[group] <- vapply(group, function(g) {
+      if (is.na(out[g])) L else paste0(out[g], L)
+    }, character(1))
+    remaining <- setdiff(remaining, group)
+  }
+  out
+}
+
+# Order species by MC50 (descending) for the letter assignment
+sp_order <- delta_tab$species[order(-delta_tab$mc50)]
+letters_vec <- cld_from_sidak(sp_order, pw_tab)
+
+cat("\n=== Compact letter display (Sidak-adjusted) ===\n")
+print(letters_vec)
 
 # --- 4. Stratified bootstrap (validation) ------------------------------------------
 
@@ -184,10 +302,19 @@ boot_side <- boot_tab |>
 
 summary_tab <- full_join(delta_side, boot_side, by = "species")
 
+# Merge CLD letters (Sidak-adjusted pairwise contrasts) into the summary table
+summary_tab <- summary_tab |>
+  mutate(letters = unname(letters_vec[species]))
+
 cat("\n=== MC50 comparison (%, marginalized over batches) ===\n")
 print(as.data.frame(summary_tab))
 
-write.csv(as.data.frame(delta_tab),
+# Drop the gradient (list-column) before writing to CSV; it is only needed
+# in-memory for the pairwise covariance computations.
+delta_tab_csv <- delta_tab |>
+  dplyr::select(-grad)
+
+write.csv(as.data.frame(delta_tab_csv),
           file.path(tablas_dir, "mc50_delta.csv"), row.names = FALSE)
 write.csv(as.data.frame(boot_tab),
           file.path(tablas_dir, "mc50_bootstrap.csv"), row.names = FALSE)
@@ -202,6 +329,12 @@ dir.create(img_dir, recursive = TRUE, showWarnings = FALSE)
 plot_tab <- summary_tab |>
   mutate(species = factor(species, levels = levels(reorder(species, mc50))))
 
+# Max CI upper bound per species, used to position the letters to the right
+# of the error bars so they do not overlap with the graphical elements.
+letter_pos <- plot_tab |>
+  mutate(x_pos = ci_hi_delta + 1.0) |>          # 1 unit right of CI upper end
+  dplyr::select(species, x_pos, letters)
+
 p_mc50 <- ggplot(plot_tab, aes(x = mc50, y = species)) +
   # bootstrap percentile CI (validation layer, thin grey whiskers)
   geom_errorbar(aes(xmin = ci_lo_boot, xmax = ci_hi_boot),
@@ -210,14 +343,22 @@ p_mc50 <- ggplot(plot_tab, aes(x = mc50, y = species)) +
   geom_errorbar(aes(xmin = ci_lo_delta, xmax = ci_hi_delta),
                 width = 0.28, colour = "black", linewidth = 1.1) +
   geom_point(shape = 21, size = 3.2, fill = "black", colour = "black") +
-  scale_x_continuous(limits = c(24, 50), breaks = seq(25, 50, 5),
+  # CLD letters (Sidak-adjusted pairwise 95% CIs)
+  geom_text(data = letter_pos,
+            aes(x = x_pos, y = species, label = letters),
+            hjust = 0, size = 4, fontface = "bold") +
+  scale_x_continuous(limits = c(24, 55), breaks = seq(25, 55, 5),
                      expand = expansion(mult = c(0.02, 0.04))) +
   labs(
     x = expression(MC[50] ~ "(%)"),
     y = "Species",
-    caption = paste("Bold whiskers: Delta-method 95% CI (primary).\n",
-                    "Thin grey whiskers: stratified-bootstrap percentile 95% CI (validation).\n",
-                    "MC50 marginalized over drying batches on the link scale.")
+    caption = paste(
+      "Bold whiskers: Delta-method 95% CI (primary).",
+      "Thin grey whiskers: stratified-bootstrap percentile 95% CI (validation).",
+      "Letters: groups from Sidak-adjusted pairwise 95% CIs on MC50",
+      "(shared letter = no significant difference).",
+      "MC50 marginalized over drying batches on the link scale.",
+      sep = "\n")
   ) +
   theme_classic(base_size = 12) +
   theme(
@@ -265,25 +406,40 @@ plot_bio <- summary_tab |>
                                         "Temperate")), mc50) |>
   mutate(name = factor(name, levels = name))
 
+# CLD letters positioned to the right of the CI upper bound
+letter_pos_bio <- plot_bio |>
+  mutate(x_pos = ci_hi_delta + 1.0) |>
+  dplyr::select(name, x_pos, letters, bioclimate)
+
 p_bio <- ggplot(plot_bio, aes(x = mc50, y = name, colour = bioclimate)) +
   geom_errorbar(aes(xmin = ci_lo_delta, xmax = ci_hi_delta),
                 width = 0.28, linewidth = 1.1) +
   geom_point(size = 3.4) +
+  # CLD letters (colour matches the bioclimate of each species)
+  # show.legend = FALSE: keeps the letters out of the "Bioclimate" legend so
+  # that only the colour key entries (Mediterranean/Sub-Mediterranean/Temperate)
+  # appear there; the letters stay drawn on the plot itself.
+  geom_text(data = letter_pos_bio,
+            aes(x = x_pos, y = name, label = letters, colour = bioclimate),
+            hjust = 0, size = 4, fontface = "bold",
+            show.legend = FALSE) +
   scale_colour_manual(
     values = c("Mediterranean"      = "#D55E00",   # Okabe-Ito vermillion
                "Sub-Mediterranean"  = "#E69F00",   # Okabe-Ito orange
                "Temperate"          = "#0072B2"),  # Okabe-Ito blue
     name = "Bioclimate"
   ) +
-  scale_x_continuous(limits = c(24, 50), breaks = seq(25, 50, 5),
+  scale_x_continuous(limits = c(24, 55), breaks = seq(25, 55, 5),
                      expand = expansion(mult = c(0.02, 0.04))) +
   labs(
     x = expression(MC[50] ~ "(%)"),
     y = NULL,
     caption = paste0(
-      "MC50: water content at 50% germination, \n 
-      marginalized over drying batches on the link scale.\n",
+      "MC50: water content at 50% germination, ",
+      "marginalized over drying batches on the link scale.\n",
       "Points and whiskers: Delta-method estimates with asymptotic 95% CIs.\n",
+      "Letters: groups from Sidak-adjusted pairwise 95% CIs on MC50 ",
+      "(shared letter = no significant difference).\n",
       "Colours denote the characteristic bioclimate of each species."
     )
   ) +

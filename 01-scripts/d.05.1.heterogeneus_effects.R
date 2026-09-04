@@ -21,7 +21,7 @@
 # Si se ejecuta en solitario, los reconstruye con la misma receta.
 # ============================================================
 
-GEN_DASH <- "Y"
+GEN_DASH <- "N"
 
 suppressPackageStartupMessages({
   library(tidyverse)

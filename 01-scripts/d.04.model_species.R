@@ -388,16 +388,37 @@ ic_cld <- function(order, ci_df, alpha = 0.05) {
   out
 }
 
-# Test global de la interaccion time:species (proteccion del procedimiento)
+# Efectos fijos (Anova Type II) de los modelos pre/post umbral: Chisq, gl y p.
+# Incluye el test global de la interaccion time:species (proteccion del procedimiento).
 global_tests <- bind_rows(
   Anova(mm.pre,  type = "II") |> as.data.frame() |> rownames_to_column("term") |> mutate(phase = "PRE"),
   Anova(mm.post, type = "II") |> as.data.frame() |> rownames_to_column("term") |> mutate(phase = "POST")
 ) |>
+  mutate(
+    p_valor       = `Pr(>Chisq)`,
+    significancia = case_when(
+      p_valor < 0.001 ~ "***",
+      p_valor < 0.01  ~ "**",
+      p_valor < 0.05  ~ "*",
+      TRUE            ~ ""
+    )
+  ) |>
+  dplyr::select(phase, term, Df, Chisq, p_valor, significancia)
+
+cat("Efectos fijos (Anova Type II) por fase:\n")
+print(global_tests)
+
+# Tabla de efectos fijos (material suplementario)
+write.csv(global_tests, "00-data/anova_prepost_species.csv", row.names = FALSE)
+cat("Tabla de efectos fijos guardada en 00-data/anova_prepost_species.csv\n")
+
+# Test global de la interaccion time:species (proteccion del procedimiento)
+test_interaccion <- global_tests |>
   filter(term == "time:species") |>
-  mutate(sig = `Pr(>Chisq)` < 0.05)
+  mutate(sig = p_valor < 0.05)
 
 cat("Test global time:species por fase:\n")
-print(global_tests |> dplyr::select(phase, Chisq, Df, `Pr(>Chisq)`, sig))
+print(test_interaccion |> dplyr::select(phase, Chisq, Df, p_valor, sig))
 
 # IC95 de las diferencias por pares por fase (columnas LCL/UCL por pareja)
 pairs_ci <- function(model) {
