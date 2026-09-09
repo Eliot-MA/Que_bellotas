@@ -1,0 +1,97 @@
+---
+title: "Filogenia en modelos de efectos heterogéneos"
+subtitle: "Incorporación de covarianza filogenética en pendientes específicas de especie"
+author: "Open Code & Eliot Mompeán"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    geometry:
+      - margin=2.5cm
+    fontsize: 11pt
+    keep-md: false
+bibliography: ../09-bib/bibliografía.bib
+---
+
+```{r setup, include=FALSE}
+if (!file.exists("00-data/desiccation_traits_long.csv")) {
+  knitr::opts_knit$set(root.dir = "..")
+}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(ape)
+  library(knitr)
+})
+```
+
+# Introducción
+
+Este documento describe la incorporación de la filogenia de *Quercus* en los modelos de efectos heterogéneos de los rasgos de bellota sobre la tasa de desecación.
+
+## Contexto
+
+En análisis previos (`Heterogeneus_effects_acorn_traits.qmd`) se demostró que el efecto de los rasgos (Dim.1, Dim.2, Dim.3 del FAMD) sobre la desecación **varía entre especies**. Los modelos frecuentistas con interacciones triples (`time_s:Dim:species`) capturan esta heterogeneidad, pero asumen que las especies son igualmente independientes entre sí.
+
+La filogenia permite modelar la **covarianza entre especies** basada en su parentesco evolutivo, ofreciendo una alternativa más realista a tratar a todas las especies como independientes.
+
+## Objetivos
+
+1. Evaluar si la filogenia absorbe parte de la heterogeneidad interespecífica en las pendientes
+2. Comparar dos estrategias de modelización:
+   - **M_het_1**: Filogenia en pendientes + especie libre (sin interacciones triples)
+   - **M_het_2**: Filogenia en pendientes + interacciones triples explícitas
+3. Comparar con los modelos frecuentistas equivalentes
+
+## Preguntas clave
+
+- ¿La filogenia captura la variabilidad que antes atribuíamos a diferencias "libres" entre especies?
+- ¿El efecto Dim.2 (pericarpo) que no tenía sentido biológico desaparece al controlar por filogenia?
+- ¿Merece la pena la complejidad adicional del modelo con interacciones triples?
+
+# Datos y filogenia
+
+```{r datos}
+source("01-scripts/d.05.z.pruebas_filo.R", local = TRUE)
+```
+
+# Modelos
+
+## Modelo 1: Filogenia en pendientes (sin interacciones triples)
+
+```{r modelo1, eval=FALSE}
+form_het_phylo <- bf(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    (0 + time_s | gr(phylo_species, cov = A)) +
+    (0 + time_s | species) +
+    (1 + time_s | codigo) +
+    (1 | id_bellota)
+)
+```
+
+## Modelo 2: Filogenia + interacciones triples
+
+```{r modelo2, eval=FALSE}
+form_het_phylo_v2 <- bf(
+  Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+    time_s:Dim.1:species +
+    time_s:Dim.2:species +
+    time_s:Dim.3:species +
+    (0 + time_s | gr(phylo_species, cov = A)) +
+    (1 + time_s | codigo) +
+    (1 | id_bellota)
+)
+```
+
+# Resultados
+
+(To be completed after model fitting)
+
+# Comparación con modelos frecuentistas
+
+(To be completed)
+
+# Conclusiones
+
+(To be completed)
