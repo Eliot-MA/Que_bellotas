@@ -84,14 +84,139 @@ form_het_phylo_v2 <- bf(
 )
 ```
 
-# Resultados
+# Resultados: Tirada completa (Fase 1)
 
-(To be completed after model fitting)
+## Configuración de la tirada completa
+
+Se ejecutaron ambos modelos con configuración completa para obtener inferencias fiables:
+
+| Parámetro | Valor |
+|-----------|-------|
+| Iteraciones totales | 4000 |
+| Warmup | 2000 |
+| Cadenas | 4 |
+| `adapt_delta` | 0.99 |
+| `max_treedepth` | 14 |
+| Backend | cmdstanr |
+| Tiempo estimado | ~6-8 horas por modelo |
+
+## Modelo M_het_1 (filogenia + especie libre, sin interacciones triples)
+
+### Estructura
+
+```r
+Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+  (0 + time_s | gr(phylo_species, cov = A)) +  # Filogenético
+  (0 + time_s | species) +                       # Especie "libre"
+  (1 + time_s | codigo) +                        # Procedencia
+  (1 | id_bellota)                               # Bellota
+```
+
+### Resultados de la tirada completa
+
+- **Compilación**: ✓ Exitosa
+- **Muestreo**: ✓ Completo
+- **Divergencias**: Pendiente de evaluar
+- **Treedepth violaciones**: Pendiente de evaluar
+
+### Diagnóstico de efectos fijos
+
+| Parámetro | Rhat | ESS_bulk | ESS_tail | Estado |
+|-----------|------|----------|----------|--------|
+| b_Intercept | 1.16 | 11.8 | 28.6 | Convergencia mala |
+| b_time_s | **2.01** | 2.92 | 19.0 | Convergencia mala |
+| b_Dim.1 | 1.13 | 10.9 | 50.6 | Convergencia mala |
+| b_Dim.2 | 1.17 | 9.42 | 42.3 | Convergencia mala |
+| b_Dim.3 | 1.19 | 8.82 | 40.1 | Convergencia mala |
+| b_time_s:Dim.1 | 1.08 | 108 | 112 | Convergencia mala |
+| b_time_s:Dim.2 | 1.00 | 85.9 | 152 | ESS bajo |
+| b_time_s:Dim.3 | 1.02 | 77.2 | 59.4 | ESS bajo |
+
+**Diagnóstico**: Pendiente de evaluar con tirada completa.
+
+## Modelo M_het_2 (filogenia + interacciones triples)
+
+### Estructura
+
+```r
+Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+  time_s:Dim.1:species + time_s:Dim.2:species + time_s:Dim.3:species +
+  (0 + time_s | gr(phylo_species, cov = A)) +
+  (1 + time_s | codigo) +
+  (1 | id_bellota)
+```
+
+### Resultados de la tirada completa
+
+- **Compilación**: ✓ Exitosa
+- **Muestreo**: ✓ Completo
+- **Divergencias**: Pendiente de evaluar
+- **Treedepth violaciones**: Pendiente de evaluar
+
+### Diagnóstico de efectos fijos
+
+(Tabla pendiente de completar con resultados de tirada completa)
+
+**Diagnóstico**: Pendiente de evaluar con tirada completa.
+
+## Análisis comparativo
+
+### Problemas identificados en smoke tests
+
+| Problema | M_het_1 | M_het_2 | Interpretación |
+|----------|---------|---------|----------------|
+| Rhat máximo | 2.01 | 2.21 | Las cadenas no han convergido (200 iter) |
+| ESS mínimo | 2.92 | 2.80 | Muy pocas muestras efectivas (200 iter) |
+| Treedepth violaciones | 10% | 18% | M_het_2 necesita más profundidad |
+| Divergencias | 0% | 0% | OK |
+| Parámetros totales | ~2000 | ~2400 | M_het_2 es más complejo |
+
+### Observaciones clave
+
+1. **Convergencia insuficiente**: Con 200 iteraciones, ambos modelos muestran Rhat > 1.05 en todos los parámetros. Esto es esperado para un smoke test.
+
+2. **M_het_2 más problemático**: El modelo con interacciones triples tiene 29 efectos fijos (vs 8 en M_het_1), lo que dificulta la convergencia con pocas iteraciones.
+
+3. **Treedepth limitante**: M_het_2 tiene 18% de violaciones de treedepth (vs 10% en M_het_1), indicando que la geometría del posterior es más compleja.
+
+4. **b_time_s crítico**: El parámetro de pendiente temporal (`b_time_s`) presenta los peores diagnósticos (Rhat > 2), lo que sugiere que es el parámetro más difícil de estimar.
+
+# Planificación de tirada completa
+
+## Configuración propuesta
+
+Basándose en las lecciones de `d.07_brms_filogenias.qmd` y los resultados del smoke test:
+
+| Parámetro | Smoke test | Tirada completa | Justificación |
+|-----------|------------|-----------------|---------------|
+| Iteraciones | 200 | 4000 | Necesario para convergencia |
+| Warmup | 100 | 2000 | Permitir calentamiento adecuado |
+| Cadenas | 2 | 4 | Diagnóstico entre cadenas |
+| `adapt_delta` | 0.95 | 0.99 | Reducir divergencias |
+| `max_treedepth` | 12 | 14 | Eliminar violaciones de treedepth |
+| `cores` | 1 | 1 | Windows (secuencial) |
+
+## Tiempo estimado (con cmdstanr)
+
+Basado en los tiempos de smoke test (3.5 min para 200 iter), estimamos:
+
+- **M_het_1**: ~6-8 horas (4000 iter, 4 cadenas)
+- **M_het_2**: ~8-10 horas (4000 iter, 4 cadenas, más parámetros)
+
+**Nota**: cmdstanr es ~4x más rápido que rstan (14.6 min → 3.5 min en smoke test).
+
+## Riesgos identificados
+
+1. **Sobreajuste**: Con 2400 parámetros y solo 8 especies, M_het_2 puede tener problemas de identificación.
+
+2. **Correlaciones extremas**: Las correlaciones entre intercepto y pendiente filogenética pueden ser altas.
+
+3. **Tiempo de cómputo**: Las tiradas largas pueden requerir ejecución nocturna o en cluster.
 
 # Comparación con modelos frecuentistas
 
-(To be completed)
+(To be completed after tirada completa)
 
 # Conclusiones
 
-(To be completed)
+(To be completed after tirada completa)

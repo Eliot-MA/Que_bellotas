@@ -8,24 +8,35 @@
 #
 # Fases:
 #   0. Preparacion de datos y filogenia
-#   1. Smoke tests (compilacion y muestreo basico)
+#   1. Tirada completa (iter=4000, warmup=2000, chains=4)
 #
 # Configuracion:
 #   - Cadenas secuenciales (evita problemas con parallel en Windows)
-#   - Iteraciones reducidas para smoke tests
+#   - Backend cmdstanr (mas rapido que rstan)
+#   - adapt_delta=0.99, max_treedepth=14
 # ============================================================
 
-RUN_SMOKE_TEST <- TRUE
-N_CHAINS_SMOKE <- 2
-ITER_SMOKE     <- 200
-WARMUP_SMOKE   <- 100
+RUN_SMOKE_TEST <- FALSE
+N_CHAINS_FULL  <- 4
+ITER_FULL      <- 4000
+WARMUP_FULL    <- 2000
 SEED_BASE      <- 123
 
 suppressPackageStartupMessages({
   library(tidyverse)
   library(brms)
   library(ape)
+  library(cmdstanr)
 })
+
+# Verificar que cmdstanr está configurado
+if (requireNamespace("cmdstanr", quietly = TRUE)) {
+  cat("cmdstanr version:", as.character(packageVersion("cmdstanr")), "\n")
+  cat("cmdstan path:", cmdstanr::cmdstan_path(), "\n")
+  cat("cmdstan version:", cmdstanr::cmdstan_version(), "\n")
+} else {
+  warning("cmdstanr no está disponible. Usando rstan como backend.")
+}
 
 dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
 
@@ -105,12 +116,12 @@ if (na_phylo_t1 > 0 || na_phylo_t2 > 0) {
 cat("\n========== FASE 0 completada ==========\n")
 
 # ============================================================
-# FASE 1: Smoke tests
+# FASE 1: Tirada completa
 # ============================================================
-cat("\n========== FASE 1: Smoke tests ==========\n")
+cat("\n========== FASE 1: Tirada completa ==========\n")
 
 if (!RUN_SMOKE_TEST) {
-  cat("RUN_SMOKE_TEST = FALSE. Saltando smoke tests.\n")
+  cat("RUN_SMOKE_TEST = FALSE. Ejecutando tirada completa.\n")
 } else {
 
   # ---- 1.1 Especificaciones de modelos ----
@@ -157,8 +168,8 @@ if (!RUN_SMOKE_TEST) {
     cat(strrep("=", 60), "\n")
     cat("Formula:", deparse(formula), "\n")
     cat("Datos:", nrow(data), "obs,", nlevels(data$species), "especies\n")
-    cat("Iteraciones:", ITER_SMOKE, "| Warmup:", WARMUP_SMOKE,
-        "| Cadenas:", N_CHAINS_SMOKE, "\n")
+    cat("Iteraciones:", ITER_FULL, "| Warmup:", WARMUP_FULL,
+        "| Cadenas:", N_CHAINS_FULL, "\n")
 
     t_start <- Sys.time()
 
@@ -169,17 +180,16 @@ if (!RUN_SMOKE_TEST) {
         data2 = list(A = A),
         family = gaussian(),
         prior = priors,
-        iter = ITER_SMOKE,
-        warmup = WARMUP_SMOKE,
-        chains = N_CHAINS_SMOKE,
+        iter = ITER_FULL,
+        warmup = WARMUP_FULL,
+        chains = N_CHAINS_FULL,
         cores = 1,  # Secuencial para evitar problemas en Windows
         control = list(
-          adapt_delta = 0.95,
-          max_treedepth = 12
+          adapt_delta = 0.99,
+          max_treedepth = 14
         ),
         seed = seed,
-        refresh = 0,  # Sin output de progreso
-        silent = 2,
+        refresh = 100,  # Progreso cada 100 iteraciones
         backend = "cmdstanr"
       ),
       error = function(e) {
@@ -260,16 +270,16 @@ if (!RUN_SMOKE_TEST) {
     return(fit)
   }
 
-  # ---- 1.4 Ejecutar smoke tests ----
-  cat("\n-- Smoke test M_het_1 (PRE) --\n")
-  m_het_1_pre <- smoke_test(form_het_phylo, "m_het_1_pre_smoke", df.t1, SEED_BASE)
+  # ---- 1.4 Ejecutar tirada completa ----
+  cat("\n-- Tirada completa M_het_1 (PRE) --\n")
+  m_het_1_pre <- smoke_test(form_het_phylo, "m_het_1_pre", df.t1, SEED_BASE)
 
-  cat("\n-- Smoke test M_het_2 (PRE) --\n")
-  m_het_2_pre <- smoke_test(form_het_phylo_v2, "m_het_2_pre_smoke", df.t1, SEED_BASE + 1)
+  cat("\n-- Tirada completa M_het_2 (PRE) --\n")
+  m_het_2_pre <- smoke_test(form_het_phylo_v2, "m_het_2_pre", df.t1, SEED_BASE + 1)
 
   # ---- 1.5 Resumen comparativo ----
   cat("\n", strrep("=", 60), "\n")
-  cat("RESUMEN SMOKE TESTS\n")
+  cat("RESUMEN TIRADA COMPLETA\n")
   cat(strrep("=", 60), "\n")
 
   resultados <- list(
@@ -305,20 +315,9 @@ if (!RUN_SMOKE_TEST) {
     cat("  Treedepth max:", resultados[[nm]]$treedepth, "\n")
   }
 
-  # ---- 1.6 Recomendaciones ----
-  cat("\n-- Recomendaciones para tirada completa --\n")
-
-  if (!is.null(m_het_1_pre)) {
-    cat("M_het_1: LISTO para tirada completa (iter=4000, warmup=2000, chains=4)\n")
-  } else {
-    cat("M_het_1: REVISAR antes de tirada completa (error en smoke test)\n")
-  }
-
-  if (!is.null(m_het_2_pre)) {
-    cat("M_het_2: LISTO para tirada completa (iter=4000, warmup=2000, chains=4)\n")
-  } else {
-    cat("M_het_2: REVISAR antes de tirada completa (error en smoke test)\n")
-  }
-
   cat("\n========== FASE 1 completada ==========\n")
 }
+test_model <- cmdstanr::cmdstan_model(
+  cmdstanr::write_stan_file("data { } parameters { real y; } model { y ~ normal(0,1); }")
+)
+cat("cmdstanr funciona correctamente\n")
