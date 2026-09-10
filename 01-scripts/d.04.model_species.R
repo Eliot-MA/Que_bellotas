@@ -158,7 +158,7 @@ write.csv(sumtable_breakpoints, "00-data/sumtable_breakpoints.csv", row.names = 
 ## Fit model
 
 # 1) Create time segmented
-umbral <- 100
+umbral <- 94
 
 df <- df |> 
   mutate(
@@ -274,6 +274,7 @@ mm.pre <- glmmTMB(Moisture_content ~ time * species + (time|provenance) + (time|
 
 ## Model post
 mm.post <- glmmTMB(Moisture_content ~ time * species + (time|provenance) + (time|id_bellota), data = df.t2)
+
 
 # ============================================================
 # Export de resultados para el articulo / material suplementario
