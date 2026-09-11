@@ -16,7 +16,6 @@
 #   - adapt_delta=0.99, max_treedepth=14
 # ============================================================
 
-RUN_SMOKE_TEST <- FALSE
 N_CHAINS_FULL  <- 4
 ITER_FULL      <- 4000
 WARMUP_FULL    <- 2000
@@ -26,16 +25,19 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(brms)
   library(ape)
-  library(cmdstanr)
 })
 
-# Verificar que cmdstanr está configurado
+# cmdstanr es informativo: si falla, se avisa pero el script sigue y el
+# error real de brm() quedara capturado en el smoke_test.
 if (requireNamespace("cmdstanr", quietly = TRUE)) {
   cat("cmdstanr version:", as.character(packageVersion("cmdstanr")), "\n")
   cat("cmdstan path:", cmdstanr::cmdstan_path(), "\n")
-  cat("cmdstan version:", cmdstanr::cmdstan_version(), "\n")
+  tryCatch(
+    cat("cmdstan version:", cmdstanr::cmdstan_version(), "\n"),
+    error = function(e) cat("  (cmdstan no localizado)\n")
+  )
 } else {
-  warning("cmdstanr no está disponible. Usando rstan como backend.")
+  warning("cmdstanr no está instalado; los ajustes con backend='cmdstanr' fallaran.")
 }
 
 dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
@@ -45,29 +47,35 @@ dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
 # ============================================================
 cat("\n========== FASE 0: Preparacion ==========\n")
 
-# ---- 0.1 Cargar datos ----
-if (!exists("df") || !exists("df.t1") || !exists("df.t2")) {
-  df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
-  df.famd     <- read.csv("00-data/famd_ind_coord.csv")
-  df <- df.bellotas |>
-    dplyr::select(-X) |>
-    dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
-    left_join(y = df.famd, by = "id_bellota") |>
-    tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
-    rename(time = tiempo_acumulado_horas) |>
-    mutate(
-      time_s     = as.vector(scale(time)),
-      species    = factor(species),
-      provenance = factor(provenance),
-      id_bellota = factor(id_bellota)
-    )
-  t94  <- as.vector((94 - mean(df$time)) / sd(df$time))
-  df.t1 <- df |> filter(time_s < t94)
-  df.t2 <- df |> filter(time_s > t94)
-  cat("Datos cargados:", nrow(df.t1), "obs PRE,", nrow(df.t2), "obs POST\n")
-} else {
-  cat("Usando dataframes existentes en el entorno\n")
+# ---- 0.1 Cargar datos (siempre frescos; no reutilizar dataframes viejos
+#   del entorno, que pueden tener columnas obsoletas) ----
+df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
+df.famd     <- read.csv("00-data/famd_ind_coord.csv")
+df <- df.bellotas |>
+  dplyr::select(-X) |>
+  dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
+  left_join(y = df.famd, by = "id_bellota") |>
+  tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
+  rename(time = tiempo_acumulado_horas) |>
+  mutate(
+    time_s     = as.vector(scale(time)),
+    species    = factor(species),
+    provenance = factor(provenance),
+    id_bellota = factor(id_bellota)
+  )
+t94  <- as.vector((94 - mean(df$time)) / sd(df$time))
+df.t1 <- df |> filter(time_s < t94)
+df.t2 <- df |> filter(time_s > t94)
+
+needed_cols <- c("time_s", "species", "codigo", "id_bellota", "Dim.1", "Dim.2", "Dim.3")
+missing_t1  <- setdiff(needed_cols, colnames(df.t1))
+missing_t2  <- setdiff(needed_cols, colnames(df.t2))
+if (length(missing_t1) > 0 || length(missing_t2) > 0) {
+  stop("Faltan columnas requeridas: ",
+       paste(unique(c(missing_t1, missing_t2)), collapse = ", "))
 }
+
+cat("Datos cargados:", nrow(df.t1), "obs PRE,", nrow(df.t2), "obs POST\n")
 
 # ---- 0.2 Cargar filogenia y matriz A ----
 if (!file.exists("00-data/phylo/oak_tree.rds") || !file.exists("00-data/phylo/oak_vcv.rds")) {
@@ -169,6 +177,7 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
 
     t_start <- Sys.time()
 
+    fit_err <- NULL
     fit <- tryCatch(
       brm(
         formula,
@@ -189,8 +198,9 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
         backend = "cmdstanr"
       ),
       error = function(e) {
+        fit_err <<- conditionMessage(e)
         cat("\n*** ERROR en compilacion/muestreo ***\n")
-        cat(conditionMessage(e), "\n")
+        cat(fit_err, "\n")
         return(NULL)
       }
     )
@@ -199,8 +209,9 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
     elapsed <- as.numeric(difftime(t_end, t_start, units = "mins"))
 
     if (is.null(fit)) {
-      cat("RESULTADO: FALLO (", round(elapsed, 1), "min)\n")
-      return(invisible(NULL))
+      cat("\n!!!! FALLO:", name, " -> ", fit_err, "\n", sep = "")
+      cat("RESULTADO: FALLO (", round(elapsed, 1), "min)\n", sep = "")
+      return(list(fit = NULL, error = fit_err, elapsed = elapsed))
     }
 
     cat("\nRESULTADO: COMPILADO Y MUESTREADO (", round(elapsed, 1), "min)\n")
@@ -296,21 +307,22 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
       cat("Trace plots guardados en: ", file_png, "\n", sep = "")
     }
 
-    return(fit)
+    return(list(fit = fit, error = NULL, elapsed = elapsed))
   }
 
   # ---- 1.4 Ejecutar tirada completa ----
+  t_total <- Sys.time()
   cat("\n-- Tirada completa M_het_1 (PRE) --\n")
-  m_het_1_pre <- smoke_test(form_het_phylo, "m_het_1_pre", df.t1, SEED_BASE)
+  res_het_1_pre  <- smoke_test(form_het_phylo, "m_het_1_pre", df.t1, SEED_BASE)
 
   cat("\n-- Tirada completa M_het_2 (PRE) --\n")
-  m_het_2_pre <- smoke_test(form_het_phylo_v2, "m_het_2_pre", df.t1, SEED_BASE + 1)
+  res_het_2_pre  <- smoke_test(form_het_phylo_v2, "m_het_2_pre", df.t1, SEED_BASE + 1)
 
   cat("\n-- Tirada completa M_het_1 (POST) --\n")
-  m_het_1_post <- smoke_test(form_het_phylo, "m_het_1_post", df.t2, SEED_BASE + 2)
+  res_het_1_post <- smoke_test(form_het_phylo, "m_het_1_post", df.t2, SEED_BASE + 2)
 
   cat("\n-- Tirada completa M_het_2 (POST) --\n")
-  m_het_2_post <- smoke_test(form_het_phylo_v2, "m_het_2_post", df.t2, SEED_BASE + 3)
+  res_het_2_post <- smoke_test(form_het_phylo_v2, "m_het_2_post", df.t2, SEED_BASE + 3)
 
   # ---- 1.5 Resumen comparativo ----
   cat("\n", strrep("=", 60), "\n")
@@ -320,57 +332,43 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
   resultados <- list(
     M_het_1_PRE = list(
       formula = "sin interacciones triples",
-      compilado = !is.null(m_het_1_pre),
-      divergencias = if (!is.null(m_het_1_pre)) {
-        draws <- as_draws_df(m_het_1_pre)
-        sum(draws$.divergent__ == 1, na.rm = TRUE)
-      } else NA_integer_,
-      treedepth = if (!is.null(m_het_1_pre)) {
-        max(as_draws_df(m_het_1_pre)$.treedepth__, na.rm = TRUE)
-      } else NA_integer_
+      fit = res_het_1_pre$fit,
+      error = res_het_1_pre$error
     ),
     M_het_2_PRE = list(
       formula = "con interacciones triples",
-      compilado = !is.null(m_het_2_pre),
-      divergencias = if (!is.null(m_het_2_pre)) {
-        draws <- as_draws_df(m_het_2_pre)
-        sum(draws$.divergent__ == 1, na.rm = TRUE)
-      } else NA_integer_,
-      treedepth = if (!is.null(m_het_2_pre)) {
-        max(as_draws_df(m_het_2_pre)$.treedepth__, na.rm = TRUE)
-      } else NA_integer_
+      fit = res_het_2_pre$fit,
+      error = res_het_2_pre$error
     ),
     M_het_1_POST = list(
       formula = "sin interacciones triples",
-      compilado = !is.null(m_het_1_post),
-      divergencias = if (!is.null(m_het_1_post)) {
-        draws <- as_draws_df(m_het_1_post)
-        sum(draws$.divergent__ == 1, na.rm = TRUE)
-      } else NA_integer_,
-      treedepth = if (!is.null(m_het_1_post)) {
-        max(as_draws_df(m_het_1_post)$.treedepth__, na.rm = TRUE)
-      } else NA_integer_
+      fit = res_het_1_post$fit,
+      error = res_het_1_post$error
     ),
     M_het_2_POST = list(
       formula = "con interacciones triples",
-      compilado = !is.null(m_het_2_post),
-      divergencias = if (!is.null(m_het_2_post)) {
-        draws <- as_draws_df(m_het_2_post)
-        sum(draws$.divergent__ == 1, na.rm = TRUE)
-      } else NA_integer_,
-      treedepth = if (!is.null(m_het_2_post)) {
-        max(as_draws_df(m_het_2_post)$.treedepth__, na.rm = TRUE)
-      } else NA_integer_
+      fit = res_het_2_post$fit,
+      error = res_het_2_post$error
     )
   )
 
   for (nm in names(resultados)) {
-    cat("\n", nm, ":\n")
-    cat("  Formula:", resultados[[nm]]$formula, "\n")
-    cat("  Compilado:", resultados[[nm]]$compilado, "\n")
-    cat("  Divergencias:", resultados[[nm]]$divergencias, "\n")
-    cat("  Treedepth max:", resultados[[nm]]$treedepth, "\n")
+    r <- resultados[[nm]]
+    cat("\n", nm, ":\n", sep = "")
+    cat("  Formula:", r$formula, "\n")
+    if (!is.null(r$fit)) {
+      draws <- as_draws_df(r$fit)
+      cat("  Compilado: TRUE\n")
+      cat("  Divergencias:", sum(draws$.divergent__ == 1, na.rm = TRUE), "\n")
+      cat("  Treedepth max:", max(draws$.treedepth__, na.rm = TRUE), "\n")
+    } else {
+      cat("  Compilado: FALSE\n")
+      cat("  Error: ", r$error, "\n", sep = "")
+    }
   }
+
+  t_total_elapsed <- as.numeric(difftime(Sys.time(), t_total, units = "mins"))
+  cat("\nTiempo total tirada:", round(t_total_elapsed, 1), "min\n")
 
   cat("\n========== FASE 1 completada ==========\n")
 
