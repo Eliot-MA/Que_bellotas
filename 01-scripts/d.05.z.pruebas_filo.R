@@ -263,6 +263,39 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
     saveRDS(fit, file.path("00-data/phylo", paste0(name, ".rds")))
     cat("\nModelo guardado en: 00-data/phylo/", name, ".rds\n", sep = "")
 
+    # Trace plots en PNG
+    cat("\n-- Generando trace plots --\n")
+    trace_params <- grep(
+      "^(b_|sd_|cor_|sigma)",
+      posterior::variables(fit),
+      value = TRUE
+    )
+    p_trace <- tryCatch(
+      bayesplot::mcmc_trace(
+        fit,
+        pars = trace_params,
+        facet_args = list(ncol = 4, scales = "free")
+      ) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(size = 7)),
+      error = function(e) {
+        cat("Trace plot no disponible:", conditionMessage(e), "\n")
+        NULL
+      }
+    )
+    if (!is.null(p_trace)) {
+      file_png <- file.path("00-data/phylo", paste0("trace_", name, ".png"))
+      n_rows <- ceiling(length(trace_params) / 4)
+      ggplot2::ggsave(
+        filename = file_png,
+        plot     = p_trace,
+        width    = 14,
+        height   = max(6, 2 * n_rows),
+        dpi      = 150,
+        limitsize = FALSE
+      )
+      cat("Trace plots guardados en: ", file_png, "\n", sep = "")
+    }
+
     return(fit)
   }
 
@@ -273,13 +306,19 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
   cat("\n-- Tirada completa M_het_2 (PRE) --\n")
   m_het_2_pre <- smoke_test(form_het_phylo_v2, "m_het_2_pre", df.t1, SEED_BASE + 1)
 
+  cat("\n-- Tirada completa M_het_1 (POST) --\n")
+  m_het_1_post <- smoke_test(form_het_phylo, "m_het_1_post", df.t2, SEED_BASE + 2)
+
+  cat("\n-- Tirada completa M_het_2 (POST) --\n")
+  m_het_2_post <- smoke_test(form_het_phylo_v2, "m_het_2_post", df.t2, SEED_BASE + 3)
+
   # ---- 1.5 Resumen comparativo ----
   cat("\n", strrep("=", 60), "\n")
   cat("RESUMEN TIRADA COMPLETA\n")
   cat(strrep("=", 60), "\n")
 
   resultados <- list(
-    M_het_1 = list(
+    M_het_1_PRE = list(
       formula = "sin interacciones triples",
       compilado = !is.null(m_het_1_pre),
       divergencias = if (!is.null(m_het_1_pre)) {
@@ -290,7 +329,7 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
         max(as_draws_df(m_het_1_pre)$.treedepth__, na.rm = TRUE)
       } else NA_integer_
     ),
-    M_het_2 = list(
+    M_het_2_PRE = list(
       formula = "con interacciones triples",
       compilado = !is.null(m_het_2_pre),
       divergencias = if (!is.null(m_het_2_pre)) {
@@ -299,6 +338,28 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
       } else NA_integer_,
       treedepth = if (!is.null(m_het_2_pre)) {
         max(as_draws_df(m_het_2_pre)$.treedepth__, na.rm = TRUE)
+      } else NA_integer_
+    ),
+    M_het_1_POST = list(
+      formula = "sin interacciones triples",
+      compilado = !is.null(m_het_1_post),
+      divergencias = if (!is.null(m_het_1_post)) {
+        draws <- as_draws_df(m_het_1_post)
+        sum(draws$.divergent__ == 1, na.rm = TRUE)
+      } else NA_integer_,
+      treedepth = if (!is.null(m_het_1_post)) {
+        max(as_draws_df(m_het_1_post)$.treedepth__, na.rm = TRUE)
+      } else NA_integer_
+    ),
+    M_het_2_POST = list(
+      formula = "con interacciones triples",
+      compilado = !is.null(m_het_2_post),
+      divergencias = if (!is.null(m_het_2_post)) {
+        draws <- as_draws_df(m_het_2_post)
+        sum(draws$.divergent__ == 1, na.rm = TRUE)
+      } else NA_integer_,
+      treedepth = if (!is.null(m_het_2_post)) {
+        max(as_draws_df(m_het_2_post)$.treedepth__, na.rm = TRUE)
       } else NA_integer_
     )
   )
@@ -315,4 +376,3 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
 
   
 
-readRDS("00-data/phylo/m_het_1_pre.rds")
