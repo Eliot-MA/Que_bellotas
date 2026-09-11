@@ -30,6 +30,8 @@
 ## formal estimates.                                                          ##
 ##                                                                           ##
 ## Outputs:                                                                  ##
+##   00-data/models/germ_final_model.rds                                      ##
+##   00-data/anova_germ_final.csv                                             ##
 ##   00-data/tablas_resumen/glm_dredge_with_phase.csv                        ##
 ##   00-data/tablas_resumen/glm_dredge_no_phase.csv                          ##
 ##   00-data/tablas_resumen/glm_global_comparison.csv                        ##
@@ -185,6 +187,37 @@ phase_in_best <- function(fit) {
   any(grepl("phase", labels(terms(formula(fit)))))
 }
 cat("Phase retained in best WITH-phase model?", phase_in_best(best_with_phase), "\n")
+
+# --- 4b. Final model: phase as simple effect + mc:species interaction ------------
+
+glm_final <- glm(
+  germinated ~ mc * species + phase,
+  family = binomial, data = df.germ, na.action = na.fail
+)
+
+cat("\n=== Final model ===\n")
+cat("Formula:", deparse(formula(glm_final)), "\n")
+print(summary(glm_final))
+
+anova_final <- as.data.frame(anova(glm_final, test = "Chisq"))
+anova_final$term <- rownames(anova_final)
+
+cat("\n=== ANOVA table (Type I, Chi-squared) ===\n")
+print(anova_final)
+
+# --- 4c. Phase-level descriptive summary (console only) -------------------------
+
+phase_summary <- df.germ |>
+  group_by(phase) |>
+  summarise(
+    n        = n(),
+    germ_mean = round(mean(germinated), 3),
+    mc_mean   = round(mean(mc), 2),
+    .groups   = "drop"
+  )
+
+cat("\n=== Germination and MC by phase ===\n")
+print(as.data.frame(phase_summary))
 
 # --- 5. Selected-model coefficients ----------------------------------------------
 
@@ -376,5 +409,11 @@ write.csv(dharma_tests,
           file.path(tablas_dir, "glm_dharma_tests.csv"),
           row.names = FALSE)
 
-cat("\ns.02 done: dredge tables, global comparison, coefficients, DHARMa checks",
-    "and predictive figures written\n")
+# Final model + ANOVA table
+saveRDS(glm_final, file.path("00-data/models", "germ_final_model.rds"))
+write.csv(anova_final,
+          file.path("00-data", "anova_germ_final.csv"),
+          row.names = FALSE)
+
+cat("\ns.02 done: dredge tables, global comparison, coefficients, DHARMa checks,",
+    "final model, ANOVA table, and predictive figures written\n")
