@@ -84,11 +84,11 @@ form_het_phylo_v2 <- bf(
 )
 ```
 
-# Resultados: Tirada completa (Fase 1)
+# Resultados: Tirada completa
 
-## Configuración de la tirada completa
+## Configuración
 
-Se ejecutaron ambos modelos con configuración completa para obtener inferencias fiables:
+Ambos modelos se ejecutaron con la configuración completa:
 
 | Parámetro | Valor |
 |-----------|-------|
@@ -98,7 +98,10 @@ Se ejecutaron ambos modelos con configuración completa para obtener inferencias
 | `adapt_delta` | 0.99 |
 | `max_treedepth` | 14 |
 | Backend | cmdstanr |
-| Tiempo estimado | ~6-8 horas por modelo |
+| Observaciones | 2066 |
+| Especies | 8 |
+| Códigos de procedencia | 16 |
+| Bellotas | 430 |
 
 ## Modelo M_het_1 (filogenia + especie libre, sin interacciones triples)
 
@@ -112,27 +115,46 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
   (1 | id_bellota)                               # Bellota
 ```
 
-### Resultados de la tirada completa
+### Convergencia
 
-- **Compilación**: ✓ Exitosa
-- **Muestreo**: ✓ Completo
-- **Divergencias**: Pendiente de evaluar
-- **Treedepth violaciones**: Pendiente de evaluar
+| Métrica | Valor | Criterio |
+|---------|-------|----------|
+| Rhat máximo | 1.02 | < 1.05 ✅ |
+| ESS mínimo | 374 (Dim.3) | > 400 ⚠️ (marginal) |
+| Divergencias | 5/8000 (0.06%) | < 1% ✅ |
 
-### Diagnóstico de efectos fijos
+### Efectos fijos
 
-| Parámetro | Rhat | ESS_bulk | ESS_tail | Estado |
-|-----------|------|----------|----------|--------|
-| b_Intercept | 1.16 | 11.8 | 28.6 | Convergencia mala |
-| b_time_s | **2.01** | 2.92 | 19.0 | Convergencia mala |
-| b_Dim.1 | 1.13 | 10.9 | 50.6 | Convergencia mala |
-| b_Dim.2 | 1.17 | 9.42 | 42.3 | Convergencia mala |
-| b_Dim.3 | 1.19 | 8.82 | 40.1 | Convergencia mala |
-| b_time_s:Dim.1 | 1.08 | 108 | 112 | Convergencia mala |
-| b_time_s:Dim.2 | 1.00 | 85.9 | 152 | ESS bajo |
-| b_time_s:Dim.3 | 1.02 | 77.2 | 59.4 | ESS bajo |
+| Parámetro | Est ± SE | IC 95% | Significativo |
+|-----------|----------|--------|---------------|
+| Intercept | 24.18 ± 1.21 | (21.90 – 26.63) | ✅ |
+| time_s | -17.68 ± 2.47 | (-21.74 – -11.81) | ✅ |
+| Dim.1 (tamaño) | 1.11 ± 0.16 | (0.79 – 1.43) | ✅ |
+| Dim.2 (pericarpo) | -1.02 ± 0.22 | (-1.45 – -0.59) | ✅ |
+| Dim.3 (cicatriz) | -0.66 ± 0.21 | (-1.10 – -0.24) | ✅ |
+| **time_s:Dim.1** | **1.77 ± 0.12** | (1.54 – 2.00) | ✅ Protector |
+| **time_s:Dim.2** | **-0.86 ± 0.16** | (-1.18 – -0.55) | ✅ Acelerador |
+| **time_s:Dim.3** | **-0.56 ± 0.16** | (-0.87 – -0.25) | ✅ Acelerador |
 
-**Diagnóstico**: Pendiente de evaluar con tirada completa.
+### Estructura de varianza
+
+| Nivel | sd(time_s) | IC 95% | Interpretación |
+|-------|-----------|--------|----------------|
+| phylo_species | 2.36 | (0.09 – 7.65) | Variación filogenética en pendiente |
+| species (libre) | 1.80 | (0.08 – 5.45) | Variación residual entre especies |
+| codigo | 5.45 | (3.63 – 7.98) | **Mayor fuente de variación en pendiente** |
+| id_bellota (Intercept) | 2.70 | (2.52 – 2.89) | Variación individual |
+| sigma | 0.68 | (0.66 – 0.70) | Error residual |
+
+### Señal filogenética
+
+| Métrica | Mediana | IC 90% |
+|---------|---------|--------|
+| **CCI filogenético** (pendiente) | **0.075** | (0.0006 – 0.512) |
+| **CCI especie total** (phylo + libre) | **0.183** | (0.014 – 0.617) |
+| **Proporción filogenética** (de esp.) | **0.607** | (0.010 – 0.996) |
+
+**Lectura**: La señal filogenética es **baja-moderada** (~7.5% de la varianza de la pendiente). Sin embargo, el **60.7%** de la varianza entre especies se atribuye a la filogenia en lugar de especie "libre". La incertidumbre es muy amplia (IC [1%–99.6%]), reflejando la limitación de solo 8 especies.
 
 ## Modelo M_het_2 (filogenia + interacciones triples)
 
@@ -146,77 +168,122 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
   (1 | id_bellota)
 ```
 
-### Resultados de la tirada completa
+### Convergencia
 
-- **Compilación**: ✓ Exitosa
-- **Muestreo**: ✓ Completo
-- **Divergencias**: Pendiente de evaluar
-- **Treedepth violaciones**: Pendiente de evaluar
+| Métrica | Valor | Criterio |
+|---------|-------|----------|
+| Rhat máximo | 1.01 | < 1.05 ✅ |
+| ESS mínimo | 596 (Dim.3) | > 400 ✅ |
+| Divergencias | 14/8000 (0.17%) | < 1% ✅ |
 
-### Diagnóstico de efectos fijos
+### Efectos fijos globales
 
-(Tabla pendiente de completar con resultados de tirada completa)
+| Parámetro | Est ± SE | IC 95% | Significativo |
+|-----------|----------|--------|---------------|
+| Intercept | 24.17 ± 1.21 | (21.83 – 26.74) | ✅ |
+| time_s | -17.77 ± 2.11 | (-21.36 – -13.00) | ✅ |
+| Dim.1 | 1.10 ± 0.16 | (0.81 – 1.41) | ✅ |
+| Dim.2 | -1.03 ± 0.22 | (-1.45 – -0.60) | ✅ |
+| Dim.3 | -0.66 ± 0.22 | (-1.09 – -0.22) | ✅ |
+| time_s:Dim.1 | 1.67 ± 0.27 | (1.13 – 2.20) | ✅ |
+| **time_s:Dim.2** | **-0.39 ± 0.29** | **(-0.97 – 0.17)** | **❌ No significativo** |
+| time_s:Dim.3 | -1.63 ± 0.32 | (-2.27 – -1.02) | ✅ |
 
-**Diagnóstico**: Pendiente de evaluar con tirada completa.
+### Ajustes específicos de especie (interacciones triples)
 
-## Análisis comparativo
+**Dim.1 (tamaño)** — desviación respecto a la especie base (coccifera):
 
-### Problemas identificados en smoke tests
+| Especie | Ajuste (Est ± SE) | IC 95% |
+|---------|-------------------|--------|
+| faginea | 0.32 ± 0.51 | (-0.70 – 1.34) |
+| ilex | -0.30 ± 0.32 | (-0.92 – 0.36) |
+| **petraea** | **1.92 ± 0.36** | (1.23 – 2.63) ✅ |
+| **pubescens** | **1.40 ± 0.46** | (0.48 – 2.28) ✅ |
+| pyrenaica | 0.11 ± 0.35 | (-0.57 – 0.78) |
+| **robur** | **-0.85 ± 0.39** | (-1.60 – -0.09) ✅ |
+| suber | -0.48 ± 0.38 | (-1.23 – 0.28) |
 
-| Problema | M_het_1 | M_het_2 | Interpretación |
-|----------|---------|---------|----------------|
-| Rhat máximo | 2.01 | 2.21 | Las cadenas no han convergido (200 iter) |
-| ESS mínimo | 2.92 | 2.80 | Muy pocas muestras efectivas (200 iter) |
-| Treedepth violaciones | 10% | 18% | M_het_2 necesita más profundidad |
-| Divergencias | 0% | 0% | OK |
-| Parámetros totales | ~2000 | ~2400 | M_het_2 es más complejo |
+**Dim.2 (pericarpo)** — desviación respecto a coccifera:
 
-### Observaciones clave
+| Especie | Ajuste (Est ± SE) | IC 95% |
+|---------|-------------------|--------|
+| faginea | -0.06 ± 0.47 | (-0.98 – 0.87) |
+| ilex | -0.47 ± 0.40 | (-1.24 – 0.34) |
+| **petraea** | **-1.39 ± 0.40** | (-2.17 – -0.60) ✅ |
+| **pubescens** | **-1.98 ± 0.63** | (-3.25 – -0.76) ✅ |
+| **pyrenaica** | **-1.49 ± 0.54** | (-2.57 – -0.48) ✅ |
+| **robur** | **-1.02 ± 0.53** | (-2.07 – -0.00) ✅ |
+| suber | 0.32 ± 0.46 | (-0.57 – 1.24) |
 
-1. **Convergencia insuficiente**: Con 200 iteraciones, ambos modelos muestran Rhat > 1.05 en todos los parámetros. Esto es esperado para un smoke test.
+**Dim.3 (cicatriz)** — desviación respecto a coccifera:
 
-2. **M_het_2 más problemático**: El modelo con interacciones triples tiene 29 efectos fijos (vs 8 en M_het_1), lo que dificulta la convergencia con pocas iteraciones.
+| Especie | Ajuste (Est ± SE) | IC 95% |
+|---------|-------------------|--------|
+| **faginea** | **1.32 ± 0.53** | (0.28 – 2.39) ✅ |
+| **ilex** | **1.28 ± 0.46** | (0.35 – 2.16) ✅ |
+| petraea | 0.52 ± 0.43 | (-0.31 – 1.38) |
+| **pubescens** | **1.40 ± 0.51** | (0.40 – 2.43) ✅ |
+| **pyrenaica** | **1.19 ± 0.42** | (0.39 – 2.03) ✅ |
+| robur | 0.61 ± 0.45 | (-0.29 – 1.47) |
+| **suber** | **1.75 ± 0.48** | (0.82 – 2.71) ✅ |
 
-3. **Treedepth limitante**: M_het_2 tiene 18% de violaciones de treedepth (vs 10% en M_het_1), indicando que la geometría del posterior es más compleja.
+### Señal filogenética
 
-4. **b_time_s crítico**: El parámetro de pendiente temporal (`b_time_s`) presenta los peores diagnósticos (Rhat > 2), lo que sugiere que es el parámetro más difícil de estimar.
+| Métrica | Mediana | IC 90% |
+|---------|---------|--------|
+| **CCI filogenético** (pendiente) | **0.048** | (0.0003 – 0.470) |
 
-# Planificación de tirada completa
+Sin término de especie libre (por diseño), toda la varianza de especie se atribuye a la filogenia.
 
-## Configuración propuesta
+## Comparación M_het_1 vs M_het_2
 
-Basándose en las lecciones de `d.07_brms_filogenias.qmd` y los resultados del smoke test:
+### Efectos globales
 
-| Parámetro | Smoke test | Tirada completa | Justificación |
-|-----------|------------|-----------------|---------------|
-| Iteraciones | 200 | 4000 | Necesario para convergencia |
-| Warmup | 100 | 2000 | Permitir calentamiento adecuado |
-| Cadenas | 2 | 4 | Diagnóstico entre cadenas |
-| `adapt_delta` | 0.95 | 0.99 | Reducir divergencias |
-| `max_treedepth` | 12 | 14 | Eliminar violaciones de treedepth |
-| `cores` | 1 | 1 | Windows (secuencial) |
+| Parámetro | M_het_1 | M_het_2 | Interpretación |
+|-----------|---------|---------|----------------|
+| time_s:Dim.1 | 1.77 ✅ | 1.67 ✅ | Consistente |
+| time_s:Dim.2 | **-0.86** ✅ | **-0.39** ❌ | **Desaparece al añadir heterogeneidad** |
+| time_s:Dim.3 | -0.56 ✅ | **-1.63** ✅ | Se refuerza en coccifera |
 
-## Tiempo estimado (con cmdstanr)
+### Pendientes específicas por especie (efecto total = base + ajuste)
 
-Basado en los tiempos de smoke test (3.5 min para 200 iter), estimamos:
+| Especie | Dim.1 | Dim.2 | Dim.3 |
+|---------|-------|-------|-------|
+| coccifera (base) | 1.67 | -0.39 | **-1.63** |
+| faginea | 1.99 | -0.44 | -0.31 |
+| ilex | 1.37 | -0.86 | -0.35 |
+| petraea | **3.59** ✅ | **-1.78** ✅ | -1.11 |
+| pubescens | **3.06** ✅ | **-2.37** ✅ | -0.23 |
+| pyrenaica | 1.78 | **-1.87** ✅ | -0.44 |
+| robur | 0.81 | **-1.40** ✅ | -1.02 |
+| suber | 1.19 | **-0.06** | **+0.11** |
 
-- **M_het_1**: ~6-8 horas (4000 iter, 4 cadenas)
-- **M_het_2**: ~8-10 horas (4000 iter, 4 cadenas, más parámetros)
+### Señal filogenética comparada
 
-**Nota**: cmdstanr es ~4x más rápido que rstan (14.6 min → 3.5 min en smoke test).
+| Modelo | CCI filogenético (mediana) | IC 90% |
+|--------|---------------------------|--------|
+| M_het_1 | 0.075 | (0.001 – 0.512) |
+| M_het_2 | 0.048 | (0.0003 – 0.470) |
 
-## Riesgos identificados
+La señal filogenética es **equivalente** en ambos modelos y no aumenta al incorporar las interacciones triples.
 
-1. **Sobreajuste**: Con 2400 parámetros y solo 8 especies, M_het_2 puede tener problemas de identificación.
+## Conclusiones preliminares
 
-2. **Correlaciones extremas**: Las correlaciones entre intercepto y pendiente filogenética pueden ser altas.
+1. **La heterogeneidad interespecífica persiste controlando por filogenia**: las interacciones triples del modelo M_het_2 muestran efectos especie-específicos significativos que no son absorbidos por la estructura filogenética.
 
-3. **Tiempo de cómputo**: Las tiradas largas pueden requerir ejecución nocturna o en cluster.
+2. **El efecto Dim.2 (pericarpo) acelerador es específico de especie**: petraea, pubescens, pyrenaica y robur presentan aceleración significativa en M_het_2, consistente con el análisis frecuentista previo. Suber y coccifera no muestran efecto.
 
-# Comparación con modelos frecuentistas
+3. **Dim.1 (tamaño) es protector, con dos excepciones**: muy protector en petraea y pubescens (~2x el efecto global); robur muestra el efecto más débil o incluso inverso.
 
-(To be completed after tirada completa)
+4. **Dim.3 (cicatriz) es específico de coccifera**: única especie con efecto acelerador fuerte (-1.63), consistente con el análisis frecuentista.
 
-# Conclusiones
+5. **La filogenia no absorbe la heterogeneidad**: sd(phylo_species) similar en ambos modelos (2.36 vs 1.94). Señal filogenética baja-moderada (~5-8% de varianza de pendiente).
 
-(To be completed after tirada completa)
+6. **Procedencia como mayor fuente de variación**: sd(codigo) = 5.45 supera la varianza de especie (phylo + libre), con correlación intercepto-pendiente alta (0.81).
+
+# Pendiente
+
+- [ ] Ajustar equivalentes POST (t > 94h) para ambos modelos
+- [ ] Comparar con modelos frecuentistas (WAIC/LOO)
+- [ ] Análisis de sensibilidad de la filogenia (Grafen vs alternativa)
+- [ ] Figuras de resultados

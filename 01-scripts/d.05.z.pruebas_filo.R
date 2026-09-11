@@ -120,10 +120,6 @@ cat("\n========== FASE 0 completada ==========\n")
 # ============================================================
 cat("\n========== FASE 1: Tirada completa ==========\n")
 
-if (!RUN_SMOKE_TEST) {
-  cat("RUN_SMOKE_TEST = FALSE. Ejecutando tirada completa.\n")
-} else {
-
   # ---- 1.1 Especificaciones de modelos ----
 
   # Modelo 1: Filogenia en pendientes + especie libre (sin interacciones triples)
@@ -316,8 +312,7 @@ if (!RUN_SMOKE_TEST) {
   }
 
   cat("\n========== FASE 1 completada ==========\n")
-}
-test_model <- cmdstanr::cmdstan_model(
-  cmdstanr::write_stan_file("data { } parameters { real y; } model { y ~ normal(0,1); }")
-)
-cat("cmdstanr funciona correctamente\n")
+
+  
+
+readRDS("00-data/phylo/m_het_1_pre.rds")
