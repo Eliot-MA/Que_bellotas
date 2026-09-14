@@ -8,17 +8,22 @@
 #
 # Fases:
 #   0. Preparacion de datos y filogenia
-#   1. Tirada completa (iter=4000, warmup=2000, chains=4)
+#   1. Tirada completa (iter=6000, warmup=3000, chains=4 en paralelo)
 #
 # Configuracion:
-#   - Cadenas secuenciales (evita problemas con parallel en Windows)
+#   - Cadenas en paralelo con cmdstanr (4 nucleos; ya no son secuenciales)
 #   - Backend cmdstanr (mas rapido que rstan)
-#   - adapt_delta=0.99, max_treedepth=14
+#   - adapt_delta=0.999, max_treedepth=15 (para reducir divergencias)
+#   - Priors mas informativos en sd (student_t(3,0,2.5)) para estabilizar
+#     grupos pequenos (8 especies, 16 codigos)
 # ============================================================
 
 N_CHAINS_FULL  <- 4
-ITER_FULL      <- 4000
-WARMUP_FULL    <- 2000
+ITER_FULL      <- 6000
+WARMUP_FULL    <- 3000
+N_CORES_PAR    <- 4          # cadenas en paralelo
+ADAPT_DELTA    <- 0.999
+MAX_TREEDEPTH  <- 15
 SEED_BASE      <- 123
 
 suppressPackageStartupMessages({
@@ -160,8 +165,8 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
   priors <- c(
     prior(normal(40, 20), class = "Intercept"),
     prior(normal(0, 10),  class = "b"),
-    prior(student_t(3, 0, 10), class = "sd"),
-    prior(student_t(3, 0, 10), class = "sigma"),
+    prior(student_t(3, 0, 2.5), class = "sd"),
+    prior(student_t(3, 0, 2.5), class = "sigma"),
     prior(lkj(2), class = "cor")
   )
 
@@ -173,7 +178,9 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
     cat("Formula:", deparse(formula), "\n")
     cat("Datos:", nrow(data), "obs,", nlevels(data$species), "especies\n")
     cat("Iteraciones:", ITER_FULL, "| Warmup:", WARMUP_FULL,
-        "| Cadenas:", N_CHAINS_FULL, "\n")
+        "| Cadenas:", N_CHAINS_FULL, "| Cores en paralelo:", N_CORES_PAR,
+        "\n")
+    cat("adapt_delta:", ADAPT_DELTA, "| max_treedepth:", MAX_TREEDEPTH, "\n")
 
     t_start <- Sys.time()
 
@@ -188,10 +195,10 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
         iter = ITER_FULL,
         warmup = WARMUP_FULL,
         chains = N_CHAINS_FULL,
-        cores = 1,  # Secuencial para evitar problemas en Windows
+        cores = N_CORES_PAR,  # cadenas en paralelo con cmdstanr
         control = list(
-          adapt_delta = 0.99,
-          max_treedepth = 14
+          adapt_delta = ADAPT_DELTA,
+          max_treedepth = MAX_TREEDEPTH
         ),
         seed = seed,
         refresh = 100,  # Progreso cada 100 iteraciones
