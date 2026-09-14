@@ -188,6 +188,8 @@ phase_in_best <- function(fit) {
 }
 cat("Phase retained in best WITH-phase model?", phase_in_best(best_with_phase), "\n")
 
+cat("== Comparison of the three models with and without phase == \n")
+
 lrt_phase2 <- anova(glm_global_no_phase, best_with_phase, glm_global_with_phase, test = "LRT")
 global_comparison <- tibble(
   model        = c("germ ~ mc*species",
@@ -206,7 +208,8 @@ global_comparison <- tibble(
   lrt_p        = c(NA, lrt_phase2[["Pr(>Chi)"]][2], lrt_phase2[["Pr(>Chi)"]][3])
 )
 
-cat("Comparison of the three models")
+cat("== Comparison of the three models with and without phase == \n")
+global_comparison
 
 
 # --- 4b. Final model: phase as simple effect + mc:species interaction ------------
@@ -227,6 +230,10 @@ cat("\n=== ANOVA table (Type I, Chi-squared) ===\n")
 print(anova_final)
 
 # --- 4c. Phase-level descriptive summary (console only) -------------------------
+
+emmeans(glm_final, specs = "phase", type = "response", weights = "proportional")
+
+sjPlot::plot_model(glm_final, type = "pred", terms = c("phase", "species"))
 
 phase_summary <- df.germ |>
   group_by(phase) |>
