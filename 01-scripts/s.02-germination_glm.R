@@ -188,6 +188,27 @@ phase_in_best <- function(fit) {
 }
 cat("Phase retained in best WITH-phase model?", phase_in_best(best_with_phase), "\n")
 
+lrt_phase2 <- anova(glm_global_no_phase, best_with_phase, glm_global_with_phase, test = "LRT")
+global_comparison <- tibble(
+  model        = c("germ ~ mc*species",
+                   "germ ~ mc*species + phase",
+                   "germ ~ mc*species + phase*species"),
+  df           = c(attr(logLik(glm_global_no_phase), "df"),
+                   attr(logLik(best_with_phase), "df"),
+                   attr(logLik(glm_global_with_phase), "df")),
+  logLik       = c(logLik(glm_global_no_phase), 
+                   logLik(best_with_phase),
+                   logLik(glm_global_with_phase)),
+  AICc         = c(AICc(glm_global_no_phase), 
+                   AICc(best_with_phase),
+                   AICc(glm_global_with_phase)),
+  lrt_deviance = c(NA, lrt_phase2$Deviance[2], lrt_phase2$Deviance[3]),
+  lrt_p        = c(NA, lrt_phase2[["Pr(>Chi)"]][2], lrt_phase2[["Pr(>Chi)"]][3])
+)
+
+cat("Comparison of the three models")
+
+
 # --- 4b. Final model: phase as simple effect + mc:species interaction ------------
 
 glm_final <- glm(
