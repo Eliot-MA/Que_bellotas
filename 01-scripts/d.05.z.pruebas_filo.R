@@ -380,4 +380,159 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
   cat("\n========== FASE 1 completada ==========\n")
 
   
+#===
+# FASE 2: Checar modelos
+#===
 
+# 1. Load models
+  
+models <- list(
+  m_het_1_pre  = readRDS(file = "00-data/phylo/m_het_1_pre.rds"),
+  m_het_1_post = readRDS(file = "00-data/phylo/m_het_1_post.rds"),
+  m_het_2_pre  = readRDS(file = "00-data/phylo/m_het_2_pre.rds"),
+  m_het_2_post = readRDS(file = "00-data/phylo/m_het_2_post.rds")
+)
+
+# 2. Summary stats
+cat("=== Summary stats === \n")
+
+for (i in 1:length(models)) {
+  nombre_modelo <- names(models)[i]
+  cat("====== Summary of ", nombre_modelo, "======", "\n")
+  print(summary(models[[i]]))
+  cat("=========================== \n")
+  cat("\n")
+}
+
+# 3. Diagnostic graphs
+plot(models[["m_het_1_pre"]])
+plot(models[["m_het_1_post"]]) 
+plot(models[["m_het_2_pre"]])  
+plot(models[["m_het_2_post"]])  
+
+# 4. Posterior predictive checks
+pp_check(models[["m_het_1_pre"]])
+pp_check(models[["m_het_1_post"]])
+pp_check(models[["m_het_2_pre"]])
+pp_check(models[["m_het_2_post"]])  
+
+# 5. Conditional effects
+plot(conditional_effects(models[["m_het_1_pre"]]), points = TRUE)
+
+# 6. Compare models
+
+# === PRE ===
+
+loo_1 <- loo(models[["m_het_1_pre"]])
+loo_2 <- loo(models[["m_het_2_pre"]])
+
+k_1 <- loo_1$diagnostics$pareto_k
+k_2 <- loo_2$diagnostics$pareto_k
+
+bad_1 <- which(k_1 > 0.7)
+bad_2 <- which(k_2 > 0.7)
+
+df.plot <- df.t1 |>
+  dplyr::filter(!is.na(Moisture_content)) |>
+  dplyr::mutate(
+    k_1 = k_1,
+    k_2 = k_2,
+    problematic_1 = k_1 > 0.7,
+    problematic_2 = k_2 > 0.7
+  )
+
+df.plot <- df.plot |>
+  dplyr::mutate(
+    pareto_status = dplyr::case_when(
+      problematic_1 & problematic_2 ~ "Problematic in both",
+      problematic_1 ~ "Problematic in m_het_1_pre",
+      problematic_2 ~ "Problematic in m_het_2_pre",
+      TRUE ~ "Not problematic"
+    )
+  )
+
+library(ggplot2)
+ggplot(
+  df.plot,
+  aes(
+    x = time,
+    y = Moisture_content
+  )
+) +
+  geom_line(
+    aes(group = id_bellota),
+    alpha = 0.25
+  ) +
+  geom_point(
+    aes(
+      colour = pareto_status
+    ),
+    alpha = 0.6
+  ) +
+  facet_wrap(
+    ~ codigo
+  ) +
+  labs(
+    x = "Time",
+    y = "Moisture content (%)",
+    shape = "Pareto k"
+  ) +
+  theme_classic()
+
+## === POST ===
+
+loo_1 <- loo(models[["m_het_1_post"]])
+loo_2 <- loo(models[["m_het_2_post"]])
+
+k_1 <- loo_1$diagnostics$pareto_k
+k_2 <- loo_2$diagnostics$pareto_k
+
+bad_1 <- which(k_1 > 0.7)
+bad_2 <- which(k_2 > 0.7)
+
+df.plot <- df.t2 |>
+  dplyr::filter(!is.na(Moisture_content)) |>
+  dplyr::mutate(
+    k_1 = k_1,
+    k_2 = k_2,
+    problematic_1 = k_1 > 0.7,
+    problematic_2 = k_2 > 0.7
+  )
+
+df.plot <- df.plot |>
+  dplyr::mutate(
+    pareto_status = dplyr::case_when(
+      problematic_1 & problematic_2 ~ "Problematic in both",
+      problematic_1 ~ "Problematic in m_het_1_pre",
+      problematic_2 ~ "Problematic in m_het_2_pre",
+      TRUE ~ "Not problematic"
+    )
+  )
+
+library(ggplot2)
+ggplot(
+  df.plot,
+  aes(
+    x = time,
+    y = Moisture_content
+  )
+) +
+  geom_line(
+    aes(group = id_bellota),
+    alpha = 0.25
+  ) +
+  geom_point(
+    aes(
+      colour = pareto_status
+    ),
+    alpha = 0.6
+  ) +
+  facet_wrap(
+    ~ codigo
+  ) +
+  labs(
+    x = "Time",
+    y = "Moisture content (%)",
+    shape = "Pareto k"
+  ) +
+  theme_classic()
