@@ -2,16 +2,26 @@
 # d.05.2.phylo_data.R
 # Construccion de la filogenia de las 8 especies de Quercus.
 #
+# Fuente principal: arbol CROWN de Hipp et al. (2020) "Global oak phylogeny of
+# the genus Quercus" (Nature Plants 6: 1113-1119) - repositorio
+# andrew-hipp/global-oaks-2019. Es un filogenoma de Quercus (RAD-seq, ~functional
+# por miles de marcadores) datado con ~8 fosiles. Comparado con OToL (que carece
+# de longitudes de rama) y con GBOTB (que injerta ad hoc especies ausentes),
+# el crown tree es la via mas informativa: todos los tips de nuestras 8
+# especies existen y con datum.
+#
 # Genera y guarda:
-#   - arbol de Open Tree of Life (subarbol inducido) con longitudes de Grafen
+#   - arbol crown descargado y PODADO a las 8 especies (sin injertos)
 #   - matriz de covarianza filogenetica A = vcv.phylo
-#   - arboles de la via descartada V.PhyloMaker2/GBOTB (escenarios S1-S3)
-#   - metricas comparativas para justificar (a) la eleccion de OToL frente a
-#     GBOTB y (b) el uso de distancias de Grafen
+#   - verificacion de coincidencia de nombres (tips crown vs spp del analisis)
+#   - via descartada V.PhyloMaker2/GBOTB (escenarios S1-S3) solo como cotejo
+#   - metricas comparativas para justificar (a) la eleccion del crown tree
+#     frente a OToL/GBOTB y (b) el uso distancias de Grafen si procediera
 #
 # Salidas:
-#   00-data/phylo/otol_resolution.rds            resolucion de nombres en OToL
-#   00-data/phylo/oak_tree.rds | .nwk            arbol OToL + Grafen
+#   00-data/phylo/oak_crown.tre                   arbol crown crudo (descarga)
+#   00-data/phylo/tip_check_summary.csv           coincidencia de nombres
+#   00-data/phylo/oak_tree.rds | .nwk            arbol crown podado (principal)
 #   00-data/phylo/oak_vcv.rds                    matriz A
 #   00-data/phylo/gbotb_scenarios.rds            arboles S1-S3 + estado de especies
 #   00-data/phylo/tree_comparison_summary.csv    metricas de justificacion
@@ -21,7 +31,6 @@
 # ============================================================
 
 library(ape)
-library(rotl)
 
 spp <- c("Quercus petraea", "Quercus robur", "Quercus faginea",
          "Quercus coccifera", "Quercus ilex", "Quercus pyrenaica",
@@ -30,70 +39,172 @@ spp <- c("Quercus petraea", "Quercus robur", "Quercus faginea",
 dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
 dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
 
-RECREATE_PHYLO <- FALSE   # TRUE para re-descargar de OToL
+RECREATE_PHYLO <- FALSE   # TRUE para re-descargar y regenerar todo
 DEMO_GBOTB     <- TRUE    # FALSE para no ejecutar V.PhyloMaker2 (tarda ~1.5 min)
+RECREATE_OTOL  <- FALSE   # TRUE para generar el arbol OToL de cotejo (requiere rotl)
 
 # ============================================================
-# 1. Arbol de OToL + longitudes de Grafen
+# 1. Arbol CROWN de Hipp et al. (2020) — fuente principal
 # ============================================================
+# El crown tree es un filogenoma de Quercus (RAD-seq) datado con ~8 fosiles.
+# Su nodo raiz (crown age) marca el inicio de la diversificacion de Quercus,
+# lo cual es lo relevante para un analisis comparativo de 8 especies del
+# genero. No se necesita el stem tree ni longitudes sinteticas de Grafen.
+
+CROWN_URL <- "https://raw.githubusercontent.com/andrew-hipp/global-oaks-2019/master/ANALYSES/2019-06_globalOaks-gitUpdate/OUT/ANALYSIS.PRODUCTS/tr.singletons.correlated.1.taxaGrepCrown.tre"
+
 if (!file.exists("00-data/phylo/oak_tree.rds") || RECREATE_PHYLO) {
 
-  # 1a. Resolucion de nombres en la taxonomia de OToL
-  resolved <- rotl::tnrs_match_names(spp, context_name = "Vascular plants")
-  saveRDS(resolved, "00-data/phylo/otol_resolution.rds")
-
-  cat("-- Resolucion de nombres en OToL --\n")
-  print(resolved[, c("search_string", "unique_name", "ott_id", "is_synonym", "flags")])
-  stopifnot(!any(is.na(resolved$ott_id)))   # las 8 especies deben resolverse
-
-  # 1b. Subarbol inducido
-  tree <- rotl::tol_induced_subtree(ott_ids = resolved$ott_id[!is.na(resolved$ott_id)])
-
-  # 1c. Limpiar labels y hacerlos coincidir con los nombres originales
-  strip <- function(x) gsub("_ott\\d+$", "", x)
-  tip_clean <- strip(tree$tip.label)
-  map <- setNames(resolved$unique_name, as.character(resolved$ott_id))
-  ott_from_tip <- gsub(".*_ott(\\d+)$", "\\1", tree$tip.label)
-  tip_species <- map[ott_from_tip]
-  tree$tip.label <- unname(ifelse(is.na(tip_species), tip_clean, tip_species))
-
-  missing <- setdiff(spp, tree$tip.label)
-  stopifnot(length(missing) == 0)
-
-  # 1d. JUSTIFICACION DE GRAFEN: el subarbol inducido de OToL no trae
-  #     longitudes de rama; Grafen las deriva a partir de la profundidad de
-  #     los nodos (ultrametrico y estandar en ausencia de longitudes).
-  otol_had_lengths <- !is.null(tree$edge.length)
-  cat("OToL inducido con branch lengths:", otol_had_lengths, "\n")
-  if (!otol_had_lengths) {
-    cat("Aplicando Grafen (compute.brlen) para derivar longitudes de rama\n")
-    tree <- ape::compute.brlen(tree, method = "Grafen")
+  # 1a. Descargar el crown tree (si no existe o se pide re-descarga)
+  crown_dest <- "00-data/phylo/oak_crown.tre"
+  if (!file.exists(crown_dest) || RECREATE_PHYLO) {
+    download.file(CROWN_URL, crown_dest, mode = "wb")
+    cat("Crown tree descargado de Hipp et al. (2020)\n")
   }
+
+  # 1b. Cargar con ape
+  crown_full <- ape::read.tree(crown_dest)
+  cat("Crown tree cargado:", length(crown_full$tip.label), "tips\n")
+  cat("Branch lengths:", !is.null(crown_full$edge.length), "\n")
+  cat("Ultrametric:", ape::is.ultrametric(crown_full), "\n")
+
+  # 1c. Normalizar labels del crown tree
+  # Los tips vienen como "Quercus_petraea|NA|NA|1982.0337|QUE001513"
+  # (genero_especie|pais|prov|coleccion|codigo). Necesitamos "Quercus petraea"
+  # Normalizar a "Genero especie" (2 palabras, primera mayuscula, resto minuscula)
+  # para que coincidan EXACTAMENTE con nuestro vector spp.
+  # e.g. Quercus_petraea|NA|NA|1982.0337|QUE001513 -> "Quercus petraea"
+  normalize_tip <- function(x) {
+    sp  <- sub("\\|.*$", "", x)        # quitar todo despues del primer |
+    sp  <- gsub("_", " ", sp)          # guion bajo -> espacio
+    parts <- strsplit(trimws(sp), "\\s+")[[1]]
+    if (length(parts) < 2) return(sp)
+    genus   <- paste0(toupper(substr(parts[1], 1, 1)),
+                      tolower(substr(parts[1], 2, nchar(parts[1]))))
+    epithet <- tolower(parts[-1])
+    paste(c(genus, epithet), collapse = " ")
+  }
+
+  tip_sp <- sapply(crown_full$tip.label, normalize_tip, USE.NAMES = FALSE)
+  names(tip_sp) <- crown_full$tip.label
+
+  # 1d. Verificar que las 8 especies estan presentes
+  cat("-- Verificacion de nombres de tips (crown tree) --\n")
+  check_df <- data.frame(
+    expected   = spp,
+    n_tips     = sapply(spp, function(sp) sum(tip_sp == sp)),
+    stringsAsFactors = FALSE
+  )
+  print(check_df)
+  missing <- spp[check_df$n_tips == 0]
+  if (length(missing) > 0) {
+    stop("Especies no encontradas en crown tree: ",
+         paste(missing, collapse = ", "))
+  }
+
+  # Guardar verificacion como CSV
+  write.csv(check_df, "00-data/phylo/tip_check_summary.csv", row.names = FALSE)
+
+  # 1e. Elegir 1 tip por especie: preferir la accesion con metadatos completos
+  #     (label mas largo = mas pipes). Robur e ilex tienen 2 accesiones.
+  keep_tips <- character(length(spp))
+  names(keep_tips) <- spp
+  for (sp in spp) {
+    labels <- crown_full$tip.label[tip_sp == sp]
+    keep_tips[sp] <- labels[which.max(nchar(labels))]
+  }
+  cat("\nTips seleccionados (1 por especie):\n")
+  print(keep_tips)
+
+  # 1f. Podar a las 8 especies y renombrar
+  tree <- ape::keep.tip(crown_full, unname(keep_tips))
+  tree$tip.label <- spp[match(tree$tip.label, unname(keep_tips))]
+
+  cat("\nArbol crown podado a 8 especies:\n")
+  cat("Tips:", paste(tree$tip.label, collapse = ", "), "\n")
+  cat("Branch lengths:", !is.null(tree$edge.length), "\n")
+  cat("Ultrametric:", ape::is.ultrametric(tree), "\n")
 
   ape::write.tree(tree, file = "00-data/phylo/oak_tree.nwk")
   saveRDS(tree, "00-data/phylo/oak_tree.rds")
 
 } else {
-  cat("Cargando arbol OToL ya construido\n")
+  cat("Cargando arbol crown ya construido\n")
   tree <- readRDS("00-data/phylo/oak_tree.rds")
-  otol_had_lengths <- FALSE
 }
 
 # Matriz de varianza-covarianza filogenetica
 A <- ape::vcv.phylo(tree)
 saveRDS(A, "00-data/phylo/oak_vcv.rds")
 
-# Figura del arbol OToL
+# Figura del arbol crown
 png("07-img/oak_phylo.png", width = 1200, height = 800, res = 150)
 plot(tree, cex = 1.1)
-title("Open Tree of Life - Quercus subtree (Grafen branch lengths)")
+title("Quercus crown tree — Hipp et al. (2020)")
 dev.off()
-cat("Guardado: 00-data/phylo/oak_tree.rds, oak_tree.nwk, oak_vcv.rds y 07-img/oak_phylo.png\n")
+cat("Guardado: 00-data/phylo/oak_tree.rds, oak_tree.nwk, oak_vcv.rds, 07-img/oak_phylo.png\n")
 
 # ============================================================
-# 2. Via descartada: V.PhyloMaker2 / GBOTB (escenarios S1-S3)
+# 2. Cotejo: OToL + Grafen (opcional, requiere rotl)
+# ============================================================
+# Via secundaria de cotejo documentada en el metodo: subarbol inducido de
+# Open Tree of Life con longitudes de Grafen. El crown tree es el principal;
+# este bloque solo verifica que la topologia OToL es coherente con la del
+# crown tree. Habilitar con RECREATE_OTOL <- TRUE (tarda ~30 s). Si rotl no
+# esta instalado, se salta sin error.
+if ((!file.exists("00-data/phylo/oak_otol.rds") || RECREATE_OTOL) &&
+    requireNamespace("rotl", quietly = TRUE)) {
+
+  suppressPackageStartupMessages(library(rotl))
+
+  # 2a. Resolucion de nombres en la taxonomia de OToL
+  resolved <- rotl::tnrs_match_names(spp, context_name = "Vascular plants")
+  saveRDS(resolved, "00-data/phylo/otol_resolution.rds")
+
+  cat("-- Resolucion de nombres en OToL (cotejo) --\n")
+  print(resolved[, c("search_string", "unique_name", "ott_id", "is_synonym", "flags")])
+  stopifnot(!any(is.na(resolved$ott_id)))   # las 8 especies deben resolverse
+
+  # 2b. Subarbol inducido
+  tree_otol <- rotl::tol_induced_subtree(ott_ids = resolved$ott_id[!is.na(resolved$ott_id)])
+
+  # 2c. Limpiar labels y hacerlos coincidir con spp
+  strip <- function(x) gsub("_ott\\d+$", "", x)
+  tip_clean <- strip(tree_otol$tip.label)
+  map <- setNames(resolved$unique_name, as.character(resolved$ott_id))
+  ott_from_tip <- gsub(".*_ott(\\d+)$", "\\1", tree_otol$tip.label)
+  tip_species <- map[ott_from_tip]
+  tree_otol$tip.label <- unname(ifelse(is.na(tip_species), tip_clean, tip_species))
+
+  missing <- setdiff(spp, tree_otol$tip.label)
+  stopifnot(length(missing) == 0)
+
+  # 2d. OToL no trae longitudes de rama: derivacion de Grafen
+  if (is.null(tree_otol$edge.length)) {
+    cat("OToL sin branch lengths; aplicando Grafen (compute.brlen)\n")
+    tree_otol <- ape::compute.brlen(tree_otol, method = "Grafen")
+  }
+
+  ape::write.tree(tree_otol, file = "00-data/phylo/oak_otol.nwk")
+  saveRDS(tree_otol, "00-data/phylo/oak_otol.rds")
+
+} else if (file.exists("00-data/phylo/oak_otol.rds")) {
+  cat("Cargando arbol OToL de cotejo ya construido\n")
+  tree_otol <- readRDS("00-data/phylo/oak_otol.rds")
+} else {
+  cat("OToL de cotejo omitido (rotl no disponible o RECREATE_OTOL = FALSE)\n")
+  tree_otol <- NULL
+}
+
+# ============================================================
+# 3. Via descartada: V.PhyloMaker2 / GBOTB (escenarios S1-S3)
 # ============================================================
 if (!file.exists("00-data/phylo/gbotb_scenarios.rds") || DEMO_GBOTB) {
+  if (!requireNamespace("V.PhyloMaker2", quietly = TRUE)) {
+    cat("V.PhyloMaker2 no instalado; omitiendo cotejo GBOTB\n")
+    res_sc <- list(S1 = NULL, S2 = NULL, S3 = NULL)
+    status <- data.frame(species = spp, status = NA_character_)
+  } else {
   suppressPackageStartupMessages(library(V.PhyloMaker2))
 
   sp_list <- data.frame(
@@ -153,6 +264,7 @@ if (!file.exists("00-data/phylo/gbotb_scenarios.rds") || DEMO_GBOTB) {
         side = 1, line = -1, outer = TRUE)
   dev.off()
   cat("Guardado: 00-data/phylo/gbotb_scenarios.rds y 07-img/phylomaker_scenarios.png\n")
+  }
 
 } else {
   gbotb <- readRDS("00-data/phylo/gbotb_scenarios.rds")
@@ -168,85 +280,90 @@ trees_gbotb <- lapply(res_sc, function(r) {
 })
 
 # ============================================================
-# 3. Comparacion de arboles y justificacion de la eleccion
+# 4. Comparacion de arboles y justificacion de la eleccion
 # ============================================================
+# El arbol crown (Hipp et al. 2020) es la referencia. Se compara contra
+# GBOTB (V.PhyloMaker2, escenarios S1-S3) y, si existe, OToL+Grafen para
+# justificar que el crown tree no necesita injertar ninguna especie.
+
 tidy_labels <- function(phy) {
   phy$tip.label <- gsub("_", " ", phy$tip.label)
   phy
 }
-tree_otol <- tidy_labels(tree)
+tree_crown_ref <- tidy_labels(tree)
 gbotb_ok <- !is.null(trees_gbotb) && !all(sapply(trees_gbotb, is.null))
+otol_ok  <- !is.null(tree_otol)
 
+cands <- list()
+if (otol_ok) cands[["OToL_Grafen"]] <- tidy_labels(tree_otol)
 if (gbotb_ok) {
-  cands <- lapply(trees_gbotb, function(phy) {
-    if (is.null(phy)) return(NULL)
-    tidy_labels(phy)
-  })
+  for (sc in names(trees_gbotb)) {
+    phy <- trees_gbotb[[sc]]
+    if (!is.null(phy)) cands[[sc]] <- tidy_labels(phy)
+  }
+}
+
+if (length(cands) > 0) {
+
+  bind_sp <- if (exists("status")) status$species[status$status == "bind"] else character(0)
 
   rf <- sapply(cands, function(phy) {
-    if (is.null(phy)) return(NA_real_)
-    tryCatch(ape::dist.topo(tree_otol, phy, method = "PH85"),
+    tryCatch(ape::dist.topo(tree_crown_ref, phy, method = "PH85"),
              error = function(e) NA_real_)
   })
   coph <- sapply(cands, function(phy) {
-    if (is.null(phy)) return(NA_real_)
-    tryCatch(cor(as.vector(ape::cophenetic(tree_otol)),
-                 as.vector(ape::cophenetic(phy))),
+    tryCatch(cor(as.vector(stats::cophenetic(tree_crown_ref)),
+                 as.vector(stats::cophenetic(phy))),
              error = function(e) NA_real_)
   })
 
   tree_summary <- tibble::tibble(
-    arbol              = names(cands),
-    tips               = sapply(cands, function(phy) if (is.null(phy)) NA_integer_ else length(phy$tip.label)),
-    branch_lengths     = sapply(cands, function(phy) if (is.null(phy)) NA else !is.null(phy$edge.length)),
-    ultrametric        = sapply(cands, function(phy) if (is.null(phy)) NA else isTRUE(ape::is.ultrametric(phy))),
-    RF_distance_OToL   = unname(rf),
-    cophenetic_cor_OToL = unname(coph)
+    arbol                 = names(cands),
+    tips                  = sapply(cands, function(phy) length(phy$tip.label)),
+    branch_lengths        = sapply(cands, function(phy) !is.null(phy$edge.length)),
+    ultrametric           = sapply(cands, function(phy) isTRUE(ape::is.ultrametric(phy))),
+    RF_distance_crown     = unname(rf),
+    cophenetic_cor_crown  = unname(coph)
   )
 
   tree_summary <- tibble::add_row(
     tree_summary,
-    arbol = "OToL_Grafen",
-    tips = length(tree_otol$tip.label),
-    branch_lengths = !is.null(tree_otol$edge.length),
-    ultrametric = isTRUE(ape::is.ultrametric(tree_otol)),
-    RF_distance_OToL = 0,
-    cophenetic_cor_OToL = 1
-  )
-
-  # Justificacion de Grafen: el subarbol inducido de OToL carecia de longitudes
-  tree_summary <- tibble::add_column(
-    tree_summary,
-    otol_without_branch_lengths = ifelse(tree_summary$arbol == "OToL_Grafen",
-                                         otol_had_lengths == FALSE, NA),
-    .after = "branch_lengths"
+    arbol                 = "Crown_Hipp2020",
+    tips                  = length(tree_crown_ref$tip.label),
+    branch_lengths        = !is.null(tree_crown_ref$edge.length),
+    ultrametric           = isTRUE(ape::is.ultrametric(tree_crown_ref)),
+    RF_distance_crown     = 0,
+    cophenetic_cor_crown  = 1
   )
 
   write.csv(tree_summary, "00-data/phylo/tree_comparison_summary.csv", row.names = FALSE)
   cat("Guardada: 00-data/phylo/tree_comparison_summary.csv\n")
   print(tree_summary)
 
-  # Figura comparativa de los 4 arboles candidatos
-  png("07-img/phylo_trees_comparison.png", width = 2600, height = 900, res = 150)
-  par(mfrow = c(1, 4), mar = c(2, 1, 3, 1))
-  plot(tree_otol, cex = 1.1)
-  title("OToL + Grafen")
-  for (sc in names(cands)) {
-    phy <- cands[[sc]]
-    if (is.null(phy)) next
-    tip_col <- ifelse(phy$tip.label %in% status$species[status$status == "bind"],
-                      "firebrick", "black")
+  # Figura comparativa: crown + (OToL opcional) + escenarios GBOTB
+  n_panels <- 1 + length(cands)
+  png("07-img/phylo_trees_comparison.png",
+      width = 400 * n_panels, height = 900, res = 150)
+  par(mfrow = c(1, n_panels), mar = c(2, 1, 3, 1))
+  plot(tree_crown_ref, cex = 1.1)
+  title("Crown (Hipp 2020)")
+  for (nm in names(cands)) {
+    phy <- cands[[nm]]
+    bind_pos <- vapply(phy$tip.label, function(t) any(t %in% bind_sp), logical(1))
+    tip_col <- ifelse(bind_pos, "firebrick", "black")
     plot(phy, cex = 1.1, tip.color = tip_col, label.offset = 0.1)
-    title(paste("V.PhyloMaker2 -", sc))
+    title(nm)
   }
   mtext("rojo = especies injertadas ad hoc en GBOTB", side = 1, line = -1, outer = TRUE)
   dev.off()
   cat("Figura guardada: 07-img/phylo_trees_comparison.png\n")
 
-  cat("\nJustificacion: la via GBOTB no lanza error, pero injerta ad hoc las\n")
-  cat("3 especies ausentes (robur, ilex, pubescens), que cambian de posicion\n")
-  cat("segun el escenario S1/S2/S3. OToL resuelve las 8 especies sin injertos\n")
-  cat("y, al carecer de longitudes de rama, se completan con Grafen.\n")
+  cat("\nJustificacion: el crown tree (Hipp et al. 2020) resuelve las 8 especies\n")
+  cat("sin injertos, con longitudes de rama reales datadas con fosiles.\n")
+  if (gbotb_ok) {
+    cat("GBOTB injerta ad hoc las 3 especies ausentes (robur, ilex, pubescens),\n")
+    cat("que cambian de posicion segun el escenario S1/S2/S3.\n")
+  }
 }
 
 cat("\n===== d.05.2.phylo_data.R completado =====\n")

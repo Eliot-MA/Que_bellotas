@@ -13,10 +13,9 @@
 #      within-between y comparacion con el modelo "ingenuo".
 #
 #   2) d.05.2.phylo_data.R
-#      Filogenia de las 8 especies (OToL + longitudes de Grafen) y matriz
+#      Filogenia de las 8 especies (arbol CROWN de Hipp et al. 2020) y matriz
 #      de covarianza A, junto con el material que justifica su eleccion
-#      frente a la via V.PhyloMaker2/GBOTB (escenarios S1-S3) y el uso de
-#      distancias de Grafen.
+#      frente a las vias OToL + Grafen y V.PhyloMaker2/GBOTB (escenarios S1-S3).
 #
 #   3) d.05.3_fit_models.R
 #      Modelos finales a ajustar con brms. SOLO SE PRESENTAN; no se
