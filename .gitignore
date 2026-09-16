@@ -53,6 +53,9 @@ rsconnect/
 # Ignore data
 00-data/*
 
+# Scripts temporales de verificacion
+temp/
+
 # Others
 99-other_resources/
 Estimating Phylogenetic Multilevel Models with brms.pdf

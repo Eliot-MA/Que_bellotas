@@ -379,160 +379,192 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
 
   cat("\n========== FASE 1 completada ==========\n")
 
-  
-#===
-# FASE 2: Checar modelos
-#===
+# ============================================================
+# FASE 2: Validacion, comparacion y exportacion de resultados
+#
+# Carga los 4 modelos ajustados en FASE 1 y produce:
+#   - resumenes (txt) y tablas de efectos fijos / varianzas (CSV)
+#   - senal filogenetica (CCI) por modelo (CSV)
+#   - comparacion LOO + pareto-k (CSV + figura)
+#   - pendientes totales por especie para M_het_2 (CSV + forest plot)
+#   - posterior predictive checks (PNG)
+# Salidas en: 00-data/phylo/ y 07-img/
+# ============================================================
+cat("\n========== FASE 2: Validacion y comparacion ==========\n")
 
-# 1. Load models
-  
-models <- list(
-  m_het_1_pre  = readRDS(file = "00-data/phylo/m_het_1_pre.rds"),
-  m_het_1_post = readRDS(file = "00-data/phylo/m_het_1_post.rds"),
-  m_het_2_pre  = readRDS(file = "00-data/phylo/m_het_2_pre.rds"),
-  m_het_2_post = readRDS(file = "00-data/phylo/m_het_2_post.rds")
+dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
+
+# ---- 2.1 Cargar modelos ----
+# Se recargan de disco: asi la FASE 2 es independiente de la sesion
+# de la FASE 1 (los RDS fueron guardados por smoke_test()).
+modelos <- list(
+  m_het_1_pre  = readRDS("00-data/phylo/m_het_1_pre.rds"),
+  m_het_1_post = readRDS("00-data/phylo/m_het_1_post.rds"),
+  m_het_2_pre  = readRDS("00-data/phylo/m_het_2_pre.rds"),
+  m_het_2_post = readRDS("00-data/phylo/m_het_2_post.rds")
 )
 
-# 2. Summary stats
-cat("=== Summary stats === \n")
+# ---- 2.2 Resumen por modelo (a pantalla y a log) ----
+sink("00-data/phylo/summary_modelos.txt")
+for (nm in names(modelos)) {
+  cat("\n===== Summary:", nm, "=====\n")
+  print(summary(modelos[[nm]]))
+}
+sink()
 
-for (i in 1:length(models)) {
-  nombre_modelo <- names(models)[i]
-  cat("====== Summary of ", nombre_modelo, "======", "\n")
-  print(summary(models[[i]]))
-  cat("=========================== \n")
-  cat("\n")
+# ---- 2.3 Senal filogenetica (CCI) ----
+# Unica funcion: el calculo de la CCI se repite 4 veces con denominador
+# distinto segun si el modelo tiene termino de especie libre (M_het_1).
+calcular_cci <- function(fit, con_especie_libre = FALSE) {
+  d <- as_draws_df(fit)
+  phylo_var <- d$sd_phylo_species__time_s^2
+  cod_var   <- d$sd_codigo__time_s^2
+  bell_var  <- d$sd_id_bellota__Intercept^2
+  sigma2    <- d$sigma^2
+  if (con_especie_libre) {
+    sp_var <- d$sd_species__time_s^2
+    var_especie <- phylo_var + sp_var
+    prop_phylo_sp <- phylo_var / var_especie
+  } else {
+    var_especie  <- phylo_var
+    prop_phylo_sp <- NA_real_
+  }
+  total <- var_especie + cod_var + bell_var + sigma2
+  cci_phylo <- phylo_var / total
+  cci_especie <- var_especie / total
+  tibble(
+    cci_phylo_media    = median(cci_phylo),
+    cci_phylo_ic_lo    = quantile(cci_phylo, 0.05)   |> unname(),
+    cci_phylo_ic_hi    = quantile(cci_phylo, 0.95)   |> unname(),
+    cci_especie_media  = median(cci_especie),
+    cci_especie_ic_lo  = quantile(cci_especie, 0.05) |> unname(),
+    cci_especie_ic_hi  = quantile(cci_especie, 0.95) |> unname(),
+    prop_phylo_en_especie = median(prop_phylo_sp)
+  )
 }
 
-# 3. Diagnostic graphs
-plot(models[["m_het_1_pre"]])
-plot(models[["m_het_1_post"]]) 
-plot(models[["m_het_2_pre"]])  
-plot(models[["m_het_2_post"]])  
+cci_df <- bind_rows(
+  m_het_1_pre  = calcular_cci(modelos$m_het_1_pre,  con_especie_libre = TRUE),
+  m_het_1_post = calcular_cci(modelos$m_het_1_post, con_especie_libre = TRUE),
+  m_het_2_pre  = calcular_cci(modelos$m_het_2_pre,  con_especie_libre = FALSE),
+  m_het_2_post = calcular_cci(modelos$m_het_2_post, con_especie_libre = FALSE),
+  .id = "modelo"
+)
+write.csv(cci_df, "00-data/phylo/cci_filogenetica.csv", row.names = FALSE)
+cat("\n-- Senal filogenetica (CCI) --\n")
+print(cci_df)
 
-# 4. Posterior predictive checks
-pp_check(models[["m_het_1_pre"]])
-pp_check(models[["m_het_1_post"]])
-pp_check(models[["m_het_2_pre"]])
-pp_check(models[["m_het_2_post"]])  
+# ---- 2.4 Efectos fijos y varianzas por nivel (CSV por modelo) ----
+for (nm in names(modelos)) {
+  fe <- as.data.frame(fixef(modelos[[nm]]))
+  fe$parametro <- rownames(fe)
+  write.csv(fe, paste0("00-data/phylo/fixef_", nm, ".csv"), row.names = FALSE)
 
-# 5. Conditional effects
-plot(conditional_effects(models[["m_het_1_pre"]]), points = TRUE)
+  vc <- VarCorr(modelos[[nm]])
+  sd_filas <- list()
+  for (lvl in names(vc)) {
+    if ("sd" %in% names(vc[[lvl]])) {
+      s <- as.data.frame(vc[[lvl]]$sd)
+      s$nivel  <- lvl
+      s$efecto <- rownames(s)
+      rownames(s) <- NULL
+      sd_filas[[lvl]] <- s
+    }
+  }
+  write.csv(dplyr::bind_rows(sd_filas),
+            paste0("00-data/phylo/varcom_", nm, ".csv"), row.names = FALSE)
+}
+cat("\nEfectos fijos y varcom exportados a 00-data/phylo/fixef_*.csv y varcom_*.csv\n")
 
-# 6. Compare models
+# ---- 2.5 Comparacion LOO + pareto-k (loop explicito por fase) ----
+for (fase in c("pre", "post")) {
+  cat("\n===== Comparacion LOO:", fase, "=====\n")
+  nm1 <- paste0("m_het_1_", fase)
+  nm2 <- paste0("m_het_2_", fase)
 
-# === PRE ===
+  loo_1 <- loo(modelos[[nm1]])
+  loo_2 <- loo(modelos[[nm2]])
+  tabla_loo <- loo::loo_compare(loo_1, loo_2)
+  print(tabla_loo)
+  write.csv(as.data.frame(tabla_loo),
+            paste0("00-data/phylo/loo_comp_", fase, ".csv"))
 
-loo_1 <- loo(models[["m_het_1_pre"]])
-loo_2 <- loo(models[["m_het_2_pre"]])
-
-k_1 <- loo_1$diagnostics$pareto_k
-k_2 <- loo_2$diagnostics$pareto_k
-
-bad_1 <- which(k_1 > 0.7)
-bad_2 <- which(k_2 > 0.7)
-
-df.plot <- df.t1 |>
-  dplyr::filter(!is.na(Moisture_content)) |>
-  dplyr::mutate(
-    k_1 = k_1,
-    k_2 = k_2,
-    problematic_1 = k_1 > 0.7,
-    problematic_2 = k_2 > 0.7
+  # pareto-k por observacion
+  # brms descarto las filas con NA en Moisture_content al ajustar, de modo
+  # que de df.t1/df.t2 quedan las mismas observaciones que las de pareto_k.
+  dat <- (if (fase == "pre") df.t1 else df.t2) |>
+    dplyr::filter(!is.na(Moisture_content))
+  dat$k_1 <- loo_1$diagnostics$pareto_k
+  dat$k_2 <- loo_2$diagnostics$pareto_k
+  dat$pareto_status <- dplyr::case_when(
+    dat$k_1 > 0.7 & dat$k_2 > 0.7 ~ "Problematic in both",
+    dat$k_1 > 0.7                  ~ paste0("Problematic in ", nm1),
+    dat$k_2 > 0.7                  ~ paste0("Problematic in ", nm2),
+    TRUE ~ "Not problematic"
   )
 
-df.plot <- df.plot |>
-  dplyr::mutate(
-    pareto_status = dplyr::case_when(
-      problematic_1 & problematic_2 ~ "Problematic in both",
-      problematic_1 ~ "Problematic in m_het_1_pre",
-      problematic_2 ~ "Problematic in m_het_2_pre",
-      TRUE ~ "Not problematic"
+  p_pareto <- ggplot(dat, aes(x = time, y = Moisture_content)) +
+    geom_line(aes(group = id_bellota), alpha = 0.25) +
+    geom_point(aes(colour = pareto_status), alpha = 0.6) +
+    facet_wrap(~ codigo) +
+    labs(x = "Time", y = "Moisture content (%)",
+         colour = "Pareto k") +
+    theme_classic()
+  ggsave(paste0("07-img/pareto_k_", fase, ".png"),
+         p_pareto, width = 14, height = 8, dpi = 150)
+  cat("Figura pareto guardada en 07-img/pareto_k_", fase, ".png\n", sep = "")
+}
+
+# ---- 2.6 Pendientes totales por especie (M_het_2) ----
+# La pendiente time_s:Dim de cada especie = base (coccifera) + ajuste.
+# El coeficiente de la interaccion triple es siempre la DESVIACION
+# respecto al nivel base del factor species.
+especies        <- levels(modelos$m_het_2_pre$data$species)
+especie_base    <- especies[1]           # coccifera (ordinal: brms usa el 1er nivel)
+especies_ajuste <- especies[-1]
+
+draws2      <- as_draws_df(modelos$m_het_2_pre)
+pend_filas  <- list()
+for (dim in c("Dim.1", "Dim.2", "Dim.3")) {
+  base_col <- paste0("b_time_s:", dim)
+  totales  <- list()
+  totales[[especie_base]] <- draws2[[base_col]]
+  for (sp in especies_ajuste) {
+    adj_col <- paste0("b_time_s:", dim, ":species", gsub(" ", "", sp))
+    totales[[sp]] <- draws2[[base_col]] + draws2[[adj_col]]
+  }
+  for (sp in especies) {
+    pend_filas[[length(pend_filas) + 1]] <- tibble(
+      dimension = dim,
+      especie   = sp,
+      pendiente = median(totales[[sp]]),
+      ic_lo     = quantile(totales[[sp]], 0.025) |> unname(),
+      ic_hi     = quantile(totales[[sp]], 0.975) |> unname()
     )
-  )
+  }
+}
+pend_df <- dplyr::bind_rows(pend_filas)
+write.csv(pend_df, "00-data/phylo/pendientes_por_especie_m_het_2_pre.csv",
+          row.names = FALSE)
 
-library(ggplot2)
-ggplot(
-  df.plot,
-  aes(
-    x = time,
-    y = Moisture_content
-  )
-) +
-  geom_line(
-    aes(group = id_bellota),
-    alpha = 0.25
-  ) +
-  geom_point(
-    aes(
-      colour = pareto_status
-    ),
-    alpha = 0.6
-  ) +
-  facet_wrap(
-    ~ codigo
-  ) +
-  labs(
-    x = "Time",
-    y = "Moisture content (%)",
-    shape = "Pareto k"
-  ) +
+p_forest <- ggplot(pend_df, aes(x = pendiente, y = especie)) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  geom_pointrange(aes(xmin = ic_lo, xmax = ic_hi)) +
+  facet_wrap(~ dimension, scales = "free_x") +
+  labs(x = "Pendiente time_s:Dim (tasa de desecacion)", y = NULL) +
   theme_classic()
+ggsave("07-img/forest_pendientes_m_het_2_pre.png",
+       p_forest, width = 10, height = 6, dpi = 150)
+cat("Pendientes por especie y forest plot guardados\n")
 
-## === POST ===
+# ---- 2.7 Posterior predictive checks (PNG) ----
+for (nm in names(modelos)) {
+  p_pp <- pp_check(modelos[[nm]]) + ggplot2::ggtitle(nm)
+  ggsave(paste0("07-img/pp_check_", nm, ".png"),
+         p_pp, width = 8, height = 6, dpi = 150)
+}
+cat("Posterior predictive checks guardados en 07-img/pp_check_*.png\n")
 
-loo_1 <- loo(models[["m_het_1_post"]])
-loo_2 <- loo(models[["m_het_2_post"]])
+cat("\n========== FASE 2 completada ==========\n")
 
-k_1 <- loo_1$diagnostics$pareto_k
-k_2 <- loo_2$diagnostics$pareto_k
 
-bad_1 <- which(k_1 > 0.7)
-bad_2 <- which(k_2 > 0.7)
-
-df.plot <- df.t2 |>
-  dplyr::filter(!is.na(Moisture_content)) |>
-  dplyr::mutate(
-    k_1 = k_1,
-    k_2 = k_2,
-    problematic_1 = k_1 > 0.7,
-    problematic_2 = k_2 > 0.7
-  )
-
-df.plot <- df.plot |>
-  dplyr::mutate(
-    pareto_status = dplyr::case_when(
-      problematic_1 & problematic_2 ~ "Problematic in both",
-      problematic_1 ~ "Problematic in m_het_1_pre",
-      problematic_2 ~ "Problematic in m_het_2_pre",
-      TRUE ~ "Not problematic"
-    )
-  )
-
-library(ggplot2)
-ggplot(
-  df.plot,
-  aes(
-    x = time,
-    y = Moisture_content
-  )
-) +
-  geom_line(
-    aes(group = id_bellota),
-    alpha = 0.25
-  ) +
-  geom_point(
-    aes(
-      colour = pareto_status
-    ),
-    alpha = 0.6
-  ) +
-  facet_wrap(
-    ~ codigo
-  ) +
-  labs(
-    x = "Time",
-    y = "Moisture content (%)",
-    shape = "Pareto k"
-  ) +
-  theme_classic()

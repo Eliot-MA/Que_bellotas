@@ -12,11 +12,10 @@ format:
       - margin=2.5cm
     fontsize: 11pt
     keep-md: false
-bibliography: ../09-bib/bibliografía.bib
 ---
 
 ```{r setup, include=FALSE}
-if (!file.exists("00-data/desiccation_traits_long.csv")) {
+if (!file.exists("00-data\desiccation_traits_long.csv")) {
   knitr::opts_knit$set(root.dir = "..")
 }
 suppressPackageStartupMessages({
@@ -53,7 +52,7 @@ La filogenia permite modelar la **covarianza entre especies** basada en su paren
 # Datos y filogenia
 
 ```{r datos}
-source("01-scripts/d.05.z.pruebas_filo.R", local = TRUE)
+source("01-scripts\d.05.z.pruebas_filo.R", local = TRUE)
 ```
 
 # Modelos
@@ -159,7 +158,7 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 | sd(species libre) | 1.38 | Magnitud similar a la filogenética |
 | Proporción filogenética (sd²) | ~0.55 | sd_phylo² / (sd_phylo² + sd_libre²); misma incertidumbre enorme |
 
-**Lectura**: con 8 especies la varianza filogenética es **indistinguible de la varianza "libre"** entre especies. El CCI filogenético (proporción de varianza de pendiente) estimado en la corrida previa era bajo (0.075, IC 0.001 – 0.512) y debe recalcularse con la configuración final; la conclusión —señal filogenética débil— no cambia.
+**Lectura**: con 8 especies la varianza filogenética es **indistinguible de la varianza "libre"** entre especies. El CCI filogenético (proporción de varianza de pendiente) en la corrida final es 0.043 (IC₉₀%: 0.0004 – 0.323); la conclusión —señal filogenética débil— no cambia.
 
 ### Fase POST (`t > 94 h`)
 
@@ -378,6 +377,101 @@ Sin término de especie libre (por diseño), toda la varianza de especie se atri
 
 La señal filogenética es **equivalente** en ambos modelos y **no aumenta** al incorporar las interacciones triples. Ninguna de las dos permite distinguir varianza filogenética de 0.
 
+## Comparación de modelos con LOO (Leave-One-Out Bayesiano)
+
+### Resultados
+
+| Fase | Modelo | elpd_loo | elpd_diff (SE) | LOOIC | k_psis > 0.7 |
+|------|--------|----------|----------------|-------|--------------|
+| **PRE** | **M_het_2** (triple) | **-2310.6** | 0 (ref.) | 4621.1 | 29 |
+| PRE | M_het_1 (libre) | -2388.4 | -77.8 (15.8) | 4776.8 | 21 |
+| **POST** | **M_het_2** (triple) | **-3694.7** | 0 (ref.) | 7389.5 | 16 |
+| POST | M_het_1 (libre) | -3730.5 | -35.8 (13.8) | 7461.0 | 8 |
+
+M_het_2 mejora significativamente el ajuste en ambas fases:
+
+- **PRE**: elpd más alto en 77.8 puntos (SE = 15.8; diferencia ~4.9 SE → clara)
+- **POST**: elpd más alto en 35.8 puntos (SE = 13.8; diferencia ~2.6 SE → moderada)
+
+La superioridad de M_het_2 es **consistente** con el patrón observado en los coeficientes: al modelar explícitamente la heterogeneidad por especie con interacciones triples, el modelo evita que la información que las correlaciones proporcionan se distribuya incorrectamente entre el efecto global `time_s:Dim.2` y los efectos específicos de especie.
+
+### Diagnóstico: puntos problemáticos (pareto *k* > 0.7) en fase PRE
+
+La estimación LOO deja una observación fuera por iteración. Cuando la suavización `psis` falla para alguna observación (*k* > 0.7), la estimación de `elpd_loo` es inestable para esa observación. En los modelos PRE:
+
+| Métrica | M_het_1 | M_het_2 |
+|---------|---------|---------|
+| Total observaciones | 2066 | 2066 |
+| Obs con *k* > 0.7 | 21 (1.0%) | 29 (1.4%) |
+| Máximo *k* | 1.47 | 1.60 |
+
+Las 35 observaciones problemáticas (únicas entre ambos modelos) se reparten en 22 bellotas de 6 códigos de procedencia:
+
+| Código | Especie | Bellotas afectadas | Obs. problemáticas |
+|--------|---------|--------------------|--------------------|
+| IL3 | *Q. ilex* | 7 | 14 |
+| PE2 | *Q. petraea* | 6 | 9 |
+| PU1 | *Q. pubescens* | 5 | 8 |
+| PY1 / PY2 | *Q. pyrenaica* | 2 | 3 |
+| CO2 | *Q. coccifera* | 1 | 1 |
+
+Las más problemáticas (con mayor *k*), casi todas con Dim.1 y/o Dim.2 muy negativos:
+
+| id_bellota | Especie | Código | Dim.1 | Dim.2 | Obs. problemáticas |
+|------------|---------|--------|-------|-------|--------------------|
+| 450 | *Q. pubescens* | PU1 | -2.69 | -1.71 | 4 (times 0, 4.6, 28–44 h) |
+| 47 | *Q. petraea* | PE2 | -5.77 | -2.72 | 2 (times 0, 44 h) |
+| 59 | *Q. petraea* | PE2 | -1.37 | -0.81 | 3 (times 0, 29.1, 44 h) |
+| 57 | *Q. petraea* | PE2 | -4.00 | -3.49 | 1 (time 44 h) |
+| 317 | *Q. pyrenaica* | PY1 | -0.40 | -0.60 | 2 (times 0, 43.8 h) |
+
+**Patrón**: las observaciones problemáticas corresponden a bellotas con valores extremos en Dim.1 (tamaño) y Dim.2 (pericarpo), negativos, al inicio de la fase PRE (0–44 h). Son precisamente las especies donde el modelo detecta los efectos más fuertes (petraea con Dim.1 protector +3.6, pubescens con Dim.2 acelerador -2.3). El modelo tiene dificultad para predecir la trayectoria de estas bellotas porque sus valores de Dim.1/Dim.2 los sitúan fuera del comportamiento promedio; la likelihood subestima su desecación real.
+
+**Recomendaciones:**
+
+1. **Refit con `moment_match = TRUE`** en `loo()`: la función repondera el ELPD de forma más robusta para puntos con *k* > 0.7, lo que podría estabilizar la comparación.
+2. **k-fold cross-validation**: alternativa más costosa pero definitiva como comprobación futura.
+3. **Impacto real**: dado que el problema afecta solo al 1–1.4% de las observaciones y la diferencia entre modelos es ~4.9 SE, el resultado **no debería cambiar materialmente** con la corrección. La recomendación de M_het_2 como modelo de referencia se mantiene.
+
+## Comparación simplificada con modelos glmmTMB (sin filogenia)
+
+La comparación formal por LOO/WAIC con los modelos frecuentistas quedaría pendiente; en su lugar se comparan los coeficientes de efectos fijos (estimación entre corchetes, IC 95%) de los cuatro modelos equivalentes:
+
+- **glmmTMB homog (sin filogenia)**: `mm.pre.1` / `mm.post.1`
+- **glmmTMB het (sin filogenia)**: `m.pre.all.het` / `m.post.all.het`
+- **brms M_het_1 (con filogenia)**: efecto de rasgo homogéneo
+- **brms M_het_2 (con filogenia)**: efecto de rasgo homogéneo + interacciones triples
+
+Los asteriscos marcan significación estadística (*p* < 0.05/IC 95% que no cruza 0); en los bayesianos, un IC 95% que no incluye 0 se marca con `*`.
+
+### Fase PRE (`t < 94 h`)
+
+| Parámetro | glmmTMB homog (sin filogenia) | glmmTMB het (sin filogenia) | brms M_het_1 (con filogenia) | brms M_het_2 (con filogenia) |
+|-----------|-------------------------------|-----------------------------|------------------------------|------------------------------|
+| time_s | -18.73 [-21.55, -15.9] *** | -18.35 [-21.15, -15.55] *** | -18.05 [-21.39, -14.5] * | -18.04 [-21.36, -14.25] * |
+| Dim.1 | 1.13 [0.74, 1.52] *** | 1.13 [0.74, 1.52] *** | 1.1 [0.79, 1.4] * | 1.11 [0.8, 1.42] * |
+| Dim.2 | -1 [-1.54, -0.47] *** | -1.01 [-1.54, -0.47] *** | -1 [-1.43, -0.57] * | -1.01 [-1.42, -0.59] * |
+| Dim.3 | -0.68 [-1.21, -0.15] * | -0.69 [-1.22, -0.15] * | -0.67 [-1.09, -0.26] * | -0.66 [-1.07, -0.24] * |
+| time_s:Dim.1 | 1.79 [1.42, 2.16] *** | 1.52 [0.85, 2.18] *** | 1.77 [1.53, 2] * | 1.67 [1.15, 2.18] * |
+| time_s:Dim.2 | -0.81 [-1.32, -0.31] ** | -0.75 [-1.51, 0.02] | -0.85 [-1.17, -0.53] * | -0.39 [-0.97, 0.21] |
+| time_s:Dim.3 | -0.62 [-1.12, -0.12] * | -1.1 [-1.9, -0.3] ** | -0.57 [-0.87, -0.26] * | -1.62 [-2.25, -1] * |
+
+### Fase POST (`t > 94 h`)
+
+| Parámetro | glmmTMB homog (sin filogenia) | glmmTMB het (sin filogenia) | brms M_het_1 (con filogenia) | brms M_het_2 (con filogenia) |
+|-----------|-------------------------------|-----------------------------|------------------------------|------------------------------|
+| time_s | -7.79 [-8.59, -6.99] *** | -7.92 [-8.61, -7.22] *** | -7.74 [-9.51, -5.84] * | -7.93 [-9.86, -5.98] * |
+| Dim.1 | 0.64 [0.33, 0.94] *** | 0.64 [0.33, 0.95] *** | 0.63 [0.29, 0.95] * | 0.64 [0.32, 0.97] * |
+| Dim.2 | -0.51 [-0.93, -0.1] * | -0.51 [-0.93, -0.1] * | -0.51 [-0.95, -0.06] * | -0.52 [-0.94, -0.08] * |
+| Dim.3 | -0.25 [-0.67, 0.18] | -0.23 [-0.65, 0.19] | -0.26 [-0.7, 0.18] | -0.25 [-0.69, 0.18] |
+| time_s:Dim.1 | 0.37 [0.25, 0.49] *** | 0.09 [-0.26, 0.43] | 0.39 [0.32, 0.46] * | 0.08 [-0.11, 0.28] |
+| time_s:Dim.2 | -0.01 [-0.18, 0.15] | -0.09 [-0.46, 0.28] | -0.01 [-0.1, 0.09] | -0.07 [-0.28, 0.15] |
+| time_s:Dim.3 | 0.01 [-0.16, 0.17] | -0.21 [-0.61, 0.2] | 0.01 [-0.08, 0.1] | -0.2 [-0.43, 0.03] |
+
+**Lectura (PRE):** los cuatro modelos coinciden en la magnitud y dirección de los efectos globales (`time_s`, `Dim.*`, `time_s:Dim.1` positivo/protector, `time_s:Dim.2` y `time_s:Dim.3` negativos/aceleradores). La coincidencia confirma que los resultados de los modelos bayesianos con filogenia **no dependen de la inclusión de la filogenia** (que apenas aporta señal) y que eran estables frente a la especificación frecuentista. Las diferencias aparecen en los modelos con interacciones triples: brms M_het_2 intensifica `time_s:Dim.3` (-1.62) frente a glmmTMB het (-1.1), mientras que para `time_s:Dim.2` la triple de glmmTMB sigue siendo negativa pero pierde significación; esto refleja que el efecto heterogéneo se reparte distinto entre el término global y los ajustes de especie según el marco estadístico.
+
+**Lectura (POST):** todos los modelos coinciden en que los efectos de rasgo sobre la pendiente desaparecen o colapsan (solo `time_s:Dim.1` homogéneo conserva un efecto débil, ~0.37-0.39). Es la confirmación cruzada del hallazgo central: la influencia de los rasgos es exclusiva de la fase lineal de desecación.
+
 ## Comparación de fases PRE vs POST
 
 Los cuatro modelos muestran el mismo patrón temporal, que es el resultado más robusto:
@@ -411,7 +505,8 @@ Los cuatro modelos muestran el mismo patrón temporal, que es el resultado más 
 # Pendiente
 
 - [x] Ajustar modelos PRE y POST (M_het_1 y M_het_2) con configuración limpia (0 divergencias)
-- [ ] Comparar con modelos frecuentistas (WAIC/LOO)
-- [ ] Recomputar el CCI filogenético y la proporción de varianza con la corrida final
+- [ ] Comparar con modelos frecuentistas (WAIC/LOO) — *pospuesto: comparación formal ELPD/WAIC entre brms y glmmTMB es compleja; se sustituye por una comparación simplificada de parámetros (sección siguiente)*
+- [x] Comparación simplificada de parámetros con modelos glmmTMB sin filogenia (PRE y POST)
+- [x] Recomputar el CCI filogenético y la proporción de varianza con la corrida final (0.043, IC₉₀% 0.0004 – 0.323)
 - [ ] Análisis de sensibilidad de la filogenia (Grafen vs alternativa)
 - [ ] Figuras de resultados
