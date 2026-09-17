@@ -52,6 +52,14 @@ dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
 # ============================================================
 cat("\n========== FASE 0: Preparacion ==========\n")
 
+# ---- 0.0 Procedencias excluidas ----
+# IL3 (Quercus ilex) se ELIMINA del analisis: tiene solo 60 observaciones
+# en fase PRE (t < 94 h) frente a 150 en el resto de procedencias, lo que
+# impide la estimacion adecuada de sus parametros. Se retira TAMBIEN de la
+# fase POST para que las comparaciones pre-post se hagan sobre el mismo
+# conjunto de procedencias (por eso el filtro esta ANTES de la particion).
+PROCEDENCIAS_EXCLUIDAS <- "IL3"
+
 # ---- 0.1 Cargar datos (siempre frescos; no reutilizar dataframes viejos
 #   del entorno, que pueden tener columnas obsoletas) ----
 df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
@@ -60,6 +68,7 @@ df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
   left_join(y = df.famd, by = "id_bellota") |>
+  dplyr::filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
   tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
   rename(time = tiempo_acumulado_horas) |>
   mutate(
@@ -71,6 +80,11 @@ df <- df.bellotas |>
 t94  <- as.vector((94 - mean(df$time)) / sd(df$time))
 df.t1 <- df |> filter(time_s < t94)
 df.t2 <- df |> filter(time_s > t94)
+
+# Verificar que la procedencia excluida no esta en ninguna fase
+stopifnot(!any(df.t1$codigo %in% PROCEDENCIAS_EXCLUIDAS),
+          !any(df.t2$codigo %in% PROCEDENCIAS_EXCLUIDAS))
+cat("Procedencias excluidas:", paste(PROCEDENCIAS_EXCLUIDAS, collapse = ", "), "\n")
 
 needed_cols <- c("time_s", "species", "codigo", "id_bellota", "Dim.1", "Dim.2", "Dim.3")
 missing_t1  <- setdiff(needed_cols, colnames(df.t1))

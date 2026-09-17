@@ -27,6 +27,10 @@
 library(tidyverse)
 
 # ---- 0. Datos ----
+# Procedencia IL3 excluida: muy pocas observaciones en fase PRE (60 vs 150)
+# en el resto, impide la estimacion. Se elimina de ambas fases (PRE y POST)
+# para que las comparaciones pre-post sean validas.
+PROCEDENCIAS_EXCLUIDAS <- "IL3"
 df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 df.famd     <- read.csv("00-data/famd_ind_coord.csv")
 
@@ -34,6 +38,7 @@ df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
   left_join(y = df.famd, by = "id_bellota") |>
+  dplyr::filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
   tidyr::drop_na(Moisture_content, Dim.1, Dim.2, Dim.3) |>
   rename(time = tiempo_acumulado_horas) |>
   mutate(

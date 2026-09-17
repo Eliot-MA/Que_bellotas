@@ -36,12 +36,16 @@ suppressPackageStartupMessages(library(patchwork))
 
 # Datos: reconstruccion en solitario por si no se ejecuta via d.05
 if (!exists("df") || !exists("df.traits") || !exists("df.t1") || !exists("df.t2")) {
+  # Procedencia IL3 excluida (ver d.05.0.model_traits.R): se elimina de
+  # ambas fases PRE y POST para que las comparaciones pre-post sean validas.
+  PROCEDENCIAS_EXCLUIDAS <- "IL3"
   df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
   df.famd     <- read.csv("00-data/famd_ind_coord.csv")
   df <- df.bellotas |>
     dplyr::select(-X) |>
     dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
     left_join(y = df.famd, by = "id_bellota") |>
+    dplyr::filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
     tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
     rename(time = tiempo_acumulado_horas) |>
     mutate(

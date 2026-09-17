@@ -28,12 +28,17 @@ dir.create(OUTDIR_CSV, showWarnings = FALSE, recursive = TRUE)
 # ============================================================
 # 0. Datos (misma preparacion que d.05.z.pruebas_filo.R)
 # ============================================================
+# Procedencia IL3 excluida (ver d.05.0.model_traits.R): muy pocas obs en
+# fase PRE (60 vs 150); se elimina de ambas fases para comparaciones
+# pre-post validas.
+PROCEDENCIAS_EXCLUIDAS <- "IL3"
 df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 df.famd     <- read.csv("00-data/famd_ind_coord.csv")
 df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
   left_join(y = df.famd, by = "id_bellota") |>
+  dplyr::filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
   tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
   rename(time = tiempo_acumulado_horas) |>
   mutate(
