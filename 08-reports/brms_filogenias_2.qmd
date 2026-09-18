@@ -15,15 +15,26 @@ format:
 ---
 
 ```{r setup, include=FALSE}
-if (!file.exists("00-data\desiccation_traits_long.csv")) {
+if (!file.exists("00-data/desiccation_traits_long.csv")) {
   knitr::opts_knit$set(root.dir = "..")
 }
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(ape)
   library(knitr)
 })
 ```
+
+# Resumen
+
+**Introducción y objetivos**: las bellotas de *Quercus* se desecan a ritmos distintos según la especie y la procedencia. En análisis previos se mostró que los rasgos del fruto (tamaño, pericarpo y cicatriz de abscisión, sintetizados en tres dimensiones de un FAMD) modulan la velocidad de desecación de forma heterogénea entre especies. Este trabajo incorpora la **filogenia del género *Quercus*** para modelar la covarianza entre especies y evaluar si el parentesco evolutivo absorbe parte de esa heterogeneidad.
+
+**Métodos**: se analizaron 403 bellotas de 8 especies y 15 procedencias (2012 observaciones en la fase lineal o PRE, *t* < 94 h; 2015 en la fase de equilibrio o POST, *t* > 94 h). La matriz de covarianza filogenética se derivó del filogenoma de *Quercus* de Hipp et al. (2020) (crown tree, RAD-seq). Se ajustaron dos modelos bayesianos multinivel con brms: **M_het_1** (filogenia en las pendientes + especie libre) y **M_het_2** (idem + interacciones triples *tiempo*:rasgo:especie), comparados mediante LOO y validados con diagnósticos de convergencia y pareto-*k*.
+
+**Resultados**: los rasgos modulan la **velocidad de desecación en la fase lineal**, no la humedad de equilibrio. Dim.1 (tamaño) es protector en las 8 especies; Dim.2 (pericarpo) y Dim.3 (cicatriz) aceleran la desecación, con efectos fuertes y específicos de especie (petraea y pubescens en Dim.2; coccifera en Dim.3). La varianza de las pendientes está dominada por la **procedencia** en PRE (sd ≈ 4.3, correlación intercepto-pendiente ≈ 0.8) y **colapsa en POST** (sd ≈ 1.2–1.3). La señal filogenética es débil e indistinguible de cero (CCI ≈ 0.007; sd(phylo) ≈ 0.56–0.61 con IC que incluyen ~0). M_het_2 supera a M_het_1 en ambas fases (LOO: Δelpd = 81.0, SE 17.2 en PRE; Δelpd = 30.2, SE 13.6 en POST). Todos los modelos convergen sin divergencias (Rhat ≤ 1.03).
+
+**Conclusiones**: la influencia de los rasgos sobre la desecación es un fenómeno de la fase lineal, heterogéneo entre especies y no capturado por la filogenia a este nivel de repertorio taxonómico (8 especies). Las interacciones triples mejoran el ajuste sin alterar las conclusiones cualitativas, que se mantienen frente a la actualización del árbol y la depuración de la procedencia IL3.
 
 # Introducción
 
@@ -56,8 +67,8 @@ La presente versión incorpora dos actualizaciones del análisis:
 
 # Datos y filogenia
 
-```{r datos}
-source("01-scripts\d.05.z.pruebas_filo.R", local = TRUE)
+```{r datos, eval=FALSE}
+source("01-scripts/d.05.z.pruebas_filo.R", local = TRUE)
 ```
 
 ## Filogenia: crown tree de Hipp et al. (2020)
