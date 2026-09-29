@@ -1,4 +1,5 @@
 if (!exists("bioclimate_cols")) source("01-scripts/d.03.0-utils.R")
+if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
 
 library(tidyverse)
 
@@ -30,8 +31,15 @@ df <- df.bellotas |>
          pericarp_rupture = rajas_pericarpo
   ) |> 
   unique() |> 
+  # Procedencias excluidas ANTES de calcular el FAMD: los ejes deben reflejar
+  # el conjunto real de procedencias del estudio (15 codigos), no uno que
+  # incluye una procedencia que luego se descarta de los modelos.
+  filter(!prov_code %in% PROCEDENCIAS_EXCLUIDAS) |>
   drop_na() |> 
   mutate(pericarp_rupture = as.factor(pericarp_rupture))
+
+assert_sin_procedencias_excluidas(df, "prov_code", "FAMD (matriz de entrada)")
+reportar_composicion_procedencias(df, "prov_code", "FAMD (matriz de entrada)")
 
 df |> 
   group_by(species, provenance) |> 
@@ -80,11 +88,28 @@ library(factoextra)
 df.famd <- df |> dplyr::select(-id_bellota, -species, -provenance, -prov_code)
 
 # Calculate famd
+# Los ejes se calculan sobre `df`, que ya viene filtrado por
+# PROCEDENCIAS_EXCLUIDAS: el espacio de rasgos refleja el conjunto real de
+# procedencias del estudio.
 famd.traits <- FAMD(df.famd, graph = FALSE)
 
-df <- cbind(df, famd.traits$ind$coord[,1:5])
+# Coordenadas individuales: se seleccionan por nombre y se renombran Dim.1..Dim.5
+# para depender solo del contenido y no del formato de $ind de FactoMineR.
+coord_ind <- as.data.frame(famd.traits$ind$coord)
+coord_ind <- coord_ind[, grep("^Dim\\.", colnames(coord_ind)), drop = FALSE]
+coord_ind <- coord_ind[, 1:5, drop = FALSE]
+names(coord_ind) <- paste0("Dim.", 1:5)
 
-write.csv(x = df, "00-data/famd_ind_coord.csv")
+df <- cbind(df, coord_ind)
+
+assert_sin_procedencias_excluidas(df, "prov_code", "famd_ind_coord.csv")
+# row.names = FALSE: por defecto write.csv escribe los nombres de fila como
+# primera columna sin cabecera, que al releer el CSV aparece como "H1".
+write.csv(x = df, "00-data/famd_ind_coord.csv", row.names = FALSE)
+cat("Coordenadas FAMD guardadas en 00-data/famd_ind_coord.csv (",
+    nrow(df), " bellotas, ", length(PROCEDENCIAS_EXCLUIDAS) ,
+    " procedencia(s) excluida(s): ",
+    paste(PROCEDENCIAS_EXCLUIDAS, collapse = ", "), ")\n", sep = "")
 
 
 ### Save famd info ----
@@ -215,7 +240,9 @@ tabla_contrib <- tabla_famd %>%
 
 tabla_contrib <- tabla_contrib %>%
   mutate(
-    signo = ifelse(coord >= 0, "+", "ÔêÆ"),
+    # Signo en ASCII plano: el guion unicode estaba corrupto en el codigo
+    # fuente y write.csv2 lo exportaba como mojibake en los CSV de salida.
+    signo = ifelse(coord >= 0, "+", "-"),
     contrib_signo = paste0(round(contrib, 1), signo)
   )
 

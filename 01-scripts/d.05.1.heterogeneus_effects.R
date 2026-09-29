@@ -23,6 +23,8 @@
 
 GEN_DASH <- "N"
 
+if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(glmmTMB)
@@ -36,9 +38,8 @@ suppressPackageStartupMessages(library(patchwork))
 
 # Datos: reconstruccion en solitario por si no se ejecuta via d.05
 if (!exists("df") || !exists("df.traits") || !exists("df.t1") || !exists("df.t2")) {
-  # Procedencia IL3 excluida (ver d.05.0.model_traits.R): se elimina de
-  # ambas fases PRE y POST para que las comparaciones pre-post sean validas.
-  PROCEDENCIAS_EXCLUIDAS <- "IL3"
+  # Procedencias excluidas declaradas en 01-scripts/00-config_procedencias.R
+  if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
   df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
   df.famd     <- read.csv("00-data/famd_ind_coord.csv")
   df <- df.bellotas |>
@@ -61,6 +62,12 @@ if (!exists("df") || !exists("df.traits") || !exists("df.t1") || !exists("df.t2"
   df.t1 <- df |> filter(time_s < t94)
   df.t2 <- df |> filter(time_s > t94)
 }
+
+# El filtro se aplica antes de la particion temporal, de modo que PRE y POST
+# comparten el mismo conjunto de procedencias.
+assert_sin_procedencias_excluidas(df,    "codigo", "d.05.1 datos")
+assert_sin_procedencias_excluidas(df.t1, "codigo", "d.05.1 fase PRE")
+assert_sin_procedencias_excluidas(df.t2, "codigo", "d.05.1 fase POST")
 
 source("01-scripts/00-export_helpers.R")
 # dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
@@ -120,10 +127,14 @@ cat("Guardadas: 00-data/heterogeneity_cor_global.csv y 00-data/heterogeneity_cor
 # 2b. Correlacion entre rasgos funcionales originales dentro de especies
 # ============================================================
 # Leer datos originales con rasgos funcionales
+# Se releen del CSV largo (no del FAMD) porque se usan los rasgos en bruto, pero
+# se aplican las MISMAS exclusions que el resto de la linea d.*: sin este
+# filtro las correlaciones por especie incluian las bellotas de IL3.
 df.traits_orig <- read.csv("00-data/desiccation_traits_long.csv") |>
-  dplyr::select(id_bellota, especie, peso_seco, Volumen_estimado_cm3, 
+  dplyr::select(id_bellota, especie, codigo, peso_seco, Volumen_estimado_cm3, 
                 Relacion_SV, SPM_g_cm2, Seed_Coat_Ratio, 
                 Ratio_A.cicatriz_A.bellota, rajas_pericarpo) |>
+  filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
   rename(species = especie,
          mass = peso_seco,
          volume = Volumen_estimado_cm3,
@@ -134,6 +145,9 @@ df.traits_orig <- read.csv("00-data/desiccation_traits_long.csv") |>
          pericarp_rupture = rajas_pericarpo) |>
   mutate(pericarp_rupture = as.numeric(as.character(pericarp_rupture))) |>
   distinct()
+
+assert_sin_procedencias_excluidas(df.traits_orig, "codigo",
+                                  "d.05.1 rasgos originales")
 
 species_order <- c("Quercus coccifera", "Quercus ilex", "Quercus suber",
                    "Quercus faginea", "Quercus pyrenaica", "Quercus pubescens",

@@ -1,7 +1,17 @@
 GEN_DASH <- "N"
 stopifnot("GEN_DASH must be 'Y' or 'N'" = GEN_DASH %in% c("Y", "N"))
 
-df.bellotas <- read.csv(file = "00-data/df.bellotas.csv")
+if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
+
+# Fuente de datos. Antes se leia "00-data/df.bellotas.csv", una tabla ancha de
+# una fila por bellota que d.01.2 tiene comentada y que ya no existe en el
+# repositorio. Se usa el mismo long que d.03.1 ("desiccation_traits_long.csv"),
+# que contiene todas las columnas necesarias. Es seguro porque las variables
+# morfologicas usadas aqui son invariantes dentro de cada bellota (no dependen
+# del tiempo de muestreo), de modo que distinct(id_bellota) conserva los mismos
+# valores sea cual sea la fila de tiempo que se quede. Los NA son por bellota,
+# no por punto de muestreo.
+df.bellotas <- read.csv(file = "00-data/desiccation_traits_long.csv")
 
 library(tidyverse)
 library(emmeans)     # Calculo de medias marginales y tendencias
@@ -24,6 +34,9 @@ vars <- c("id_bellota","especie","codigo", "procedencia",
 df_unique <- df.bellotas %>%
   distinct(id_bellota, .keep_all = TRUE) %>%
   dplyr::select(all_of(vars)) %>%
+  # Procedencias excluidas (ver 00-config_procedencias.R): la tabla de rasgos
+  # describe el mismo conjunto de bellotas que los analisis de desecacion.
+  filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
   drop_na() %>%  # elimina filas con NA en cualquier columna
   mutate(
     especie = factor(especie),
@@ -43,6 +56,9 @@ df_unique <- df.bellotas %>%
          surface_cm2 = Area_estimada_cm2, 
          pericarp_rupture = rajas_pericarpo
          )
+
+assert_sin_procedencias_excluidas(df_unique, "prov_code", "d.02 tabla de rasgos")
+reportar_composicion_procedencias(df_unique, "prov_code", "d.02 tabla de rasgos")
 
 df <- df_unique
 

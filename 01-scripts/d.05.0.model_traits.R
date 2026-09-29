@@ -27,10 +27,12 @@
 library(tidyverse)
 
 # ---- 0. Datos ----
-# Procedencia IL3 excluida: muy pocas observaciones en fase PRE (60 vs 150)
-# en el resto, impide la estimacion. Se elimina de ambas fases (PRE y POST)
-# para que las comparaciones pre-post sean validas.
-PROCEDENCIAS_EXCLUIDAS <- "IL3"
+# Las procedencias excluidas se declaran una sola vez en
+# 01-scripts/00-config_procedencias.R. IL3 (Q. ilex) queda fuera de todo el
+# estudio: solo 2 tiempos de muestreo por debajo de 94 h (60 obs PRE frente a
+# 150 del resto) y metadatos de localidad incompletos. Se elimina de AMBAS
+# fases (PRE y POST) para que las comparaciones pre-post sean validas.
+if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
 df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 df.famd     <- read.csv("00-data/famd_ind_coord.csv")
 
@@ -47,6 +49,8 @@ df <- df.bellotas |>
     provenance = factor(provenance),
     id_bellota = factor(id_bellota)
   )
+
+assert_sin_procedencias_excluidas(df, "codigo", "d.05.0 datos")
 
 # Rasgos del FAMD a nivel de bellota (unidad muestral)
 df.traits <- df |>

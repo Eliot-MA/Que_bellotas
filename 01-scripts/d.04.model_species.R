@@ -1,3 +1,6 @@
+# Configuracion comun de la linea d.* (procedencias excluidas)
+if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
+
 # Load data ----
 df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 df.famd <- read.csv("00-data/famd_ind_coord.csv")
@@ -11,12 +14,19 @@ df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |> 
   left_join(y = df.famd, by = "id_bellota") |> 
+  # Procedencias excluidas (ver 00-config_procedencias.R). El filtro es explicito
+  # aunque el FAMD ya no contenga esas bellotas: `provenance` se usa como nivel
+  # aleatorio en todos los modelos de este script.
+  filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
   drop_na(Moisture_content, Dim.1, Dim.2, Dim.3) |> 
   rename(time = tiempo_acumulado_horas) |> 
   mutate(
     log.t = log(time+1), 
     sqrt.t = sqrt(time+1)
   )
+
+assert_sin_procedencias_excluidas(df, "codigo", "d.04 modelo de especies")
+reportar_composicion_procedencias(df, "codigo", "d.04 modelo de especies")
 
 # Model selection ----
 library(glmmTMB)
@@ -268,6 +278,11 @@ df.t1 <- df |>
 
 df.t2 <- df |> 
   filter(time > 94)
+
+# PRE y POST deben compartir el mismo conjunto de procedencias para que las
+# comparaciones de tasas entre fases sean validas.
+assert_sin_procedencias_excluidas(df.t1, "codigo", "d.04 fase PRE (t < 94 h)")
+assert_sin_procedencias_excluidas(df.t2, "codigo", "d.04 fase POST (t > 94 h)")
 
 ## Model pre
 mm.pre <- glmmTMB(Moisture_content ~ time * species + (time|provenance) + (time|id_bellota), data = df.t1)

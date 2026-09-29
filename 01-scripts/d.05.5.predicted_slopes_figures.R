@@ -28,10 +28,8 @@ dir.create(OUTDIR_CSV, showWarnings = FALSE, recursive = TRUE)
 # ============================================================
 # 0. Datos (misma preparacion que d.05.z.pruebas_filo.R)
 # ============================================================
-# Procedencia IL3 excluida (ver d.05.0.model_traits.R): muy pocas obs en
-# fase PRE (60 vs 150); se elimina de ambas fases para comparaciones
-# pre-post validas.
-PROCEDENCIAS_EXCLUIDAS <- "IL3"
+# Procedencias excluidas declaradas en 01-scripts/00-config_procedencias.R
+if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
 df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 df.famd     <- read.csv("00-data/famd_ind_coord.csv")
 df <- df.bellotas |>
@@ -47,6 +45,8 @@ df <- df.bellotas |>
     provenance = factor(provenance),
     id_bellota = factor(id_bellota)
   )
+
+assert_sin_procedencias_excluidas(df, "codigo", "d.05.5 datos")
 
 TIME_M <- mean(df$time)
 TIME_S <- sd(df$time)

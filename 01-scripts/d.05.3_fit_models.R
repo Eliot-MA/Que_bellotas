@@ -17,12 +17,14 @@ suppressPackageStartupMessages(library(tidyverse))
 
 # ---- 0. Datos (si se ejecuta en solitario, reconstruir) ----
 if (!exists("df") || !exists("df.t1") || !exists("df.t2")) {
+  if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
   df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
   df.famd     <- read.csv("00-data/famd_ind_coord.csv")
   df <- df.bellotas |>
     dplyr::select(-X) |>
     dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
     left_join(y = df.famd, by = "id_bellota") |>
+    filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
     tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
     rename(time = tiempo_acumulado_horas) |>
     mutate(
@@ -35,6 +37,12 @@ if (!exists("df") || !exists("df.t1") || !exists("df.t2")) {
   df.t1 <- df |> filter(time_s < t94)
   df.t2 <- df |> filter(time_s > t94)
 }
+
+# El termino aleatorio (1 + time_s | codigo) de M1/M2/M3 debe correr sobre el
+# mismo conjunto de procedencias que el resto de la linea d.*.
+assert_sin_procedencias_excluidas(df,      "codigo", "d.05.3 datos")
+assert_sin_procedencias_excluidas(df.t1,   "codigo", "d.05.3 fase PRE")
+assert_sin_procedencias_excluidas(df.t2,   "codigo", "d.05.3 fase POST")
 
 # Descomposicion dentro/entre especies (necesaria para M3)
 add_within_between <- function(dat) {

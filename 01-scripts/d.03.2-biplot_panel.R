@@ -35,15 +35,23 @@ rownames(var)[rownames(var) == "dry_weight"] <- "mass"
 # Corrigiendo forma robusta:
 ind$Dim3 <- ind[, 3]
 
+# Corte de Dim.3 en dos clases. OJO: cut(breaks = 2) parte el RANGO en dos
+# intervalos de igual anchura (corte en el punto medio del rango), NO en la
+# mediana. Las etiquetas las genera cut() a partir de los valores numericos,
+# asi que cambian en cuanto cambian los datos. Por eso NO se comparan contra
+# textos fijos: si el conjunto de bellotas cambia, esas cadenas dejan de
+# coincidir y todos los individuos caen en NA (figura en blanco). Se derivan
+# de los propios levels del corte.
+dim3_cut  <- cut(ind$Dim3, breaks = 2)
+dim3_lvls <- levels(dim3_cut)
+
 ind2 <- 
   cbind(ind, df |> dplyr::select(id_bellota, pericarp_rupture)) |> 
-  mutate(dim3_bin = cut(Dim3, breaks = 2),
-         dim3_bin = case_when(
-           dim3_bin == "(-1.98,1.11]" ~ "low",
-           dim3_bin == "(1.11,4.19]" ~ "high",
-           TRUE ~ NA_character_ # Opcional: para manejar valores fuera de rango
-         ), 
-         dim3_bin = factor(dim3_bin, levels = c("low", "high")))
+  mutate(dim3_bin = factor(
+           as.character(cut(Dim3, breaks = 2)),
+           levels = dim3_lvls,
+           labels = c("low", "high")
+         ))
 
 # 3.3 Escalado de variables (CLAVE para que las flechas tengan sentido) ----
 # Las variables est├ín en otra escala ÔåÆ hay que reescalar:

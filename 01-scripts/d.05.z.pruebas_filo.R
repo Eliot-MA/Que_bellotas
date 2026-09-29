@@ -11,11 +11,12 @@
 #   1. Tirada completa (iter=6000, warmup=3000, chains=4 en paralelo)
 #
 # Configuracion:
-#   - Cadenas en paralelo con cmdstanr (4 nucleos; ya no son secuenciales)
-#   - Backend cmdstanr (mas rapido que rstan)
+#   - Backend configurable: "rstan" (ya instalado en esta maquina) o
+#     "cmdstanr" (mas rapido, pero exige instalar cmdstanr + cmdstan).
+#   - Cadenas en paralelo con el backend elegido (4 nucleos)
 #   - adapt_delta=0.999, max_treedepth=15 (para reducir divergencias)
 #   - Priors mas informativos en sd (student_t(3,0,2.5)) para estabilizar
-#     grupos pequenos (8 especies, 16 codigos)
+#     grupos pequenos (8 especies, 15 codigos)
 # ============================================================
 
 N_CHAINS_FULL  <- 4
@@ -26,23 +27,41 @@ ADAPT_DELTA    <- 0.999
 MAX_TREEDEPTH  <- 15
 SEED_BASE      <- 123
 
+# ---- Backend ----
+# En esta maquina solo hay rstan 2.32.7; cmdstanr NO esta instalado (habria que
+# instalar ademas cmdstan, ~1 GB). Pon "cmdstanr" si lo instalas.
+BACKEND <- "rstan"
+
+# ---- Modo preparacion ----
+# PREP_ONLY = TRUE ejecuta SOLO la FASE 0 (carga de datos, filogenia, matrices,
+# comprobaciones) y se detiene antes de ajustar ningun modelo. Sirve para
+# verificar que todo esta listo sin gastar horas de muestreo.
+#
+# POR DEFECTO ESTA EN TRUE. Para lanzar de verdad las 4 tiradas hay que poner
+# esta linea a FALSE y despues source() el script. Es lo unico que hay que tocar.
+PREP_ONLY <- TRUE
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(brms)
   library(ape)
 })
 
-# cmdstanr es informativo: si falla, se avisa pero el script sigue y el
-# error real de brm() quedara capturado en el smoke_test.
-if (requireNamespace("cmdstanr", quietly = TRUE)) {
+# Preflight del backend: fallar aqui y no despues de compilar.
+if (!requireNamespace(BACKEND, quietly = TRUE)) {
+  stop(sprintf(
+    "El backend '%s' no esta instalado. Usa BACKEND <- \"rstan\" o instala %s.",
+    BACKEND, BACKEND))
+}
+cat("Backend:", BACKEND, as.character(packageVersion(BACKEND)), "\n")
+
+if (BACKEND == "cmdstanr") {
   cat("cmdstanr version:", as.character(packageVersion("cmdstanr")), "\n")
   cat("cmdstan path:", cmdstanr::cmdstan_path(), "\n")
   tryCatch(
     cat("cmdstan version:", cmdstanr::cmdstan_version(), "\n"),
     error = function(e) cat("  (cmdstan no localizado)\n")
   )
-} else {
-  warning("cmdstanr no está instalado; los ajustes con backend='cmdstanr' fallaran.")
 }
 
 dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
@@ -53,12 +72,13 @@ dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
 cat("\n========== FASE 0: Preparacion ==========\n")
 
 # ---- 0.0 Procedencias excluidas ----
-# IL3 (Quercus ilex) se ELIMINA del analisis: tiene solo 60 observaciones
-# en fase PRE (t < 94 h) frente a 150 en el resto de procedencias, lo que
-# impide la estimacion adecuada de sus parametros. Se retira TAMBIEN de la
+# Declaradas una sola vez en 01-scripts/00-config_procedencias.R.
+# IL3 (Quercus ilex) se ELIMINA de todo el estudio: solo 60 observaciones en
+# fase PRE (t < 94 h) frente a 150 en el resto de procedencias, lo que impide
+# la estimacion adecuada de sus parametros. Se retira TAMBIEN de la
 # fase POST para que las comparaciones pre-post se hagan sobre el mismo
 # conjunto de procedencias (por eso el filtro esta ANTES de la particion).
-PROCEDENCIAS_EXCLUIDAS <- "IL3"
+if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
 
 # ---- 0.1 Cargar datos (siempre frescos; no reutilizar dataframes viejos
 #   del entorno, que pueden tener columnas obsoletas) ----
@@ -75,6 +95,7 @@ df <- df.bellotas |>
     time_s     = as.vector(scale(time)),
     species    = factor(species),
     provenance = factor(provenance),
+    codigo     = factor(codigo),      # agrupador de (1 + time_s | codigo)
     id_bellota = factor(id_bellota)
   )
 t94  <- as.vector((94 - mean(df$time)) / sd(df$time))
@@ -82,9 +103,11 @@ df.t1 <- df |> filter(time_s < t94)
 df.t2 <- df |> filter(time_s > t94)
 
 # Verificar que la procedencia excluida no esta en ninguna fase
-stopifnot(!any(df.t1$codigo %in% PROCEDENCIAS_EXCLUIDAS),
-          !any(df.t2$codigo %in% PROCEDENCIAS_EXCLUIDAS))
+assert_sin_procedencias_excluidas(df,    "codigo", "d.05.z datos")
+assert_sin_procedencias_excluidas(df.t1, "codigo", "d.05.z fase PRE")
+assert_sin_procedencias_excluidas(df.t2, "codigo", "d.05.z fase POST")
 cat("Procedencias excluidas:", paste(PROCEDENCIAS_EXCLUIDAS, collapse = ", "), "\n")
+reportar_composicion_procedencias(df, "codigo", "d.05.z datos")
 
 needed_cols <- c("time_s", "species", "codigo", "id_bellota", "Dim.1", "Dim.2", "Dim.3")
 missing_t1  <- setdiff(needed_cols, colnames(df.t1))
@@ -122,6 +145,13 @@ if (length(common_species) < length(species_in_data)) {
 # Filtrar A a especies comunes
 A <- A[common_species, common_species]
 
+# OJO: el identificador escrito en `cov = A` dentro de bf() tiene que coincidir
+# EXACTAMENTE con la clave de `data2` (list(A = ...)). Si no coinciden, brms
+# aborta con "Object 'A' was not found in 'data2'" en tiempo de compilacion.
+stopifnot(is.matrix(A), identical(rownames(A), colnames(A)))
+cat("Matriz VCV A recortada a", nrow(A), "especies; nombres coherentes:", 
+    identical(rownames(A), colnames(A)), "\n")
+
 # ---- 0.4 Crear variable phylo_species (copia dedicada para termino filogenetico) ----
 # brms no permite usar el mismo factor dos veces con distinta covarianza
 df.t1$phylo_species <- factor(df.t1$species, levels = common_species)
@@ -141,6 +171,30 @@ if (na_phylo_t1 > 0 || na_phylo_t2 > 0) {
 }
 
 cat("\n========== FASE 0 completada ==========\n")
+
+# ---- Corte de preparacion ----
+# Con PREP_ONLY = TRUE se detiene aqui: no se ajusta ningun modelo. Sirve para
+# comprobar que datos, filogenia y matrices estan listos antes de lanzarse las
+# 4 tiradas (varias horas de muestreo).
+if (PREP_ONLY) {
+  cat("\n*** PREP_ONLY = TRUE: no se ejecuta la FASE 1 (ningun modelo ajustado) ***\n")
+  cat("Resumen de los datos que se usarian:\n")
+  for (nm in c("df.t1", "df.t2")) {
+    dd <- get(nm)
+    cat(sprintf("  %-6s %5d obs | %d especies | %d procedencias | %d bellotas\n",
+                nm, nrow(dd), nlevels(dd$species), nlevels(dd$codigo),
+                nlevels(dd$id_bellota)))
+    cat("         Moisture_content no perdido:", sum(!is.na(dd$Moisture_content)), "\n")
+  }
+  cat("\nParametros de la tirada completa:\n")
+  cat(sprintf("  backend=%s | chains=%d | iter=%d | warmup=%d | cores=%d\n",
+              BACKEND, N_CHAINS_FULL, ITER_FULL, WARMUP_FULL, N_CORES_PAR))
+  cat(sprintf("  adapt_delta=%.3f | max_treedepth=%d | seed=%d\n",
+              ADAPT_DELTA, MAX_TREEDEPTH, SEED_BASE))
+  cat("\nPara lanzar el ajuste de verdad:\n")
+  cat("  source('01-scripts/d.05.z.pruebas_filo.R')   # tras poner la bandera de arriba a FALSE\n")
+  quit(save = "no", status = 0)
+}
 
 # ============================================================
 # FASE 1: Tirada completa
@@ -209,14 +263,14 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
         iter = ITER_FULL,
         warmup = WARMUP_FULL,
         chains = N_CHAINS_FULL,
-        cores = N_CORES_PAR,  # cadenas en paralelo con cmdstanr
+        cores = N_CORES_PAR,  # cadenas en paralelo con el backend elegido
         control = list(
           adapt_delta = ADAPT_DELTA,
           max_treedepth = MAX_TREEDEPTH
         ),
         seed = seed,
         refresh = 100,  # Progreso cada 100 iteraciones
-        backend = "cmdstanr"
+        backend = BACKEND
       ),
       error = function(e) {
         fit_err <<- conditionMessage(e)
@@ -411,12 +465,14 @@ dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
 # ---- 2.1 Cargar modelos ----
 # Se recargan de disco: asi la FASE 2 es independiente de la sesion
 # de la FASE 1 (los RDS fueron guardados por smoke_test()).
-modelos <- list(
-  m_het_1_pre  = readRDS("00-data/phylo/m_het_1_pre.rds"),
-  m_het_1_post = readRDS("00-data/phylo/m_het_1_post.rds"),
-  m_het_2_pre  = readRDS("00-data/phylo/m_het_2_pre.rds"),
-  m_het_2_post = readRDS("00-data/phylo/m_het_2_post.rds")
-)
+nombres_modelo <- c("m_het_1_pre", "m_het_1_post", "m_het_2_pre", "m_het_2_post")
+rutas_modelo   <- file.path("00-data/phylo", paste0(nombres_modelo, ".rds"))
+faltantes      <- nombres_modelo[!file.exists(rutas_modelo)]
+if (length(faltantes) > 0) {
+  stop("Faltan modelos de la FASE 1: ", paste(faltantes, collapse = ", "),
+       ". Ejecuta primero con PREP_ONLY <- FALSE.", call. = FALSE)
+}
+modelos <- setNames(lapply(rutas_modelo, readRDS), nombres_modelo)
 
 # ---- 2.2 Resumen por modelo (a pantalla y a log) ----
 sink("00-data/phylo/summary_modelos.txt")
