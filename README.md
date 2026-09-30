@@ -112,7 +112,38 @@ d.01-load_desiccation_exp.R      master: loads d.01.1 + d.01.2, exports
 d.02-trait_tables.R              trait summaries per species/provenance
 d.03-trait_famd.R                FAMD on acorn traits
 d.04.model_species.R             species-level models
-d.05.0-d.05.3                    trait models, heterogeneous effects, phylogeny
+
+d.05.0.model_traits.R            master: trait effects on desiccation rate
+├── d.05.1.heterogeneus_effects.R   [exploratory] heterogeneity is real
+├── d.05.2.phylo_data.R             [check] phylogeny + covariance matrix
+├── d.05.3.reference_model.R        [REFERENCE MODEL] glmmTMB, random slopes
+│                                    by species and prov_code, no phylogeny
+├── d.05.4_phylo_check.R            [check] brms + phylogenetic covariance;
+│                                    not run in the main flow (hours of
+│                                    sampling), launch standalone
+└── d.05.5.slope_effects_figures.R  marginal trait effect on the slope,
+                                     averaged over species, PRE and POST
+
+The reference model is `Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3)
++ (0 + time_s | species) + (1 + time_s | prov_code) + (1 | id_bellota)`, fitted
+separately for PRE (t < 94 h) and POST (t > 94 h). Species enter as *random
+slopes* rather than fixed per-species coefficients, so the article's question is
+answered by one contrast per trait and heterogeneity is described as variance.
+The species term carries no intercept on purpose: `prov_code` is nested inside
+`species`, so a species intercept is already representable as a provenance
+intercept and estimating both leaves a redundant dimension. That is not a
+hypothesis, it is what the fit shows — the variant with a species intercept does
+not converge (non-positive-definite Hessian in PRE, singular in POST).
+`d.05.3.reference_model.R` fits that variant as `m.ref_int` for the record,
+compares everything by AIC/Akaike weights with non-converged models reported as
+excluded, and stops if the reference itself fails to converge.
+
+Phylogeny is a robustness check, not the reference: it carries no detectable
+signal at this taxonomic scale (see `08-reports/brms_filogenias_2.qmd`).
+
+The within/between species decomposition was removed from the scripts; it is
+kept only in the reports `Heterogeneus_effects_acorn_traits.qmd` and
+`d.07_brms_filogenias.qmd`.
 ```
 
 ### Laboratory conditions

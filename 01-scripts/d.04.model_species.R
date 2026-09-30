@@ -12,12 +12,15 @@ library(moments)
 # Creat working dataframe ----
 df <- df.bellotas |> 
   dplyr::select(-X) |>
-  dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |> 
-  left_join(y = df.famd, by = "id_bellota") |> 
+  dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
+  # famd_ind_coord.csv tambien trae `prov_code`; se descarta para no duplicar el
+  # nombre al hacer el join. Se conserva el de la tabla larga, que es el previo
+  # al filtro del FAMD.
+  left_join(y = df.famd |> dplyr::select(-prov_code), by = "id_bellota") |>
   # Procedencias excluidas (ver 00-config_procedencias.R). El filtro es explicito
   # aunque el FAMD ya no contenga esas bellotas: `provenance` se usa como nivel
   # aleatorio en todos los modelos de este script.
-  filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
+  filter(!prov_code %in% PROCEDENCIAS_EXCLUIDAS) |>
   drop_na(Moisture_content, Dim.1, Dim.2, Dim.3) |> 
   rename(time = tiempo_acumulado_horas) |> 
   mutate(
@@ -25,8 +28,8 @@ df <- df.bellotas |>
     sqrt.t = sqrt(time+1)
   )
 
-assert_sin_procedencias_excluidas(df, "codigo", "d.04 modelo de especies")
-reportar_composicion_procedencias(df, "codigo", "d.04 modelo de especies")
+assert_sin_procedencias_excluidas(df, "prov_code", "d.04 modelo de especies")
+reportar_composicion_procedencias(df, "prov_code", "d.04 modelo de especies")
 
 # Model selection ----
 library(glmmTMB)
@@ -110,7 +113,7 @@ puntos_inflexion <- res
 # Nota: se usa un objeto aparte para no anadir columnas duplicadas a df
 breakpoints_out <- puntos_inflexion |>
   left_join(
-    df |> distinct(id_bellota, species, codigo),
+    df |> distinct(id_bellota, species, prov_code),
     by = "id_bellota"
   )
 
@@ -281,8 +284,8 @@ df.t2 <- df |>
 
 # PRE y POST deben compartir el mismo conjunto de procedencias para que las
 # comparaciones de tasas entre fases sean validas.
-assert_sin_procedencias_excluidas(df.t1, "codigo", "d.04 fase PRE (t < 94 h)")
-assert_sin_procedencias_excluidas(df.t2, "codigo", "d.04 fase POST (t > 94 h)")
+assert_sin_procedencias_excluidas(df.t1, "prov_code", "d.04 fase PRE (t < 94 h)")
+assert_sin_procedencias_excluidas(df.t2, "prov_code", "d.04 fase POST (t > 94 h)")
 
 ## Model pre
 mm.pre <- glmmTMB(Moisture_content ~ time * species + (time|provenance) + (time|id_bellota), data = df.t1)

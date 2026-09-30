@@ -1,7 +1,17 @@
 # ============================================================
 # d.05.1.heterogeneus_effects.R
-# Material para justificar la eleccion de un modelo que separa el efecto
-# DENTRO de especie del efecto ENTRE especies (within-between).
+# Analisis EXPLORATORIO de la heterogeneidad interespecifica en el efecto de
+# los rasgos de la bellota sobre la tasa de desecacion.
+#
+# NO es el modelo de referencia. El modelo de referencia es
+# d.05.3.reference_model.R (glmmTMB, con pendientes aleatorias por especie y
+# sin filogenia); las figuras de efecto marginal sobre la pendiente se
+# generan en d.05.5.slope_effects_figures.R.
+#
+# Este script justifica que la heterogeneidad por especie es real y no un
+# artefacto. Los modelos con interacciones triples por especie (fit_het) son
+# la version glmmTMB de la exploracion bayesiana de d.05.4_phylo_check.R:
+# informativos sobre la heterogeneidad, pero no discutibles en el manuscrito.
 #
 # Reproduce y exporta el analisis de
 #   08-reports/Heterogeneus_effects_acorn_traits.qmd
@@ -9,12 +19,17 @@
 #   - distribucion de los ejes del FAMD por especie (figura)
 #   - R2 de cada eje explicado por la especie (tabla)
 #   - correlacion entre ejes: global y dentro de especie (tablas)
+#   - correlacion entre rasgos funcionales originales dentro de especie
 #   - comparacion de modelos con/sin heterogeneidad por especie (tabla AIC/pesos)
 #   - comparacion modelo "ingenuo" vs especie en random (tabla: cambio de signo)
 #   - forest plot de contrastes (Delta slope Dim.alto - Dim.bajo) por especie
-#   - coeficientes de los modelos within-between (tabla y figura)
 #   - relacion Dim.2 (pericarpo) vs contenido hidrico inicial (figura)
-#   - objetos de datos y modelos en 00-data/ y 00-data/models/
+#   - objetos de modelos en 00-data/models/
+#
+# La descomposicion DENTRO/ENTRE especies (within-between) se elimino de los
+# scripts: daba conclusiones equivalentes a otros modelos que ya contemplan la
+# heterogeneidad. Se conserva solo en los informes
+# (Heterogeneus_effects_acorn_traits.qmd y d.07_brms_filogenias.qmd).
 #
 # Requiere en el entorno (los crea d.05.model_traits.R):
 #   df, df.traits, df.t1, df.t2
@@ -44,9 +59,12 @@ if (!exists("df") || !exists("df.traits") || !exists("df.t1") || !exists("df.t2"
   df.famd     <- read.csv("00-data/famd_ind_coord.csv")
   df <- df.bellotas |>
     dplyr::select(-X) |>
-    dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
-    left_join(y = df.famd, by = "id_bellota") |>
-    dplyr::filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
+    dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
+    # famd_ind_coord.csv tambien trae `prov_code`; se descarta para no duplicar
+    # el nombre al hacer el join. Se conserva el de la tabla larga, previo al
+    # filtro del FAMD.
+    left_join(y = df.famd |> dplyr::select(-prov_code), by = "id_bellota") |>
+    dplyr::filter(!prov_code %in% PROCEDENCIAS_EXCLUIDAS) |>
     tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
     rename(time = tiempo_acumulado_horas) |>
     mutate(
@@ -65,9 +83,9 @@ if (!exists("df") || !exists("df.traits") || !exists("df.t1") || !exists("df.t2"
 
 # El filtro se aplica antes de la particion temporal, de modo que PRE y POST
 # comparten el mismo conjunto de procedencias.
-assert_sin_procedencias_excluidas(df,    "codigo", "d.05.1 datos")
-assert_sin_procedencias_excluidas(df.t1, "codigo", "d.05.1 fase PRE")
-assert_sin_procedencias_excluidas(df.t2, "codigo", "d.05.1 fase POST")
+assert_sin_procedencias_excluidas(df,    "prov_code", "d.05.1 datos")
+assert_sin_procedencias_excluidas(df.t1, "prov_code", "d.05.1 fase PRE")
+assert_sin_procedencias_excluidas(df.t2, "prov_code", "d.05.1 fase POST")
 
 source("01-scripts/00-export_helpers.R")
 # dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
@@ -131,10 +149,10 @@ cat("Guardadas: 00-data/heterogeneity_cor_global.csv y 00-data/heterogeneity_cor
 # se aplican las MISMAS exclusions que el resto de la linea d.*: sin este
 # filtro las correlaciones por especie incluian las bellotas de IL3.
 df.traits_orig <- read.csv("00-data/desiccation_traits_long.csv") |>
-  dplyr::select(id_bellota, especie, codigo, peso_seco, Volumen_estimado_cm3, 
+  dplyr::select(id_bellota, especie, prov_code, peso_seco, Volumen_estimado_cm3,
                 Relacion_SV, SPM_g_cm2, Seed_Coat_Ratio, 
                 Ratio_A.cicatriz_A.bellota, rajas_pericarpo) |>
-  filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
+  filter(!prov_code %in% PROCEDENCIAS_EXCLUIDAS) |>
   rename(species = especie,
          mass = peso_seco,
          volume = Volumen_estimado_cm3,
@@ -146,8 +164,8 @@ df.traits_orig <- read.csv("00-data/desiccation_traits_long.csv") |>
   mutate(pericarp_rupture = as.numeric(as.character(pericarp_rupture))) |>
   distinct()
 
-assert_sin_procedencias_excluidas(df.traits_orig, "codigo",
-                                  "d.05.1 rasgos originales")
+assert_sin_procedencias_excluidas(df.traits_orig, "prov_code",
+                                   "d.05.1 rasgos originales")
 
 species_order <- c("Quercus coccifera", "Quercus ilex", "Quercus suber",
                    "Quercus faginea", "Quercus pyrenaica", "Quercus pubescens",
@@ -397,93 +415,7 @@ write.csv(all_contrasts, "00-data/heterogeneity_contrasts.csv", row.names = FALS
 cat("Guardado: 00-data/heterogeneity_contrasts.rds y .csv\n")
 
 # ============================================================
-# 4. Modelos dentro/entre especies (within-between)
-# ============================================================
-df.wb.t1 <- df.t1 |>
-  group_by(species) |>
-  dplyr::mutate(
-    D1_between = mean(Dim.1), D1_within = Dim.1 - D1_between,
-    D2_between = mean(Dim.2), D2_within = Dim.2 - D2_between,
-    D3_between = mean(Dim.3), D3_within = Dim.3 - D3_between
-  ) |>
-  ungroup()
-
-df.wb.t2 <- df.t2 |>
-  group_by(species) |>
-  dplyr::mutate(
-    D1_between = mean(Dim.1), D1_within = Dim.1 - D1_between,
-    D2_between = mean(Dim.2), D2_within = Dim.2 - D2_between,
-    D3_between = mean(Dim.3), D3_within = Dim.3 - D3_between
-  ) |>
-  ungroup()
-
-m.wb.t1 <- glmmTMB(
-  Moisture_content ~ time_s * (D1_between + D1_within +
-                               D2_between + D2_within +
-                               D3_between + D3_within) +
-    (time_s | id_bellota),
-  data = df.wb.t1)
-
-m.wb.t2 <- glmmTMB(
-  Moisture_content ~ time_s * (D1_between + D1_within +
-                               D2_between + D2_within +
-                               D3_between + D3_within) +
-    (time_s | id_bellota),
-  data = df.wb.t2)
-
-wb_coef <- bind_rows(
-  parameters::model_parameters(m.wb.t1, effects = "fixed", ci = 0.95) |>
-    as.data.frame() |>
-    dplyr::mutate(modelo = "m.wb.t1 (PRE, t < 94 h)"),
-  parameters::model_parameters(m.wb.t2, effects = "fixed", ci = 0.95) |>
-    as.data.frame() |>
-    dplyr::mutate(modelo = "m.wb.t2 (POST, t > 94 h)")
-)
-write.csv(wb_coef, "00-data/heterogeneity_within_between_coef.csv", row.names = FALSE)
-cat("Guardada: 00-data/heterogeneity_within_between_coef.csv\n")
-
-# Figura: coeficientes time_s : eje, dentro vs entre especies
-wb_plot_df <- wb_coef |>
-  dplyr::filter(grepl("time_s", Parameter)) |>
-  dplyr::mutate(
-    efecto = dplyr::case_when(
-      grepl("D1_between", Parameter) ~ "Dim.1 between",
-      grepl("D1_within",  Parameter) ~ "Dim.1 within",
-      grepl("D2_between", Parameter) ~ "Dim.2 between",
-      grepl("D2_within",  Parameter) ~ "Dim.2 within",
-      grepl("D3_between", Parameter) ~ "Dim.3 between",
-      grepl("D3_within",  Parameter) ~ "Dim.3 within",
-      TRUE ~ NA_character_
-    )
-  ) |>
-  tidyr::drop_na(efecto) |>
-  dplyr::mutate(efecto = factor(efecto,
-    levels = c("Dim.1 within", "Dim.1 between",
-               "Dim.2 within", "Dim.2 between",
-               "Dim.3 within", "Dim.3 between"))) |>
-  dplyr::mutate(sig = dplyr::case_when(
-    p < 0.001 ~ "***",
-    p < 0.01  ~ "**",
-    p < 0.05  ~ "*",
-    TRUE ~ ""
-  ))
-
-p_wb <- ggplot(wb_plot_df, aes(x = Coefficient, y = efecto)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_errorbar(aes(xmin = CI_low, xmax = CI_high), width = 0) +
-  geom_point(size = 2.5) +
-  geom_text(aes(label = sig), nudge_y = .2, size = 4) +
-  facet_wrap(~modelo) +
-  labs(x = "Coeficiente time_s : eje", y = NULL) +
-  theme_classic() +
-  theme(strip.background = element_rect(fill = "grey95"),
-        strip.text = element_text(face = "bold"))
-
-ggsave("07-img/heterogeneity_within_between_coef.png", p_wb, width = 9, height = 5, dpi = 300)
-cat("Figura guardada: 07-img/heterogeneity_within_between_coef.png\n")
-
-# ============================================================
-# 5. Hipotesis mecanistica: pericarpo (Dim.2) y contenido hidrico inicial
+# 4. Hipotesis mecanistica: pericarpo (Dim.2) y contenido hidrico inicial
 # ============================================================
 p_dim2_t0 <- df |>
   dplyr::filter(time == 0) |>
@@ -499,12 +431,8 @@ ggsave("07-img/heterogeneity_dim2_initial_moisture.png", p_dim2_t0,
 cat("Figura guardada: 07-img/heterogeneity_dim2_initial_moisture.png\n")
 
 # ============================================================
-# 6. Guardado de objetos de datos y modelos
+# 5. Guardado de objetos de modelos
 # ============================================================
-saveRDS(list(df.wb.t1 = df.wb.t1, df.wb.t2 = df.wb.t2),
-        "00-data/within_between_data.rds")
-cat("Datos within-between guardados en 00-data/within_between_data.rds\n")
-
 save_models(list(
   "mm.pre.0"        = mm.pre.0,
   "mm.pre.1"        = mm.pre.1,
@@ -517,9 +445,7 @@ save_models(list(
   "mm.post.d1.het"  = mm.post.d1.het,
   "mm.post.d2.het"  = mm.post.d2.het,
   "mm.post.d3.het"  = mm.post.d3.het,
-  "m.post.all.het"  = m.post.all.het,
-  "m.wb.t1"         = m.wb.t1,
-  "m.wb.t2"         = m.wb.t2
+  "m.post.all.het"  = m.post.all.het
 ))
 
 if (GEN_DASH == "Y") {
@@ -536,9 +462,7 @@ if (GEN_DASH == "Y") {
     mm.post.d1.het  = mm.post.d1.het,
     mm.post.d2.het  = mm.post.d2.het,
     mm.post.d3.het  = mm.post.d3.het,
-    m.post.all.het  = m.post.all.het,
-    m.wb.t1         = m.wb.t1,
-    m.wb.t2         = m.wb.t2
+    m.post.all.het  = m.post.all.het
   )
   for (nm in names(modelos_dash)) {
     tryCatch(

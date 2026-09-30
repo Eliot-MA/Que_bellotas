@@ -1,6 +1,6 @@
 ---
-title: "Filogenia en modelos de efectos heterogéneos"
-subtitle: "Incorporación de covarianza filogenética en pendientes específicas de especie"
+title: "Comprobación filogenética de los efectos de los rasgos"
+subtitle: "Los modelos con covarianza filogenética replican el modelo de referencia del artículo"
 author: "Open Code & Eliot Mompeán"
 date: today
 format:
@@ -26,13 +26,28 @@ suppressPackageStartupMessages({
 })
 ```
 
+# Comprobación filogenética (no es el modelo de referencia)
+
+> **Este informe es una comprobación de robustez, no el análisis principal.**
+> El modelo de referencia del artículo es
+> `01-scripts/d.05.3.reference_model.R` (glmmTMB, con pendientes aleatorias por
+> especie y procedencia, sin filogenia) y su lectura principal está en
+> `model_reference_trait_effects.qmd`. Lo que sigue responde a una sola
+> pregunta: **¿cambia alguna conclusión si se tiene en cuenta el parentesco
+> evolutivo entre especies?**
+>
+> La respuesta es que no. La señal filogenética es débil e indistinguible de
+> cero, y las direcciones de los efectos se replican. Por eso estos modelos
+> bayesianos no se presentan como resultado principal: su complejidad no
+> aporta información que el modelo de referencia no ya dé.
+
 # Resumen
 
-**Introducción y objetivos**: las bellotas de *Quercus* se desecan a ritmos distintos según la especie y la procedencia. En análisis previos se mostró que los rasgos del fruto (tamaño, pericarpo y cicatriz de abscisión, sintetizados en tres dimensiones de un FAMD) modulan la velocidad de desecación de forma heterogénea entre especies. Este trabajo incorpora la **filogenia del género *Quercus*** para modelar la covarianza entre especies y evaluar si el parentesco evolutivo absorbe parte de esa heterogeneidad.
+**Introducción y objetivos**: las bellotas de *Quercus* se desecan a ritmos distintos según la especie y la procedencia. En análisis previos se mostró que los rasgos del fruto (tamaño, pericarpo y cicatriz de abscisión, sintetizados en tres dimensiones de un FAMD) modulan la velocidad de desecación de forma heterogénea entre especies. Esta comprobación incorpora la **filogenia del género *Quercus*** para modelar la covarianza entre especies y verificar si el parentesco evolutivo absorbe parte de esa heterogeneidad.
 
-**Métodos**: se analizaron 403 bellotas de 8 especies y 15 procedencias (2012 observaciones en la fase lineal o PRE, *t* < 94 h; 2015 en la fase de equilibrio o POST, *t* > 94 h). La matriz de covarianza filogenética se derivó del filogenoma de *Quercus* de Hipp et al. (2020) (crown tree, RAD-seq). Se ajustaron dos modelos bayesianos multinivel con brms: **M_het_1** (filogenia en las pendientes + especie libre) y **M_het_2** (idem + interacciones triples *tiempo*:rasgo:especie), comparados mediante LOO y validados con diagnósticos de convergencia y pareto-*k*.
+**Métodos**: se analizaron 403 bellotas de 8 especies y 15 procedencias (2012 observaciones en la fase lineal o PRE, *t* < 94 h; 2015 en la fase de equilibrio o POST, *t* > 94 h). La matriz de covarianza filogenética se derivó del filogenoma de *Quercus* de Hipp et al. (2020) (crown tree, RAD-seq). Se ajustaron dos modelos bayesianos multinivel con brms: **M_phylo_1** (filogenia en las pendientes + especie libre) y **M_phylo_2** (idem + interacciones triples *tiempo*:rasgo:especie), comparados mediante LOO y validados con diagnósticos de convergencia y pareto-*k*.
 
-**Resultados**: los rasgos modulan la **velocidad de desecación en la fase lineal**, no la humedad de equilibrio. Dim.1 (tamaño) es protector en las 8 especies; Dim.2 (pericarpo) y Dim.3 (cicatriz) aceleran la desecación, con efectos fuertes y específicos de especie (petraea y pubescens en Dim.2; coccifera en Dim.3). La varianza de las pendientes está dominada por la **procedencia** en PRE (sd ≈ 4.3, correlación intercepto-pendiente ≈ 0.8) y **colapsa en POST** (sd ≈ 1.2–1.3). La señal filogenética es débil e indistinguible de cero (CCI ≈ 0.007; sd(phylo) ≈ 0.56–0.61 con IC que incluyen ~0). M_het_2 supera a M_het_1 en ambas fases (LOO: Δelpd = 81.0, SE 17.2 en PRE; Δelpd = 30.2, SE 13.6 en POST). Todos los modelos convergen sin divergencias (Rhat ≤ 1.03).
+**Resultados**: los rasgos modulan la **velocidad de desecación en la fase lineal**, no la humedad de equilibrio. Dim.1 (tamaño) es protector en las 8 especies; Dim.2 (pericarpo) y Dim.3 (cicatriz) aceleran la desecación, con efectos fuertes y específicos de especie (petraea y pubescens en Dim.2; coccifera en Dim.3). La varianza de las pendientes está dominada por la **procedencia** en PRE (sd ≈ 4.3, correlación intercepto-pendiente ≈ 0.8) y **colapsa en POST** (sd ≈ 1.2–1.3). La señal filogenética es débil e indistinguible de cero (CCI ≈ 0.007; sd(phylo) ≈ 0.56–0.61 con IC que incluyen ~0). M_phylo_2 supera a M_phylo_1 en ambas fases (LOO: Δelpd = 81.0, SE 17.2 en PRE; Δelpd = 30.2, SE 13.6 en POST). Todos los modelos convergen sin divergencias (Rhat ≤ 1.03).
 
 **Conclusiones**: la influencia de los rasgos sobre la desecación es un fenómeno de la fase lineal, heterogéneo entre especies y no capturado por la filogenia a este nivel de repertorio taxonómico (8 especies). Las interacciones triples mejoran el ajuste sin alterar las conclusiones cualitativas, que se mantienen frente a la actualización del árbol y la depuración de la procedencia IL3.
 
@@ -55,20 +70,21 @@ La presente versión incorpora dos actualizaciones del análisis:
 
 1. Evaluar si la filogenia absorbe parte de la heterogeneidad interespecífica en las pendientes
 2. Comparar dos estrategias de modelización:
-   - **M_het_1**: Filogenia en pendientes + especie libre (sin interacciones triples)
-   - **M_het_2**: Filogenia en pendientes + interacciones triples explícitas
-3. Comparar con los modelos frecuentistas equivalentes
+   - **M_phylo_1**: Filogenia en pendientes + especie libre (sin interacciones triples)
+   - **M_phylo_2**: idem + interacciones triples explícitas
+3. Comprobar que las conclusiones del modelo de referencia (glmmTMB) se mantienen al incorporar la covarianza filogenética
+4. Decidir si la filogenia debe entrar en el modelo de referencia o si puede omitirse
 
 ## Preguntas clave
 
 - ¿La filogenia captura la variabilidad que antes atribuíamos a diferencias "libres" entre especies?
 - ¿El efecto Dim.2 (pericarpo) que no tenía sentido biológico desaparece al controlar por filogenia?
-- ¿Merece la pena la complejidad adicional del modelo con interacciones triples?
+- ¿Alguna conclusión del modelo de referencia cambia al añadir la filogenia?
 
 # Datos y filogenia
 
 ```{r datos, eval=FALSE}
-source("01-scripts/d.05.z.pruebas_filo.R", local = TRUE)
+source("01-scripts/d.05.4_phylo_check.R", local = TRUE)
 ```
 
 ## Filogenia: crown tree de Hipp et al. (2020)
@@ -84,11 +100,11 @@ La procedencia **IL3** (*Q. ilex*) queda fuera por desequilibrio muestral en fas
 ## Modelo 1: Filogenia en pendientes (sin interacciones triples)
 
 ```{r modelo1, eval=FALSE}
-form_het_phylo <- bf(
+form_phylo <- bf(
   Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
     (0 + time_s | gr(phylo_species, cov = A)) +
     (0 + time_s | species) +
-    (1 + time_s | codigo) +
+    (1 + time_s | prov_code) +
     (1 | id_bellota)
 )
 ```
@@ -96,13 +112,13 @@ form_het_phylo <- bf(
 ## Modelo 2: Filogenia + interacciones triples
 
 ```{r modelo2, eval=FALSE}
-form_het_phylo_v2 <- bf(
+form_phylo_v2 <- bf(
   Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
     time_s:Dim.1:species +
     time_s:Dim.2:species +
     time_s:Dim.3:species +
     (0 + time_s | gr(phylo_species, cov = A)) +
-    (1 + time_s | codigo) +
+    (1 + time_s | prov_code) +
     (1 | id_bellota)
 )
 ```
@@ -137,7 +153,7 @@ Esta configuración final **elimina las divergencias** que aparecían en la tira
 
 Todos los modelos se ajustaron a las **dos fases** de desecación: PRE (`t < 94 h`) y POST (`t > 94 h`).
 
-## Modelo M_het_1 (filogenia + especie libre, sin interacciones triples)
+## Modelo M_phylo_1 (filogenia + especie libre, sin interacciones triples)
 
 ### Estructura
 
@@ -145,7 +161,7 @@ Todos los modelos se ajustaron a las **dos fases** de desecación: PRE (`t < 94 
 Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
   (0 + time_s | gr(phylo_species, cov = A)) +  # Filogenético
   (0 + time_s | species) +                       # Especie "libre"
-  (1 + time_s | codigo) +                        # Procedencia
+  (1 + time_s | prov_code) +                        # Procedencia
   (1 | id_bellota)                               # Bellota
 ```
 
@@ -153,8 +169,8 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 
 | Modelo | Rhat máx | ESS mínimo | Divergencias |
 |--------|----------|------------|--------------|
-| M_het_1 PRE | 1.03 | 241 (Dim.2) | 0 ✅ |
-| M_het_1 POST | 1.01 | 538 (Dim.3) | 0 ✅ |
+| M_phylo_1 PRE | 1.03 | 241 (Dim.2) | 0 ✅ |
+| M_phylo_1 POST | 1.01 | 538 (Dim.3) | 0 ✅ |
 
 ### Efectos fijos — fase PRE (`t < 94 h`)
 
@@ -175,8 +191,8 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 |-------|-----------|--------|----------------|
 | phylo_species | 0.56 | (0.03 – 1.66) | Variación filogenética en pendiente |
 | species (libre) | 1.79 | (0.07 – 4.78) | Variación residual entre especies |
-| **codigo** | **4.25** | (2.75 – 6.56) | **Mayor fuente de variación en pendiente** |
-| cor(Intercept, time_s) codigo | 0.79 | (0.41 – 0.93) | Procedencia, alta correlación |
+| **prov_code** | **4.25** | (2.75 – 6.56) | **Mayor fuente de variación en pendiente** |
+| cor(Intercept, time_s) prov_code | 0.79 | (0.41 – 0.93) | Procedencia, alta correlación |
 | id_bellota (Intercept) | 2.74 | (2.56 – 2.93) | Variación individual |
 | sigma | 0.68 | (0.66 – 0.70) | Error residual |
 
@@ -211,8 +227,8 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 |-------|-----------|--------|----------------|
 | phylo_species | 0.23 | (0.01 – 0.73) | Señal filogenética ausente |
 | species (libre) | 0.95 | (0.06 – 2.45) | — |
-| **codigo** | **1.21** | (0.74 – 2.00) | Heterogeneidad por procedencia colapsa |
-| cor(Intercept, time_s) codigo | -0.24 | (-0.72 – 0.37) | Desaparece la correlación de PRE |
+| **prov_code** | **1.21** | (0.74 – 2.00) | Heterogeneidad por procedencia colapsa |
+| cor(Intercept, time_s) prov_code | -0.24 | (-0.72 – 0.37) | Desaparece la correlación de PRE |
 | **id_bellota** | **3.81** | (3.55 – 4.11) | Las bellotas difieren en el nivel de equilibrio |
 | sigma | 1.17 | (1.13 – 1.21) | Mayor ruido residual |
 
@@ -225,7 +241,7 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 | time_s:Dim.2 | -0.82 | -0.01 | Acelerador **solo** en la fase lineal |
 | time_s:Dim.3 | -0.55 | 0.02 | Acelerador **solo** en la fase lineal |
 
-## Modelo M_het_2 (filogenia + interacciones triples)
+## Modelo M_phylo_2 (filogenia + interacciones triples)
 
 ### Estructura
 
@@ -233,7 +249,7 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
   time_s:Dim.1:species + time_s:Dim.2:species + time_s:Dim.3:species +
   (0 + time_s | gr(phylo_species, cov = A)) +
-  (1 + time_s | codigo) +
+  (1 + time_s | prov_code) +
   (1 | id_bellota)
 ```
 
@@ -241,8 +257,8 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 
 | Modelo | Rhat máx | ESS mínimo | Divergencias |
 |--------|----------|------------|--------------|
-| M_het_2 PRE | 1.01 | 818 (Intercept) | 0 ✅ |
-| M_het_2 POST | 1.02 | 654 (Dim.1) | 0 ✅ |
+| M_phylo_2 PRE | 1.01 | 818 (Intercept) | 0 ✅ |
+| M_phylo_2 POST | 1.02 | 654 (Dim.1) | 0 ✅ |
 
 ### Efectos fijos globales — fase PRE (`t < 94 h`)
 
@@ -299,7 +315,7 @@ Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 
 | Métrica | Punto | Nota |
 |---------|-------|------|
-| sd(phylo_species) | 0.61 | IC 95% (0.02 – 1.79), similar a M_het_1 |
+| sd(phylo_species) | 0.61 | IC 95% (0.02 – 1.79), similar a M_phylo_1 |
 
 Sin término de especie libre (por diseño), toda la varianza de especie se atribuye a la filogenia. La señal es igualmente débil e indistinguible de 0.
 
@@ -361,8 +377,8 @@ Sin término de especie libre (por diseño), toda la varianza de especie se atri
 | Nivel | sd(time_s) | IC 95% | Interpretación |
 |-------|-----------|--------|----------------|
 | phylo_species | 0.30 | (0.02 – 0.81) | Señal filogenética ausente |
-| **codigo** | **1.29** | (0.75 – 2.14) | Heterogeneidad por procedencia colapsa |
-| cor(Intercept, time_s) codigo | -0.12 | (-0.68 – 0.46) | Desaparece la correlación de PRE |
+| **prov_code** | **1.29** | (0.75 – 2.14) | Heterogeneidad por procedencia colapsa |
+| cor(Intercept, time_s) prov_code | -0.12 | (-0.68 – 0.46) | Desaparece la correlación de PRE |
 | **id_bellota** | **3.82** | (3.56 – 4.11) | Las bellotas difieren en el nivel de equilibrio |
 | sigma | 1.14 | (1.10 – 1.18) | Mayor ruido residual |
 
@@ -375,11 +391,11 @@ Sin término de especie libre (por diseño), toda la varianza de especie se atri
 | time_s:Dim.2 | -0.34 | -0.06 ❌ | Sin efecto en ninguna fase a nivel global |
 | time_s:Dim.3 | -1.66 | -0.20 ❌ | Acelerador **solo** en la fase lineal |
 
-## Comparación M_het_1 vs M_het_2 (fase PRE)
+## Comparación M_phylo_1 vs M_phylo_2 (fase PRE)
 
 ### Efectos globales
 
-| Parámetro | M_het_1 | M_het_2 | Interpretación |
+| Parámetro | M_phylo_1 | M_phylo_2 | Interpretación |
 |-----------|---------|---------|----------------|
 | time_s:Dim.1 | 1.73 ✅ | 1.65 ✅ | Consistente |
 | time_s:Dim.2 | **-0.82** ✅ | **-0.34** ❌ | **Desaparece al añadir heterogeneidad** |
@@ -402,8 +418,8 @@ Sin término de especie libre (por diseño), toda la varianza de especie se atri
 
 | Modelo | sd(phylo_species) PRE | IC 95% |
 |--------|----------------------|--------|
-| M_het_1 | 0.56 | (0.03 – 1.66) |
-| M_het_2 | 0.61 | (0.02 – 1.79) |
+| M_phylo_1 | 0.56 | (0.03 – 1.66) |
+| M_phylo_2 | 0.61 | (0.02 – 1.79) |
 
 La señal filogenética es **equivalente** en ambos modelos y **no aumenta** al incorporar las interacciones triples. Ninguna de las dos permite distinguir varianza filogenética de 0.
 
@@ -413,23 +429,23 @@ La señal filogenética es **equivalente** en ambos modelos y **no aumenta** al 
 
 | Fase | Modelo | elpd_loo | elpd_diff (SE) | LOOIC | k_psis > 0.7 |
 |------|--------|----------|----------------|-------|--------------|
-| **PRE** | **M_het_2** (triple) | **-2234.7** | 0 (ref.) | 4469.5 | 16 |
-| PRE | M_het_1 (libre) | -2315.8 | -81.0 (17.2) | 4631.5 | 17 |
-| **POST** | **M_het_2** (triple) | **-3378.9** | 0 (ref.) | 6757.9 | 12 |
-| POST | M_het_1 (libre) | -3409.1 | -30.2 (13.6) | 6818.3 | 8 |
+| **PRE** | **M_phylo_2** (triple) | **-2234.7** | 0 (ref.) | 4469.5 | 16 |
+| PRE | M_phylo_1 (libre) | -2315.8 | -81.0 (17.2) | 4631.5 | 17 |
+| **POST** | **M_phylo_2** (triple) | **-3378.9** | 0 (ref.) | 6757.9 | 12 |
+| POST | M_phylo_1 (libre) | -3409.1 | -30.2 (13.6) | 6818.3 | 8 |
 
-M_het_2 mejora significativamente el ajuste en ambas fases:
+M_phylo_2 mejora significativamente el ajuste en ambas fases:
 
 - **PRE**: elpd más alto en 81.0 puntos (SE = 17.2; diferencia ~4.7 SE → clara)
 - **POST**: elpd más alto en 30.2 puntos (SE = 13.6; diferencia ~2.2 SE → moderada)
 
-La superioridad de M_het_2 es **consistente** con el patrón observado en los coeficientes: al modelar explícitamente la heterogeneidad por especie con interacciones triples, el modelo evita que la información que las correlaciones proporcionan se distribuya incorrectamente entre el efecto global `time_s:Dim.2` y los efectos específicos de especie.
+La superioridad de M_phylo_2 es **consistente** con el patrón observado en los coeficientes: al modelar explícitamente la heterogeneidad por especie con interacciones triples, el modelo evita que la información que las correlaciones proporcionan se distribuya incorrectamente entre el efecto global `time_s:Dim.2` y los efectos específicos de especie.
 
 ### Diagnóstico: puntos problemáticos (pareto *k* > 0.7) en fase PRE
 
 La estimación LOO deja una observación fuera por iteración. Cuando la suavización `psis` falla para alguna observación (*k* > 0.7), la estimación de `elpd_loo` es inestable para esa observación. En los modelos PRE:
 
-| Métrica | M_het_1 | M_het_2 |
+| Métrica | M_phylo_1 | M_phylo_2 |
 |---------|---------|---------|
 | Total observaciones | 2012 | 2012 |
 | Obs con *k* > 0.7 | 17 (0.84%) | 16 (0.80%) |
@@ -460,10 +476,10 @@ Las más problemáticas (con mayor *k*), casi todas con Dim.1 y/o Dim.2 muy nega
 **Recomendaciones:**
 
 1. **Moment matching sobre los puntos con *k* > 0.7**: la función repondera el ELPD de forma más robusta para puntos con *k* > 0.7, lo que podría estabilizar la comparación. **Pendiente**: requiere recompilar el modelo en C++ vía rstan (no se puede con el backend cmdstanr), lo que necesita del toolchain de R (Rtools 4.4 para R 4.4.3); en el equipo de cálculo no estaba configurado. Se deja marcada como pendiente.
-2. **`reloo()`**: reajustar el modelo dejando fuera **una a una** las observaciones problemáticas y recalcular su ELPD de verdad. Al usar cmdstanr no requiere Rtools. Coste: ~16 refits en PRE y ~12 en POST (para M_het_2). **Pendiente de probar.**
+2. **`reloo()`**: reajustar el modelo dejando fuera **una a una** las observaciones problemáticas y recalcular su ELPD de verdad. Al usar cmdstanr no requiere Rtools. Coste: ~16 refits en PRE y ~12 en POST (para M_phylo_2). **Pendiente de probar.**
 3. **k-fold cross-validation**: alternativa más costosa pero definitiva como comprobación futura.
-4. **Análisis de sensibilidad (excluir las observaciones problemáticas)**: sin ser el remedio correcto (un *k* alto indica influencia, no error), puede servir como comprobación de que la ventaja de M_het_2 no depende de esos puntos.
-5. **Impacto real**: dado que el problema afecta solo al 0.8–0.84% de las observaciones y la diferencia entre modelos es ~4.7 SE en PRE, el resultado **no debería cambiar materialmente** con la corrección. La recomendación de M_het_2 como modelo de referencia se mantiene.
+4. **Análisis de sensibilidad (excluir las observaciones problemáticas)**: sin ser el remedio correcto (un *k* alto indica influencia, no error), puede servir como comprobación de que la ventaja de M_phylo_2 no depende de esos puntos.
+5. **Impacto real**: dado que el problema afecta solo al 0.8–0.84% de las observaciones y la diferencia entre modelos es ~4.7 SE en PRE, el resultado **no debería cambiar materialmente** con la corrección. La preferencia por M_phylo_2 dentro de esta comparación bayesiana se mantiene.
 
 ## Comparación simplificada con modelos glmmTMB (sin filogenia)
 
@@ -471,14 +487,14 @@ La comparación formal por LOO/WAIC con los modelos frecuentistas quedaría pend
 
 - **glmmTMB homog (sin filogenia)**: `mm.pre.1` / `mm.post.1`
 - **glmmTMB het (sin filogenia)**: `m.pre.all.het` / `m.post.all.het`
-- **brms M_het_1 (con filogenia)**: efecto de rasgo homogéneo
-- **brms M_het_2 (con filogenia)**: efecto de rasgo homogéneo + interacciones triples
+- **brms M_phylo_1 (con filogenia)**: efecto de rasgo homogéneo
+- **brms M_phylo_2 (con filogenia)**: efecto de rasgo homogéneo + interacciones triples
 
 Los asteriscos marcan significación estadística (*p* < 0.05/IC 95% que no cruza 0); en los bayesianos, un IC 95% que no incluye 0 se marca con `*`.
 
 ### Fase PRE (`t < 94 h`)
 
-| Parámetro | glmmTMB homog (sin filogenia) | glmmTMB het (sin filogenia) | brms M_het_1 (con filogenia) | brms M_het_2 (con filogenia) |
+| Parámetro | glmmTMB homog (sin filogenia) | glmmTMB het (sin filogenia) | brms M_phylo_1 (con filogenia) | brms M_phylo_2 (con filogenia) |
 |-----------|-------------------------------|-----------------------------|------------------------------|------------------------------|
 | time_s | -18.11 [-20.84, -15.38] *** | -17.70 [-20.55, -14.86] *** | -16.29 [-21.56, -8.34] * | -16.01 [-21.52, -7.35] * |
 | Dim.1 | 1.03 [0.65, 1.42] *** | 1.04 [0.65, 1.42] *** | 1.03 [0.72, 1.33] * | 1.02 [0.72, 1.33] * |
@@ -490,7 +506,7 @@ Los asteriscos marcan significación estadística (*p* < 0.05/IC 95% que no cruz
 
 ### Fase POST (`t > 94 h`)
 
-| Parámetro | glmmTMB homog (sin filogenia) | glmmTMB het (sin filogenia) | brms M_het_1 (con filogenia) | brms M_het_2 (con filogenia) |
+| Parámetro | glmmTMB homog (sin filogenia) | glmmTMB het (sin filogenia) | brms M_phylo_1 (con filogenia) | brms M_phylo_2 (con filogenia) |
 |-----------|-------------------------------|-----------------------------|------------------------------|------------------------------|
 | time_s | -7.72 [-8.61, -6.83] *** | -7.87 [-8.57, -7.17] *** | -7.68 [-10.29, -4.59] * | -7.89 [-10.83, -4.46] * |
 | Dim.1 | 0.61 [0.30, 0.93] *** | 0.62 [0.30, 0.93] *** | 0.61 [0.28, 0.93] * | 0.61 [0.29, 0.93] * |
@@ -500,7 +516,7 @@ Los asteriscos marcan significación estadística (*p* < 0.05/IC 95% que no cruz
 | time_s:Dim.2 | -0.02 [-0.19, 0.15] | -0.08 [-0.45, 0.29] | -0.01 [-0.10, 0.09] | -0.06 [-0.28, 0.15] |
 | time_s:Dim.3 | 0.02 [-0.15, 0.18] | -0.22 [-0.63, 0.19] | 0.02 [-0.08, 0.11] | -0.20 [-0.43, 0.03] |
 
-**Lectura (PRE):** los cuatro modelos coinciden en la dirección de los efectos globales (`time_s` y `Dim.*` fuertemente negativos/positivos, `time_s:Dim.1` positivo/protector, `time_s:Dim.2` y `time_s:Dim.3` negativos/aceleradores). Tras excluir IL3, la magnitud de `time_s` queda algo más baja en los bayesianos (-16.0/–16.3) que en glmmTMB (-17.7/–18.1), pero el patrón es idéntico. La coincidencia confirma que los resultados de los modelos bayesianos con filogenia **no dependen de la inclusión de la filogenia** (que apenas aporta señal) y que eran estables frente a la especificación frecuentista. Las diferencias aparecen en los modelos con interacciones triples: brms M_het_2 intensifica `time_s:Dim.3` (-1.66) frente a glmmTMB het (-1.08), mientras que para `time_s:Dim.2` la triple de glmmTMB sigue siendo negativa pero pierde significación; esto refleja que el efecto heterogéneo se reparte distinto entre el término global y los ajustes de especie según el marco estadístico.
+**Lectura (PRE):** los cuatro modelos coinciden en la dirección de los efectos globales (`time_s` y `Dim.*` fuertemente negativos/positivos, `time_s:Dim.1` positivo/protector, `time_s:Dim.2` y `time_s:Dim.3` negativos/aceleradores). Tras excluir IL3, la magnitud de `time_s` queda algo más baja en los bayesianos (-16.0/–16.3) que en glmmTMB (-17.7/–18.1), pero el patrón es idéntico. La coincidencia confirma que los resultados de los modelos bayesianos con filogenia **no dependen de la inclusión de la filogenia** (que apenas aporta señal) y que eran estables frente a la especificación frecuentista. Las diferencias aparecen en los modelos con interacciones triples: brms M_phylo_2 intensifica `time_s:Dim.3` (-1.66) frente a glmmTMB het (-1.08), mientras que para `time_s:Dim.2` la triple de glmmTMB sigue siendo negativa pero pierde significación; esto refleja que el efecto heterogéneo se reparte distinto entre el término global y los ajustes de especie según el marco estadístico.
 
 **Lectura (POST):** todos los modelos coinciden en que los efectos de rasgo sobre la pendiente desaparecen o colapsan (solo `time_s:Dim.1` homogéneo conserva un efecto débil, ~0.35–0.36). Es la confirmación cruzada del hallazgo central: la influencia de los rasgos es exclusiva de la fase lineal de desecación.
 
@@ -536,13 +552,13 @@ Los cuatro modelos muestran el mismo patrón temporal, que es el resultado más 
 
 # Pendiente
 
-- [x] Ajustar modelos PRE y POST (M_het_1 y M_het_2) con configuración limpia (0 divergencias)
+- [x] Ajustar modelos PRE y POST (M_phylo_1 y M_phylo_2) con configuración limpia (0 divergencias)
 - [x] Actualizar el árbol filogenético al crown tree de Hipp et al. (2020)
 - [x] Excluir la procedencia IL3 (*Q. ilex*) por desequilibrio muestral en fase PRE
 - [ ] Comparar con modelos frecuentistas (WAIC/LOO) — *pospuesto: comparación formal ELPD/WAIC entre brms y glmmTMB es compleja; se sustituye por una comparación simplificada de parámetros (sección siguiente)*
 - [x] Comparación simplificada de parámetros con modelos glmmTMB sin filogenia (PRE y POST)
-- [x] Recomputar el CCI filogenético y la proporción de varianza con la corrida final (M_het_1 PRE: 0.0067, IC₉₀% 0.0001 – 0.073)
+- [x] Recomputar el CCI filogenético y la proporción de varianza con la corrida final (M_phylo_1 PRE: 0.0067, IC₉₀% 0.0001 – 0.073)
 - [ ] Moment matching en los puntos con *k* > 0.7 (bloqueado: requiere rstan + Rtools 4.4 para R 4.4.3; el fit es cmdstanr)
-- [ ] Intentar `reloo()` para las observaciones problemáticas (sin Rtools; ~16 refits PRE y ~12 POST en M_het_2)
+- [ ] Intentar `reloo()` para las observaciones problemáticas (sin Rtools; ~16 refits PRE y ~12 POST en M_phylo_2)
 - [ ] Análisis de sensibilidad excluyendo las observaciones con *k* > 0.7
 - [ ] Figuras de resultados

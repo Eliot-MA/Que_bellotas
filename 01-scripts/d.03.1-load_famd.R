@@ -15,14 +15,13 @@ df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 df <- df.bellotas |>
   filter(cotiledon_anormal %in% c(0, 1)) |>
   filter(rajas_pericarpo %in% c(0, 1)) |> 
-  dplyr::select(id_bellota, especie, procedencia, codigo, 
+  dplyr::select(id_bellota, especie, procedencia, prov_code,
                 peso_seco, Volumen_estimado_cm3, Relacion_SV, 
                 SPM_g_cm2, Seed_Coat_Ratio, 
                 Ratio_A.cicatriz_A.bellota, 
                 rajas_pericarpo) |> 
   rename(species = especie, 
          provenance = procedencia, 
-         prov_code = codigo, 
          dry_weight = peso_seco, 
          volume_cm3 = Volumen_estimado_cm3,
          SVR = Relacion_SV,

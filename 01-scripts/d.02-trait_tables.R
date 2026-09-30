@@ -27,7 +27,7 @@ library(MuMIn)
 
 # Crea una dataset con solo una observación por bellota y las variables de interés
 ## -> Si quieres otras variables cambia el siguiente vector
-vars <- c("id_bellota","especie","codigo", "procedencia",
+vars <- c("id_bellota","especie","prov_code", "procedencia",
           "longitud..mm.","diametro_total","peso_seco",
           "Area_cicatriz_mm2","peso_seco_pr","Area_estimada_cm2", "SPM_g_cm2", "rajas_pericarpo")
 ## Elimina filas repetidas en la tabla
@@ -36,17 +36,16 @@ df_unique <- df.bellotas %>%
   dplyr::select(all_of(vars)) %>%
   # Procedencias excluidas (ver 00-config_procedencias.R): la tabla de rasgos
   # describe el mismo conjunto de bellotas que los analisis de desecacion.
-  filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
+  filter(!prov_code %in% PROCEDENCIAS_EXCLUIDAS) |>
   drop_na() %>%  # elimina filas con NA en cualquier columna
   mutate(
     especie = factor(especie),
-    codigo = factor(codigo),
+    prov_code = factor(prov_code),
     procedencia = factor(procedencia),
     Area_cicatriz_cm2 = Area_cicatriz_mm2 * 0.01  # pasar a cm2
   ) |> 
   rename(species = especie, 
          provenance = procedencia, 
-         prov_code = codigo, 
          length_mm = longitud..mm., 
          diameter_mm = diametro_total, 
          dry_weight = peso_seco, 

@@ -112,13 +112,13 @@ la misma estructura de efectos aleatorios.
 :::
 
 - `numero_bellota`: numeración de las bellotas **dentro de cada procedencia**;
-  se reinicia en cada `codigo` (valores 1–30). La combinación
-  `codigo × numero_bellota` identifica cada bellota de forma única (equivale a
+  se reinicia en cada `prov_code` (valores 1–30). La combinación
+  `prov_code × numero_bellota` identifica cada bellota de forma única (equivale a
   `id_bellota`).
-- `codigo` (columna `prov_code` en los dataframes derivados): identificador
+- `prov_code` (antes `codigo` en los datos crudos): identificador
   alfanumérico único para cada combinación **especie × procedencia**
   (`PE1`, `PE2`, `IL1`, `IL2`, …). Está **anidado** dentro de especie: cada
-  `codigo` pertenece a una sola especie.
+  `prov_code` pertenece a una sola especie.
 - `procedencia` (columna `provenance` en los dataframes derivados): el nombre
   concreto de la procedencia (p. ej. Santos de la Humosa, Región Vasco-Navarra,
   …). **No está anidado** en la especie: algunos nombres de procedencia se
@@ -128,20 +128,20 @@ la misma estructura de efectos aleatorios.
   *Q. ilex*). Es, por tanto, una variable **cruzada** con la especie.
 
 La jerarquía anidada real de los datos es: **observaciones → bellota
-(`id_bellota`) → procedencia (`codigo`) → especie (filogenia)**.
+(`id_bellota`) → procedencia (`prov_code`) → especie (filogenia)**.
 
 ## Implicaciones para el flujo de trabajo
 
 Esta información modifica el planteamiento del modelo en varios puntos:
 
 1. **Nivel de procedencia.** Existe un nivel de agrupación intermedio entre la
-   bellota y la especie: la procedencia (`codigo`, 16 niveles). Es recomendable
-   incluir un término aleatorio `(1 + time | codigo)` para absorber la
+   bellota y la especie: la procedencia (`prov_code`, 16 niveles). Es recomendable
+   incluir un término aleatorio `(1 + time | prov_code)` para absorber la
    variación entre procedencias dentro de una misma especie. De lo contrario,
    esa variación se confunde con el efecto de especie (filogenético o no) o
    infla la varianza a nivel de bellota.
 
-   **Nota sobre la independencia espacial:** Al incluir `codigo` como efecto
+   **Nota sobre la independencia espacial:** Al incluir `prov_code` como efecto
    aleatorio con estructura independiente, asumimos que todas las procedencias
    son independientes entre sí. Esto es una simplificación, ya que
    procedencias geográficamente cercanas probablemente comparten condiciones
@@ -161,7 +161,7 @@ Esta información modifica el planteamiento del modelo en varios puntos:
    Un efecto cruzado `(1 + time | procedencia)` sería concebible, pero con solo
    2 de 15 nombres de procedencia compartidos entre especies su aportación es
    marginal y arriesga problemas de identificación; se recomienda modelar la
-   procedencia mediante `codigo` (anidado).
+   procedencia mediante `prov_code` (anidado).
 3. **Nombre del término filogenético.** En `brms` no se puede usar el mismo
    factor dos veces con distinta estructura de covarianza. Para el modelo M2 se
    necesita una copia de la variable de especie (p. ej.
@@ -169,7 +169,7 @@ Esta información modifica el planteamiento del modelo en varios puntos:
    `species` queda para el efecto libre no filogenético (siguiendo la
    recomendación de la vignette @buerkner2025phylo).
 4. **Señal filogenética.** La fórmula de la CCI/λ debe incorporar la varianza
-   del nivel de procedencia: `sd_phylo² / (sd_phylo² + sd_codigo² + sd_bellota² + sigma²)`.
+   del nivel de procedencia: `sd_phylo² / (sd_phylo² + sd_prov_code² + sd_bellota² + sigma²)`.
 
 ```{r datos, eval=TRUE}
 df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
@@ -177,8 +177,9 @@ df.famd <- read.csv("00-data/famd_ind_coord.csv")
 
 df.t1 <- df.bellotas |>
   dplyr::select(-X) |>
-  dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content, numero_bellota) |>
-  left_join(y = df.famd, by = "id_bellota") |>
+  dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content, numero_bellota) |>
+  # famd_ind_coord.csv ya trae `prov_code`; se descarta para no duplicarlo.
+  left_join(y = df.famd |> dplyr::select(-prov_code), by = "id_bellota") |>
   tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
   rename(time = tiempo_acumulado_horas, id_bellota2 = numero_bellota) |>
   mutate(log.t = log(time + 1), sqrt.t = sqrt(time + 1)) |>
@@ -187,7 +188,7 @@ df.t1 <- df.bellotas |>
 cat("Observaciones:", nrow(df.t1), "\n")
 cat("Bellotas (id_bellota unicos):", n_distinct(df.t1$id_bellota), "\n")
 cat("numero_bellota unicos (se reinicia por procedencia):", n_distinct(df.t1$id_bellota2), "\n")
-cat("Codigos de procedencia:", n_distinct(df.t1$codigo), "\n")
+cat("Codigos de procedencia:", n_distinct(df.t1$prov_code), "\n")
 cat("Procedencias (nombre):", n_distinct(df.t1$provenance), "\n")
 cat("Especies:", n_distinct(df.t1$species), "\n")
 cat("Procedencias compartidas entre especies:\n")
@@ -440,11 +441,11 @@ kable(round(A, 3), caption = "Matriz de varianza-covarianza filogenética (A = v
    asintótica subyacente sigue siendo relevante para la interpretación
    de los resultados.
 
-# Especificación del modelo `brms` (script `01-scripts/d.05.3_fit_models.R`)
+# Especificación del modelo `brms` (script `01-scripts/d.05.4_phylo_check.R`)
 
 La estructura general sigue el modelo original, sustituyendo la independencia
 entre especies por una covarianza filogenética, y añadiendo el término de
-bellota para la variación dentro de especie y el de procedencia (`codigo`)
+bellota para la variación dentro de especie y el de procedencia (`prov_code`)
 para la variación entre procedencias dentro de especie.
 
 Nota previa: en `brms` no se puede usar el mismo factor dos veces con distinta
@@ -461,7 +462,7 @@ df.t1$phylo_species <- df.t1$species
 form1 <- bf(
   Moisture_content ~ time * (Dim.1 + Dim.2 + Dim.3) +
     (1 + time | gr(phylo_species, cov = A)) +   # filogenético (intercepto + pendiente)
-    (1 + time | codigo) +                        # procedencia (anidada en especie)
+    (1 + time | prov_code) +                     # procedencia (anidada en especie)
     (1 + time | id_bellota)                      # variación entre bellotas
 )
 ```
@@ -477,16 +478,24 @@ form2 <- bf(
   Moisture_content ~ time * (Dim.1 + Dim.2 + Dim.3) +
     (1 + time | gr(phylo_species, cov = A)) +   # filogenético
     (1 + time | species) +                       # especie no filogenética
-    (1 + time | codigo) +                        # procedencia (anidada en especie)
+    (1 + time | prov_code) +                     # procedencia (anidada en especie)
     (1 + time | id_bellota)                      # variación entre bellotas
 )
 ```
 
-## Modelo M3: descomposición within/between + filogenia (RECOMENDADO)
+## Modelo M3: descomposición within/between + filogenia (EXPLORATORIO, superado)
 
-El modelo M3 es el que responde directamente a la pregunta de investigación:
-¿los rasgos influyen **dentro** o **entre** especies? Para ello, los ejes FAMD
-se descomponen en componentes within y between:
+> **Estado: análisis superado, conservado solo como material exploratorio.**
+> El modelo de referencia del artículo es `01-scripts/d.05.3.reference_model.R`
+> (glmmTMB, con pendientes aleatorias por especie y procedencia, sin
+> descomposición within/between). Los coeficientes fijos por especie de este M3
+> no permiten contrastar los 8×3 efectos de manera defendible, y la
+> descomposición within/between ya no se ejecuta en la línea de scripts: vive
+> únicamente en este informe. Ver `model_reference_trait_effects.qmd`.
+
+El modelo M3 responde a la pregunta de si los rasgos influyen **dentro** o
+**entre** especies. Para ello, los ejes FAMD se descomponen en componentes
+within y between:
 
 ```r
 # Descomposición within/between (script d.05.1)
@@ -507,7 +516,7 @@ form3 <- bf(
   Moisture_content ~ time_s * (D1_within + D2_within + D3_within +
                                D1_between + D2_between + D3_between) +
     (1 + time_s | gr(phylo_species, cov = A)) +  # filogenético
-    (1 + time_s | codigo) +                       # procedencia
+    (1 + time_s | prov_code) +                     # procedencia
     (1 | id_bellota)                              # bellota (solo intercepto)
 )
 ```
@@ -628,7 +637,7 @@ por unidad de predictor, lo cual sería un efecto extremadamente grande.
 
 ### Prior de las desviaciones estándar: `student_t(3, 0, 10)`
 
-Las desviaciones estándar de los efectos aleatorios (`sd_phylo`, `sd_codigo`,
+Las desviaciones estándar de los efectos aleatorios (`sd_phylo`, `sd_prov_code`,
 `sd_bellota`) y el residuo (`sigma`) están restringidas a ser positivas. El
 prior `student_t(3, 0, 10)` (cola pesada con 3 grados de libertad) es la
 elección recomendada por @buerkner2025phylo porque:
@@ -762,7 +771,7 @@ filogenético:
 ```r
 hyp_phylo <- paste(
   "sd_phylo_species__Intercept^2 /",
-  "(sd_phylo_species__Intercept^2 + sd_codigo__Intercept^2 +",
+  "(sd_phylo_species__Intercept^2 + sd_prov_code__Intercept^2 +",
   " sd_id_bellota__Intercept^2 + sigma^2)"
 )
 hypothesis(m3, hyp_phylo, class = NULL)
@@ -1011,7 +1020,7 @@ la estructura del modelo:
 |----------------|------------------------|----------------|
 | Efectos between | ✅ Significativos | ❌ No significativos |
 | Efectos filogenéticos | ❌ No incluidos | ✅ Incluidos |
-| Efecto codigo | ✅ Incluido | ✅ Incluido |
+| Efecto prov_code | ✅ Incluido | ✅ Incluido |
 | Efecto species | ❌ No incluido | ✅ Incluido (filogenético) |
 
 **Explicación:** En glmmTMB, al no incluir la filogenia ni `species` como
@@ -1047,7 +1056,7 @@ tienen efecto between significativo.
 | Archivo                                         | Contenido                                             |
 |-------------------------------------------------|-------------------------------------------------------|
 | `01-scripts/d.05.2.phylo_data.R`                | Obtención del árbol en OToL y construcción de `A`     |
-| `01-scripts/d.05.3_fit_models.R`                | Ajuste del modelo M3 con brms                         |
+| `01-scripts/d.05.4_phylo_check.R`                | Ajuste del modelo M3 con brms                         |
 | `00-data/phylo/oak_tree.rds` / `.nwk`           | Árbol filogenético (topología + longitudes de Grafen) |
 | `00-data/phylo/oak_vcv.rds`                     | Matriz de varianza-covarianza filogenética `A`        |
 | `00-data/phylo/m3_final.rds`                    | Modelos M3 PRE y POST ajustados                       |

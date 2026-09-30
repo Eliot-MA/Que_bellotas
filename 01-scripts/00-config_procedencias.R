@@ -31,8 +31,8 @@ PROCEDENCIAS_EXCLUIDAS <- "IL3"
 # Falla ruidosamente si alguna procedencia excluida sobrevive en un data.frame.
 # Se llama en cada punto del pipeline donde el filtro debe haber surtido efecto,
 # para que un olvido no pase inadvertido hasta la redaccion.
-#   col: columna que contiene el codigo de procedencia ("codigo" o "prov_code")
-assert_sin_procedencias_excluidas <- function(df, col = "codigo", contexto = NULL) {
+#   col: columna que contiene el codigo de procedencia ("prov_code")
+assert_sin_procedencias_excluidas <- function(df, col = "prov_code", contexto = NULL) {
   etiqueta <- if (is.null(contexto)) deparse(substitute(df)) else contexto
   if (!col %in% names(df))
     stop("[", etiqueta, "] no existe la columna '", col, "'")
@@ -44,9 +44,9 @@ assert_sin_procedencias_excluidas <- function(df, col = "codigo", contexto = NUL
 }
 
 # Resumen de composicion por procedencia, para dejar traza en consola.
-reportar_composicion_procedencias <- function(df, col = "codigo", etiqueta = "df") {
+reportar_composicion_procedencias <- function(df, col = "prov_code", etiqueta = "df") {
   cod <- as.character(df[[col]])
-  tb <- as.data.frame(table(codigo = cod), stringsAsFactors = FALSE)
+  tb <- as.data.frame(table(prov_code = cod), stringsAsFactors = FALSE)
   names(tb) <- c(col, "n_observaciones")
   tb$n_observaciones <- as.integer(tb$n_observaciones)
   tb$n_bellotas <- vapply(tb[[col]], function(cc)

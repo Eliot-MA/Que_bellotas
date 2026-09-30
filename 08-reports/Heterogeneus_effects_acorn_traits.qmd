@@ -32,8 +32,10 @@ df.famd <- read.csv("../00-data/famd_ind_coord.csv")
 # Creat working dataframe ----
 df <- df.bellotas |> 
   dplyr::select(-X) |>
-  dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |> 
-  left_join(y = df.famd, by = "id_bellota") |> 
+  dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
+  # famd_ind_coord.csv ya trae `prov_code`; se descarta para no duplicarlo al
+  # hacer el join.
+  left_join(y = df.famd |> dplyr::select(-prov_code), by = "id_bellota") |>
   drop_na(Dim.1, Dim.2, Dim.3) |> 
   rename(time = tiempo_acumulado_horas) |> 
   mutate(time_s = scale(time))

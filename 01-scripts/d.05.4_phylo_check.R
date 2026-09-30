@@ -1,10 +1,20 @@
-# ============================================================
-# d.05.z.pruebas_filo.R
-# Pruebas de incorporacion de filogenia en modelos de efectos
-# heterogeneos de rasgos de bellota sobre tasa de desecacion.
+﻿# ============================================================
+# d.05.4_phylo_check.R
+# COMPROBACION FILOGENETICA (no es el modelo de referencia).
 #
-# Este script es provisional (prefijo z). Cuando el codigo este
-# depurado se migrara a d.05.3_fit_models.R.
+# Incorpora la estructura de correlacion filogenetica entre especies a los
+# modelos de efectos heterogeneos de rasgos de bellota sobre la tasa de
+# desecacion, para verificar que las conclusiones del modelo de referencia
+# (d.05.3.reference_model.R, glmmTMB, sin filogenia) se mantienen al tener
+# en cuenta el parentesco evolutivo.
+#
+# NO es el modelo de referencia. Los resultados quedan como exploracion y
+# robustez; la senal filogenetica medida aqui es debil e indistinguible de
+# cero, por lo que la correccion filogenetica no aporta al manuscripto.
+#
+# Modelos (ambos CON filogenia, exploratorios):
+#   M_phylo_1: pendientes filogeneticas + especie libre, sin triples
+#   M_phylo_2: pendientes filogeneticas + interacciones triples
 #
 # Fases:
 #   0. Preparacion de datos y filogenia
@@ -16,7 +26,7 @@
 #   - Cadenas en paralelo con el backend elegido (4 nucleos)
 #   - adapt_delta=0.999, max_treedepth=15 (para reducir divergencias)
 #   - Priors mas informativos en sd (student_t(3,0,2.5)) para estabilizar
-#     grupos pequenos (8 especies, 15 codigos)
+#     grupos pequenos (8 especies, 15 procedencias)
 # ============================================================
 
 N_CHAINS_FULL  <- 4
@@ -86,16 +96,19 @@ df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
 df.famd     <- read.csv("00-data/famd_ind_coord.csv")
 df <- df.bellotas |>
   dplyr::select(-X) |>
-  dplyr::select(id_bellota, codigo, tiempo_acumulado_horas, Moisture_content) |>
-  left_join(y = df.famd, by = "id_bellota") |>
-  dplyr::filter(!codigo %in% PROCEDENCIAS_EXCLUIDAS) |>
+  dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
+  # famd_ind_coord.csv tambien trae `prov_code`; se descarta para no duplicar el
+  # nombre al hacer el join. Se conserva el de la tabla larga, previo al filtro
+  # del FAMD.
+  left_join(y = df.famd |> dplyr::select(-prov_code), by = "id_bellota") |>
+  dplyr::filter(!prov_code %in% PROCEDENCIAS_EXCLUIDAS) |>
   tidyr::drop_na(Dim.1, Dim.2, Dim.3) |>
   rename(time = tiempo_acumulado_horas) |>
   mutate(
     time_s     = as.vector(scale(time)),
     species    = factor(species),
     provenance = factor(provenance),
-    codigo     = factor(codigo),      # agrupador de (1 + time_s | codigo)
+    prov_code  = factor(prov_code),  # agrupador de (1 + time_s | prov_code)
     id_bellota = factor(id_bellota)
   )
 t94  <- as.vector((94 - mean(df$time)) / sd(df$time))
@@ -103,13 +116,13 @@ df.t1 <- df |> filter(time_s < t94)
 df.t2 <- df |> filter(time_s > t94)
 
 # Verificar que la procedencia excluida no esta en ninguna fase
-assert_sin_procedencias_excluidas(df,    "codigo", "d.05.z datos")
-assert_sin_procedencias_excluidas(df.t1, "codigo", "d.05.z fase PRE")
-assert_sin_procedencias_excluidas(df.t2, "codigo", "d.05.z fase POST")
+assert_sin_procedencias_excluidas(df,    "prov_code", "d.05.4 datos")
+assert_sin_procedencias_excluidas(df.t1, "prov_code", "d.05.4 fase PRE")
+assert_sin_procedencias_excluidas(df.t2, "prov_code", "d.05.4 fase POST")
 cat("Procedencias excluidas:", paste(PROCEDENCIAS_EXCLUIDAS, collapse = ", "), "\n")
-reportar_composicion_procedencias(df, "codigo", "d.05.z datos")
+reportar_composicion_procedencias(df, "prov_code", "d.05.4 datos")
 
-needed_cols <- c("time_s", "species", "codigo", "id_bellota", "Dim.1", "Dim.2", "Dim.3")
+needed_cols <- c("time_s", "species", "prov_code", "id_bellota", "Dim.1", "Dim.2", "Dim.3")
 missing_t1  <- setdiff(needed_cols, colnames(df.t1))
 missing_t2  <- setdiff(needed_cols, colnames(df.t2))
 if (length(missing_t1) > 0 || length(missing_t2) > 0) {
@@ -182,7 +195,7 @@ if (PREP_ONLY) {
   for (nm in c("df.t1", "df.t2")) {
     dd <- get(nm)
     cat(sprintf("  %-6s %5d obs | %d especies | %d procedencias | %d bellotas\n",
-                nm, nrow(dd), nlevels(dd$species), nlevels(dd$codigo),
+                nm, nrow(dd), nlevels(dd$species), nlevels(dd$prov_code),
                 nlevels(dd$id_bellota)))
     cat("         Moisture_content no perdido:", sum(!is.na(dd$Moisture_content)), "\n")
   }
@@ -192,7 +205,7 @@ if (PREP_ONLY) {
   cat(sprintf("  adapt_delta=%.3f | max_treedepth=%d | seed=%d\n",
               ADAPT_DELTA, MAX_TREEDEPTH, SEED_BASE))
   cat("\nPara lanzar el ajuste de verdad:\n")
-  cat("  source('01-scripts/d.05.z.pruebas_filo.R')   # tras poner la bandera de arriba a FALSE\n")
+  cat("  source('01-scripts/d.05.4_phylo_check.R')  # tras poner la bandera de arriba a FALSE\n")
   quit(save = "no", status = 0)
 }
 
@@ -203,31 +216,31 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
 
   # ---- 1.1 Especificaciones de modelos ----
 
-  # Modelo 1: Filogenia en pendientes + especie libre (sin interacciones triples)
-  form_het_phylo <- bf(
+  # Modelo exploratorio 1: Filogenia en pendientes + especie libre (sin triples)
+  form_phylo_1 <- bf(
     Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
       (0 + time_s | gr(phylo_species, cov = A)) +
       (0 + time_s | species) +
-      (1 + time_s | codigo) +
+      (1 + time_s | prov_code) +
       (1 | id_bellota)
   )
 
-  # Modelo 2: Filogenia + interacciones triples explícitas
-  form_het_phylo_v2 <- bf(
+  # Modelo exploratorio 2: Filogenia + interacciones triples explicitas
+  form_phylo_2 <- bf(
     Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
       time_s:Dim.1:species +
       time_s:Dim.2:species +
       time_s:Dim.3:species +
       (0 + time_s | gr(phylo_species, cov = A)) +
-      (1 + time_s | codigo) +
+      (1 + time_s | prov_code) +
       (1 | id_bellota)
   )
 
   cat("\n-- Formulas de modelos --\n")
-  cat("\nM_het_1 (filogenia + especie libre, sin triples):\n")
-  cat(deparse(form_het_phylo), "\n")
-  cat("\nM_het_2 (filogenia + interacciones triples):\n")
-  cat(deparse(form_het_phylo_v2), "\n")
+  cat("\nM_phylo_1 (filogenia + especie libre, sin triples):\n")
+  cat(deparse(form_phylo_1), "\n")
+  cat("\nM_phylo_2 (filogenia + interacciones triples):\n")
+  cat(deparse(form_phylo_2), "\n")
 
   # ---- 1.2 Priors ----
   priors <- c(
@@ -387,17 +400,17 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
 
   # ---- 1.4 Ejecutar tirada completa ----
   t_total <- Sys.time()
-  cat("\n-- Tirada completa M_het_1 (PRE) --\n")
-  res_het_1_pre  <- smoke_test(form_het_phylo, "m_het_1_pre", df.t1, SEED_BASE)
+  cat("\n-- Tirada completa M_phylo_1 (PRE) --\n")
+  res_phylo_1_pre  <- smoke_test(form_phylo_1, "m_phylo_1_pre", df.t1, SEED_BASE)
 
-  cat("\n-- Tirada completa M_het_2 (PRE) --\n")
-  res_het_2_pre  <- smoke_test(form_het_phylo_v2, "m_het_2_pre", df.t1, SEED_BASE + 1)
+  cat("\n-- Tirada completa M_phylo_2 (PRE) --\n")
+  res_phylo_2_pre  <- smoke_test(form_phylo_2, "m_phylo_2_pre", df.t1, SEED_BASE + 1)
 
-  cat("\n-- Tirada completa M_het_1 (POST) --\n")
-  res_het_1_post <- smoke_test(form_het_phylo, "m_het_1_post", df.t2, SEED_BASE + 2)
+  cat("\n-- Tirada completa M_phylo_1 (POST) --\n")
+  res_phylo_1_post <- smoke_test(form_phylo_1, "m_phylo_1_post", df.t2, SEED_BASE + 2)
 
-  cat("\n-- Tirada completa M_het_2 (POST) --\n")
-  res_het_2_post <- smoke_test(form_het_phylo_v2, "m_het_2_post", df.t2, SEED_BASE + 3)
+  cat("\n-- Tirada completa M_phylo_2 (POST) --\n")
+  res_phylo_2_post <- smoke_test(form_phylo_2, "m_phylo_2_post", df.t2, SEED_BASE + 3)
 
   # ---- 1.5 Resumen comparativo ----
   cat("\n", strrep("=", 60), "\n")
@@ -405,25 +418,25 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
   cat(strrep("=", 60), "\n")
 
   resultados <- list(
-    M_het_1_PRE = list(
+    M_phylo_1_PRE = list(
       formula = "sin interacciones triples",
-      fit = res_het_1_pre$fit,
-      error = res_het_1_pre$error
+      fit = res_phylo_1_pre$fit,
+      error = res_phylo_1_pre$error
     ),
-    M_het_2_PRE = list(
+    M_phylo_2_PRE = list(
       formula = "con interacciones triples",
-      fit = res_het_2_pre$fit,
-      error = res_het_2_pre$error
+      fit = res_phylo_2_pre$fit,
+      error = res_phylo_2_pre$error
     ),
-    M_het_1_POST = list(
+    M_phylo_1_POST = list(
       formula = "sin interacciones triples",
-      fit = res_het_1_post$fit,
-      error = res_het_1_post$error
+      fit = res_phylo_1_post$fit,
+      error = res_phylo_1_post$error
     ),
-    M_het_2_POST = list(
+    M_phylo_2_POST = list(
       formula = "con interacciones triples",
-      fit = res_het_2_post$fit,
-      error = res_het_2_post$error
+      fit = res_phylo_2_post$fit,
+      error = res_phylo_2_post$error
     )
   )
 
@@ -453,8 +466,7 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
 # Carga los 4 modelos ajustados en FASE 1 y produce:
 #   - resumenes (txt) y tablas de efectos fijos / varianzas (CSV)
 #   - senal filogenetica (CCI) por modelo (CSV)
-#   - comparacion LOO + pareto-k (CSV + figura)
-#   - pendientes totales por especie para M_het_2 (CSV + forest plot)
+#   - comparacion LOO entre los dos modelos exploratorios (CSV + figura)
 #   - posterior predictive checks (PNG)
 # Salidas en: 00-data/phylo/ y 07-img/
 # ============================================================
@@ -465,7 +477,7 @@ dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
 # ---- 2.1 Cargar modelos ----
 # Se recargan de disco: asi la FASE 2 es independiente de la sesion
 # de la FASE 1 (los RDS fueron guardados por smoke_test()).
-nombres_modelo <- c("m_het_1_pre", "m_het_1_post", "m_het_2_pre", "m_het_2_post")
+nombres_modelo <- c("m_phylo_1_pre", "m_phylo_1_post", "m_phylo_2_pre", "m_phylo_2_post")
 rutas_modelo   <- file.path("00-data/phylo", paste0(nombres_modelo, ".rds"))
 faltantes      <- nombres_modelo[!file.exists(rutas_modelo)]
 if (length(faltantes) > 0) {
@@ -484,11 +496,11 @@ sink()
 
 # ---- 2.3 Senal filogenetica (CCI) ----
 # Unica funcion: el calculo de la CCI se repite 4 veces con denominador
-# distinto segun si el modelo tiene termino de especie libre (M_het_1).
+# distinto segun si el modelo tiene termino de especie libre (M_phylo_1).
 calcular_cci <- function(fit, con_especie_libre = FALSE) {
   d <- as_draws_df(fit)
   phylo_var <- d$sd_phylo_species__time_s^2
-  cod_var   <- d$sd_codigo__time_s^2
+  cod_var   <- d$sd_prov_code__time_s^2
   bell_var  <- d$sd_id_bellota__Intercept^2
   sigma2    <- d$sigma^2
   if (con_especie_libre) {
@@ -514,10 +526,10 @@ calcular_cci <- function(fit, con_especie_libre = FALSE) {
 }
 
 cci_df <- bind_rows(
-  m_het_1_pre  = calcular_cci(modelos$m_het_1_pre,  con_especie_libre = TRUE),
-  m_het_1_post = calcular_cci(modelos$m_het_1_post, con_especie_libre = TRUE),
-  m_het_2_pre  = calcular_cci(modelos$m_het_2_pre,  con_especie_libre = FALSE),
-  m_het_2_post = calcular_cci(modelos$m_het_2_post, con_especie_libre = FALSE),
+  m_phylo_1_pre  = calcular_cci(modelos$m_phylo_1_pre,  con_especie_libre = TRUE),
+  m_phylo_1_post = calcular_cci(modelos$m_phylo_1_post, con_especie_libre = TRUE),
+  m_phylo_2_pre  = calcular_cci(modelos$m_phylo_2_pre,  con_especie_libre = FALSE),
+  m_phylo_2_post = calcular_cci(modelos$m_phylo_2_post, con_especie_libre = FALSE),
   .id = "modelo"
 )
 write.csv(cci_df, "00-data/phylo/cci_filogenetica.csv", row.names = FALSE)
@@ -546,18 +558,22 @@ for (nm in names(modelos)) {
 }
 cat("\nEfectos fijos y varcom exportados a 00-data/phylo/fixef_*.csv y varcom_*.csv\n")
 
-# ---- 2.5 Comparacion LOO + pareto-k (loop explicito por fase) ----
+# ---- 2.5 Comparacion LOO + pareto-k entre los dos modelos exploratorios ----
+# Pregunta que responde esta seccion: dentro de los modelos CON filogenia, que
+# diferencia hay entre permitir la especie libre y las interacciones triples?
+# NO es la comparacion que justifica el modelo de referencia (d.05.3), que es
+# glmmTMB y no incluye filogenia.
 for (fase in c("pre", "post")) {
-  cat("\n===== Comparacion LOO:", fase, "=====\n")
-  nm1 <- paste0("m_het_1_", fase)
-  nm2 <- paste0("m_het_2_", fase)
+  cat("\n===== Comparacion LOO (modelos con filogenia):", fase, "=====\n")
+  nm1 <- paste0("m_phylo_1_", fase)
+  nm2 <- paste0("m_phylo_2_", fase)
 
   loo_1 <- loo(modelos[[nm1]])
   loo_2 <- loo(modelos[[nm2]])
   tabla_loo <- loo::loo_compare(loo_1, loo_2)
   print(tabla_loo)
   write.csv(as.data.frame(tabla_loo),
-            paste0("00-data/phylo/loo_comp_", fase, ".csv"))
+            paste0("00-data/phylo/loo_comp_phylo_", fase, ".csv"))
 
   # pareto-k por observacion
   # brms descarto las filas con NA en Moisture_content al ajustar, de modo
@@ -576,7 +592,7 @@ for (fase in c("pre", "post")) {
   p_pareto <- ggplot(dat, aes(x = time, y = Moisture_content)) +
     geom_line(aes(group = id_bellota), alpha = 0.25) +
     geom_point(aes(colour = pareto_status), alpha = 0.6) +
-    facet_wrap(~ codigo) +
+    facet_wrap(~ prov_code) +
     labs(x = "Time", y = "Moisture content (%)",
          colour = "Pareto k") +
     theme_classic()
@@ -585,49 +601,13 @@ for (fase in c("pre", "post")) {
   cat("Figura pareto guardada en 07-img/pareto_k_", fase, ".png\n", sep = "")
 }
 
-# ---- 2.6 Pendientes totales por especie (M_het_2) ----
-# La pendiente time_s:Dim de cada especie = base (coccifera) + ajuste.
-# El coeficiente de la interaccion triple es siempre la DESVIACION
-# respecto al nivel base del factor species.
-especies        <- levels(modelos$m_het_2_pre$data$species)
-especie_base    <- especies[1]           # coccifera (ordinal: brms usa el 1er nivel)
-especies_ajuste <- especies[-1]
+# NOTA: este script ya NO calcula pendientes por especie. Esa tabla vivia en la
+# anterior seccion 2.6, se apoyaba en las interacciones triples del modelo
+# exploratorio 2 y se retiro del flujo principal: el efecto de los rasgos sobre
+# la pendiente se estima y se comunica promediado sobre todas las especies (ver
+# d.05.5.slope_effects_figures.R, que lo hace sobre el modelo de referencia).
 
-draws2      <- as_draws_df(modelos$m_het_2_pre)
-pend_filas  <- list()
-for (dim in c("Dim.1", "Dim.2", "Dim.3")) {
-  base_col <- paste0("b_time_s:", dim)
-  totales  <- list()
-  totales[[especie_base]] <- draws2[[base_col]]
-  for (sp in especies_ajuste) {
-    adj_col <- paste0("b_time_s:", dim, ":species", gsub(" ", "", sp))
-    totales[[sp]] <- draws2[[base_col]] + draws2[[adj_col]]
-  }
-  for (sp in especies) {
-    pend_filas[[length(pend_filas) + 1]] <- tibble(
-      dimension = dim,
-      especie   = sp,
-      pendiente = median(totales[[sp]]),
-      ic_lo     = quantile(totales[[sp]], 0.025) |> unname(),
-      ic_hi     = quantile(totales[[sp]], 0.975) |> unname()
-    )
-  }
-}
-pend_df <- dplyr::bind_rows(pend_filas)
-write.csv(pend_df, "00-data/phylo/pendientes_por_especie_m_het_2_pre.csv",
-          row.names = FALSE)
-
-p_forest <- ggplot(pend_df, aes(x = pendiente, y = especie)) +
-  geom_vline(xintercept = 0, linetype = 2) +
-  geom_pointrange(aes(xmin = ic_lo, xmax = ic_hi)) +
-  facet_wrap(~ dimension, scales = "free_x") +
-  labs(x = "Pendiente time_s:Dim (tasa de desecacion)", y = NULL) +
-  theme_classic()
-ggsave("07-img/forest_pendientes_m_het_2_pre.png",
-       p_forest, width = 10, height = 6, dpi = 150)
-cat("Pendientes por especie y forest plot guardados\n")
-
-# ---- 2.7 Posterior predictive checks (PNG) ----
+# ---- 2.6 Posterior predictive checks (PNG) ----
 for (nm in names(modelos)) {
   p_pp <- pp_check(modelos[[nm]]) + ggplot2::ggtitle(nm)
   ggsave(paste0("07-img/pp_check_", nm, ".png"),

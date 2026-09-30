@@ -1,0 +1,238 @@
+---
+title: "El efecto de los rasgos de las bellotas sobre la desecación"
+subtitle: "Modelo de referencia (glmmTMB) y su comprobación filogenética"
+author: "Eliot Mompeán"
+date: today
+format:
+  html:
+    code-fold: true
+    code-summary: "Conjuro arcano"
+---
+
+```{r setup, include=FALSE}
+if (!file.exists("00-data/desiccation_traits_long.csv")) {
+  knitr::opts_knit$set(root.dir = "..")
+}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(knitr)
+})
+```
+
+# Resumen
+
+Las bellotas de *Quercus* pierden agua a ritmos distintos, y la velocidad de esa
+pérdida depende de las características del fruto: tamaño, grosor del pericarpo y
+tamaño de la cicatriz de abscisión. Este informe presenta el **modelo de
+referencia** con el que se defendieron estos resultados, y resume la
+comprobación de que las conclusiones no cambian al introducir la filogenia.
+
+**Modelo**: `Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
+(0 + time_s | species) + (1 + time_s | prov_code) + (1 | id_bellota)`, ajustado
+por separado en la fase lineal (PRE, *t* < 94 h) y en la de equilibrio (POST,
+*t* > 94 h) con glmmTMB. Los tres ejes morfológicos proceden de un FAMD sobre
+medidas originales de acinos y bellotas, y las dos fases se modelan aparte porque
+la dinámica de la desecación cambia de signo: pierde peso de forma rápida y
+lenta a la vez, o se rehidrata y se estabiliza.
+
+**Hallazgo central**: los rasgos modulan la **velocidad** de desecación en la
+fase lineal, no el contenido de humedad de equilibrio. En PRE, un pericarpo más
+grueso y una cicatriz mayor aceleran la pérdida de agua, mientras que una
+bellota mayor se seca más despacio. En POST, esos efectos sobre la pendiente
+desaparecen.
+
+**Sobre la heterogeneidad entre especies**: la velocidad de desecación es
+claramente heterogénea, y esto no es un inconveniente del modelo sino parte del
+fenómeno. Se modela con **pendientes aleatorias por especie** en lugar de con
+coeficientes fijos por especie. La heterogeneidad queda descrita como varianza:
+un efecto del rasgo por cada una de las 8 especies no sería discutible con la
+información disponible.
+
+Conviene precisar *qué* heterogeneidad es esa, porque aquí hay una sutileza que
+condiciona la lectura de las cifras. `prov_code` está anidada en `species` (15
+códigos en 8 especies), de modo que **las varianzas de pendiente de los dos
+niveles no están identificadas de forma única**: cualquier reparto que sume la
+misma cantidad es igualmente bueno a ojos del verosimilitud. La procedencia y
+la especie no compiten por aportar información nueva, se reparten la misma.
+
+La observación que lo hace evidente es que al añadir el término de especie, la
+varianza de pendiente de `prov_code` *baja*:
+
+| | `prov_code` sin término de especie | con término de especie | reparto |
+|---|---|---|---|
+| PRE | 32.58 | 22.74 | ~30% a especie |
+| POST | 1.77 | 0.96 | ~46% a especie |
+
+El término de especie no añade heterogeneidad, la redistribuye. Con 8 especies
+y unas 2 procedencias cada una, el reparto concreto no es un resultado firme.
+
+**Sobre la filogenia**: incorporarla no cambia ninguna conclusión. La señal
+filogenética es débil e indistinguible de cero, y las direcciones de los
+efectos se replican. Por eso el modelo de referencia **no** incluye filogenia;
+los modelos bayesianos con covarianza filogenética quedan como comprobación de
+robustez en `brms_filogenias_2.qmd`.
+
+```{r datos, eval=FALSE}
+source("01-scripts/d.05.0.model_traits.R")
+```
+
+# El modelo de referencia
+
+```{r modelo, eval=FALSE}
+source("01-scripts/d.05.3.reference_model.R")
+```
+
+El término `(0 + time_s | species)` es la decisión de modelización central: la
+heterogeneidad se modela como **pendientes aleatorias por especie**, sin
+intercepto. La alternativa sería un coeficiente fijo `time_s:Dim.x:species`, que
+estimaría 8 efectos por rasgo. Se descarta porque:
+
+1. En este diseño no balanceado, los modelos libres por especie son más
+   identificables y su interpretación no depende de qué nivel se use como
+   referencia.
+2. Con 8 especies, un contraste por especie no tiene potencia suficiente para
+   sostenerse en una conclusión; la varianza de las pendientes aleatorias
+   captura la misma heterogeneidad de forma más parsimoniosa.
+3. La pregunta del artículo es sobre rasgos, no sobre un ranking de especies.
+
+**Por qué sin intercepto de especie.** `prov_code` está anidada en `species` (15
+códigos en 8 especies), de modo que cualquier intercepto de especie es ya
+representable como intercepto de procedencia: estimarlos ambos deja una
+dimensión redundante. Esto no es una hipótesis, es algo que se observa al
+ajustarlo — la variante con intercepto `(1 + time_s | species)` **no converge**
+(Hessian no definida positiva en PRE, ajuste singular en POST). Y el valor de su
+varianza de intercepto confirma el diagnóstico: 4.16e-06, es decir, exactamente
+cero, porque `prov_code` la absorbe entera. Como hay al menos una procedencia por
+especie, el nivel basal entre especies lo aporta `prov_code`; lo propio de la
+especie, y lo que el modelo conserva, es la velocidad.
+
+## Comparación de modelos
+
+Se ajustan tres variantes del mismo cuerpo y se comparan por AIC:
+
+| Modelo | Término de especie | Para qué sirve |
+|--------|--------------------|----------------|
+| `m.ref` | `(0 + time_s \| species)` | **Referencia**: pendiente por especie |
+| `m.ref_int` | `(1 + time_s \| species)` | Con intercepto; no identificable, no converge |
+| `m.ref_naive` | (ninguno) | ¿Cuánto cuesta ignorar la heterogeneidad? |
+
+```{r comparacion, eval=FALSE}
+knitr::kable(
+  read.csv("00-data/reference_model_comparison.csv"),
+  caption = "Comparación AIC/pesos de Akaike. `m.ref_int` queda fuera en PRE por no converger."
+)
+```
+
+La comparación de modelos no incluye los ajustes que no han convergido, y el
+script lo dice explícitamente en lugar de renormalizar los pesos de Akaike sobre
+los modelos supervivientes: un modelo fallido que desaparece en silencio de una
+tabla es un revisor perdido.
+
+**Cómo leer el empate.** `m.ref` sale 1.47 unidades de AIC por detrás de
+`m.ref_naive` en PRE. Es un empate, y conviene decir de qué tipo: no es que los
+dos modelos ajusten igual de bien y elija el más parsimonioso, es que el término
+de especie **no mueve la verosimilitud marginal** porque su varianza ya está
+contando los mismos datos que la de procedencia. Con solo 8 especies, una
+varianza entre grupos apenas se informa por la verosimilitud, así que AIC cobra
+sus dos grados de libertad sin devolver nada.
+
+Por eso `m.ref` **no** es el ganador del ajuste, y no debe presentarse así. Se
+conserva por decisión de diseño: es preferible no asumir que las especies se
+secan igual. La honestidad está en decir la estimación con su incertidumbre — con
+8 grupos, un intervalo ancho — y no en presentarla como un efecto demostrado.
+
+```{r varcomp, eval=FALSE}
+knitr::kable(
+  read.csv("00-data/reference_model_varcomp_detalle.csv") |>
+    dplyr::filter(modelo %in% c("m.ref.pre", "m.ref.post")) |>
+    dplyr::select(modelo, nivel, componente, varianza, sd, peso_total),
+  caption = "Componentes de varianza del modelo de referencia. `peso_total` es la fracción sobre la varianza total del modelo, sigma incluida."
+)
+```
+
+Sobre el reparto de la varianza de pendiente entre `species` y `prov_code`, ver
+la discusión del resumen: al ser niveles anidados, el reparto concreto no está
+identificado de forma única.
+
+```{r varianzas, eval=FALSE}
+knitr::kable(
+  read.csv("00-data/reference_model_varcomp.csv"),
+  caption = "Componentes de varianza del modelo de referencia."
+)
+```
+
+## Efecto de cada rasgo sobre la pendiente
+
+La figura central del artículo. El efecto se estima **promediado sobre todas las
+especies**: como las pendientes aleatorias tienen media cero, la predicción
+marginal que devuelve `emmeans` ya es la pendiente de la población. No hace
+falta estimar ni resumir una pendiente por especie.
+
+```{r figuras, eval=FALSE}
+source("01-scripts/d.05.5.slope_effects_figures.R")
+knitr::include_graphics("../07-img/slope_effect_reference.png")
+```
+
+```{r tabla-efecto, eval=FALSE}
+knitr::kable(
+  read.csv("00-data/tablas_resumen/reference_slope_effects.csv") |>
+    dplyr::select(phase, dim, estimacion_h, ic_lo_h, ic_hi_h),
+  caption = "Cambio de la pendiente entre p10 y p90 de cada eje, en % de humedad por hora."
+)
+```
+
+Las curvas predichas a p10 y p90 de cada eje, con los otros dos fijados en su
+mediana, contextualizan el resultado sobre los datos:
+
+```{r curvas, eval=FALSE}
+knitr::include_graphics("../07-img/curves_reference.png")
+```
+
+# Comprobación filogenética
+
+Si las 8 especies no fueran puntos independientes —si compartieran un
+ancestro común reciente, sus pendientes correlacionarían—, la varianza
+interespecífica estaría sobrestimada y el efecto de los rasgos podría ser un
+artefacto del parentesco. La comprobación ajusta modelos bayesianos con
+covarianza filogenética derivada del *crown tree* de *Quercus* de Hipp et al.
+(2020) y compara.
+
+El resultado es que **la señal filogenética es indistinguible de cero** (CCI ≈
+0.007; sd(phylo) ≈ 0.56–0.61 con IC que incluyen ~0) y que las direcciones de
+los efectos se replican exactamente. La filogenia no aporta señal en este nivel
+de repertorio taxonómico.
+
+Esto justifica que el modelo de referencia **no** incluya filogenia: incluirla
+complicaría el modelo sin cambiar nada. Los modelos bayesianos quedan como
+comprobación de robustez, no como resultado principal.
+
+```{r filogenia, eval=FALSE}
+source("01-scripts/d.05.4_phylo_check.R")
+```
+
+Ver `brms_filogenias_2.qmd` para la comparación completa de los cuatro modelos
+(frecuentes sin filogenia, bayesanos con filogenia) y la tabla de
+diagnósticos.
+
+# Limitaciones
+
+- **Reparto de varianza no identificado**: `prov_code` está anidada en `species`,
+  así que la partición de la varianza de pendiente entre ambos niveles no es
+  única. Las cifras concretas (~30% en PRE, ~46% en POST) describen un reparto,
+  no un hecho establecido. Con 8 especies y ~2 procedencias cada una, hace falta
+  un diseño con más grupos por especie para poder afinarlo.
+- **El término de especie no está respaldado por el AIC**: sale 1.47 unidades por
+  detrás de `m.ref_naive` en PRE. Se conserva por decisión de diseño, no porque
+  el ajuste lo prefiera, y su estimación debe leerse con el intervalo que
+  corresponde a 8 grupos.
+- **Diseño no balanceado**: la separación entre varianza de especie y de
+  procedencia se complica además por el desbalance de observaciones.
+- **Filtro IL3**: la procedencia IL3 (*Q. ilex*) se excluye por tener solo 60
+  observaciones en PRE, insuficientes para estimar sus parámetros. Se excluye
+  también de POST para que la comparación entre fases use el mismo conjunto.
+- **Modelo de referencia**: los modelos bayesianos con interacciones triples
+  por especie se ajustaron pero no se presentan; se consideran exploratorios y
+  su lógica vive en `d.07_brms_filogenias.qmd` y
+  `Heterogeneus_effects_acorn_traits.qmd`, conservados como informes.
+- **Sin partición espacial**: se asume independencia entre procedencias, lo
+  que es una simplificación (procedencias cercanas comparten clima y suelo).
