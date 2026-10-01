@@ -158,10 +158,17 @@ knitr::kable(
 
 ## Efecto de cada rasgo sobre la pendiente
 
-La figura central del artículo. El efecto se estima **promediado sobre todas las
-especies**: como las pendientes aleatorias tienen media cero, la predicción
-marginal que devuelve `emmeans` ya es la pendiente de la población. No hace
-falta estimar ni resumir una pendiente por especie.
+La figura central del artículo. El efecto es el coeficiente de la interacción
+`time_s:Dim.x` del modelo de referencia, es decir el cambio de pendiente por una
+desviación estándar de ese eje del FAMD.
+
+Antes, con la especie en los fijos, este coeficiente describía solo a la especie
+de referencia y la pendiente de las demás salía sumando coeficientes a mano; por
+eso se usaban pendientes marginales. Ahora la especie es una pendiente aleatoria
+—y `prov_code` está anidada en `species`, de modo que los términos aleatorios ya
+capturan toda la heterogeneidad entre especies—, así que no queda especie de
+referencia que explicar y el coeficiente se lee directamente. La heterogeneidad
+por especie sigue viva en la varianza del término aleatorio (tabla anterior).
 
 ```{r figuras, eval=FALSE}
 source("01-scripts/d.05.5.slope_effects_figures.R")
@@ -171,8 +178,11 @@ knitr::include_graphics("../07-img/slope_effect_reference.png")
 ```{r tabla-efecto, eval=FALSE}
 knitr::kable(
   read.csv("00-data/tablas_resumen/reference_slope_effects.csv") |>
-    dplyr::select(phase, dim, estimacion_h, ic_lo_h, ic_hi_h),
-  caption = "Cambio de la pendiente entre p10 y p90 de cada eje, en % de humedad por hora."
+    dplyr::select(phase, dim, estimacion_h, ic_lo_h, ic_hi_h, p),
+  caption = paste(
+    "Cambio de la pendiente por una desviación estándar de cada eje,",
+    "en % de humedad por hora."
+  )
 )
 ```
 

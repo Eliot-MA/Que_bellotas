@@ -1,7 +1,7 @@
 # ============================================================
 # d.05.5.slope_effects_figures.R
-# Figuras y tabla del EFECTO MARGINAL de cada eje del FAMD sobre la PENDIENTE
-# de desecacion, en las fases PRE (t < 94 h) y POST (t > 94 h).
+# Figuras y tabla del EFECTO de cada eje del FAMD sobre la PENDIENTE de
+# desecacion, en las fases PRE (t < 94 h) y POST (t > 94 h).
 #
 # MODELO: m.ref.pre / m.ref.post (glmmTMB), los de referencia ajustados en
 #   01-scripts/d.05.3.reference_model.R
@@ -9,24 +9,21 @@
 #   Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) +
 #     (0 + time_s | species) + (1 + time_s | prov_code) + (1 | id_bellota)
 #
-# POR QUE NO HAY PENDIENTES POR ESPECIE
-#   El modelo de referencia lleva la especie como PENDIENTE ALEATORIA, no como
-#   coeficiente fijo por especie. Como las pendientes aleatorias tienen media
-#   cero, la prediccion marginal que devuelve emmeans YA es la pendiente
-#   promediada sobre todas las especies: no hace falta estimar ni resumir una
-#   pendiente por especie. Es la lectura que conecta con la pregunta del
-#   articulo (los rasgos cambian la velocidad de desecacion) y evita
-#   discutir 8 efectos por rasgo sin informacion para hacerlo.
+# POR QUE SE LEN LOS COEFICIENTES DE LA INTERACCION
+#   Cuando la especie estaba en los FIJOS, con una pendiente por especie, el
+#   coeficiente `time_s:Dim.x` describia solo a la especie de referencia y la
+#   pendiente de cualquier otra especie salia sumando coeficientes a mano. Por
+#   eso antes se usaban pendientes marginales con emmeans.
 #
-#   La heterogeneidad por especie NO desaparece: vive en la varianza del
-#   termino aleatorio, que se exporta en 00-data/reference_model_varcomp.csv y
-#   se justifica en d.05.1.heterogeneus_effects.R. Si esa varianza de
-#   pendiente fuera casi nula, d.05.3 lo avisa antes de llegar aqui.
+#   Ahora la especie es una pendiente ALEATORIA y `prov_code` esta anidada en
+#   `species`, de modo que los terminos aleatorios ya capturan toda la
+#   heterogeneidad entre especies. No queda especie de referencia que explicar:
+#   el coeficiente de la interaccion es directamente el efecto del rasgo sobre
+#   la pendiente de la poblacion. Es una lectura, no un calculo.
 #
-# PROTOCOLO DE VALORES
-#   Deciles 10 y 90 de cada eje, igual que en Heterogeneus_effects_acorn_traits.qmd,
-#   para que el contraste no extrapole fuera del rango observado. El resto de
-#   ejes se fija en su mediana.
+#   La heterogeneidad por especie NO desaparece, vive en la varianza del termino
+#   aleatorio (00-data/reference_model_varcomp.csv, d.05.1). No hace falta
+#   resumir una pendiente por especie.
 #
 # Sin refit: se usan los modelos guardados en 00-data/models/.
 #
@@ -35,6 +32,7 @@
 #   07-img/slope_effect_reference_pre.png    idem, solo PRE
 #   07-img/slope_effect_reference_post.png   idem, solo POST
 #   07-img/curves_reference.png             curvas predichas a p10 / p90
+#   07-img/observed_reference.png           nube de puntos observada
 #   00-data/tablas_resumen/reference_slope_effects.csv
 # ============================================================
 
@@ -103,37 +101,37 @@ if (length(faltantes) > 0) {
 modelos <- setNames(lapply(rutas, readRDS), names(rutas))
 
 # ============================================================
-# 2. Efecto de cada eje sobre la pendiente, promediado sobre especies
+# 2. Efecto de cada eje sobre la pendiente: coeficientes de la interaccion
 # ============================================================
-# emtrends con `specs = dimension` y `var = "time_s"` devuelve la pendiente de
-# la humedad frente al tiempo en el valor del eje indicado. Al no incluir
-# `species` en las especificaciones, emmeans marginaliza sobre el termino
-# aleatorio de especie: el resultado es la pendiente de la poblacion, es decir
-# la media sobre todas las especies.
+# POR QUE SE LEEN LOS COEFICIENTES Y NO PENDIENTES MARGINALES
+#   En el modelo anterior la especie estaba en los FIJOS, con una pendiente por
+#   especie. El coeficiente de la interaccion describia solo a la especie de
+#   referencia, y obtener la pendiente de otra especie obligaba a sumar a mano
+#   su coeficiente mas el de la interaccion. Era aritmetica mental, no lectura.
 #
-# El contraste entre p10 y p90 es el cambio de pendiente atribuible al rasgo,
-# en % de humedad por unidad de tiempo escalada. Se divide por TIME_S para
-# pasarlo a %/h, que es la unidad con sentido biologico.
-# El nombre de la columna de estimacion de emmeans/emtrends NO es fijo: si la
-# tendencia tiene un solo coeficiente se llama `em.trend`, y si tiene varios
-# aparece una columna `dim.coe` mas una por coeficiente. Escribir el nombre a
-# mano hace que el script reviente con "Can't rename columns that don't exist"
-# en cuanto el paquete cambia ese comportamiento. Se localiza por patron.
-columna_estimacion <- function(df) {
-  candidatas <- c("em.trend", "trend", "emestimate", "estimate")
-  hit <- intersect(candidatas, names(df))
-  if (length(hit) == 0) {
-    # ultimo recurso: la primera columna numerica que no sea un intervalo
-    num <- names(df)[vapply(df, is.numeric, logical(1))]
-    hit <- setdiff(num, c("SE", "df", "asymp.LCL", "asymp.UCL",
-                          "lower.CL", "upper.CL"))[1]
-  }
-  if (is.na(hit) || !(hit %in% names(df))) {
-    stop("No encuentro la columna de estimacion. Columnas disponibles: ",
-         paste(names(df), collapse = ", "), call. = FALSE)
-  }
-  hit
-}
+#   Aqui la especie es una pendiente ALEATORIA, y ademas `prov_code` esta
+#   anidada en `species`, de modo que los terminos aleatorios ya capturan toda
+#   la heterogeneidad entre especies. No queda ninguna especie de referencia que
+#   explicar: el coeficiente `time_s:Dim.x` ES el efecto del rasgo sobre la
+#   pendiente de la poblacion, directamente y sin correcciones.
+#
+#   La heterogeneidad por especie sigue existiendo, pero vive en la varianza del
+#   termino aleatorio, no en los coeficientes fijos (ver d.05.1 y
+#   reference_model_varcomp.csv). Por eso no hace falta resumir una pendiente
+#   por especie.
+#
+# UNIDADES
+#   `time_s` esta escalado, asi que el coeficiente esta en % de humedad por
+#   desviacion estandar de tiempo. Se divide por TIME_S para obtener %/h, que es
+#   la unidad con sentido biologico. El valor de Dim.x es la variacion por una
+#   desviacion estandar de ese eje del FAMD.
+#
+# El tramo p10-p90 se calcula aparte solo como contexto de magnitud (cuanto
+# cambio de pendiente cubre el recorrido del 10 al 90 percentil del eje). No es
+# el efecto que se interpreta: es el coeficiente multiplicado por el rango
+# observado del eje.
+#
+# `intervalos_de` lo usan las curvas de la seccion 4.
 
 # Los limites del intervalo tambien cambian de nombre segun el metodo
 # (asymp.LCL/asymp.UCL frente a lower.CL/upper.CL). Si no estan, se recalculan
@@ -152,40 +150,49 @@ intervalos_de <- function(df, col_est) {
 }
 
 efecto_por_eje <- function(mod, fase) {
-  map_dfr(dims, function(d) {
-    at <- as.list(meds)
-    names(at) <- dims
-    at[[d]] <- c(q10[d], q90[d])
+  suppressPackageStartupMessages(library(parameters))
+  tab <- parameters::model_parameters(mod, effects = "fixed", ci = 0.95) |>
+    as.data.frame()
 
-    tr <- emmeans::emtrends(mod, specs = d, var = "time_s", at = at)
-    co <- emmeans::contrast(tr, method = "revpairwise", adjust = "none") |>
-      as.data.frame()
+  # La interaccion de interes se llama `time_s:Dim.x`. Se busca por patron y no
+  # por nombre exacto para no depender de como glmmTMB etiquete la columna.
+  es_interaccion <- grepl("^time_s:Dim\\.[123]$", tab$Parameter)
+  if (!any(es_interaccion)) {
+    stop("No encuentro las interacciones time_s:Dim.x en ", fase,
+         ". Coeficientes disponibles: ",
+         paste(tab$Parameter, collapse = ", "), call. = FALSE)
+  }
+  tab <- tab[es_interaccion, ]
 
-    col_est <- columna_estimacion(co)
-    ic <- intervalos_de(co, col_est)
-
-    tibble::tibble(
-      dim         = d,
-      phase       = fase,
-      estimacion  = co[[col_est]][1],
-      se          = co$SE[1],
-      ic_lo       = ic$lo[1],
-      ic_hi       = ic$hi[1],
-      # de % por sd(horas) a % por hora
-      estimacion_h = co[[col_est]][1] / TIME_S,
-      ic_lo_h     = ic$lo[1] / TIME_S,
-      ic_hi_h     = ic$hi[1] / TIME_S
+  tibble::tibble(
+    phase       = fase,
+    dim         = sub("^time_s:", "", tab$Parameter),
+    estimacion  = tab$Coefficient,
+    se          = tab$SE,
+    ic_lo       = tab$CI_low,
+    ic_hi       = tab$CI_high,
+    p           = tab$p,
+    # de % por sd(horas) a % por hora
+    estimacion_h = tab$Coefficient / TIME_S,
+    ic_lo_h     = tab$CI_low / TIME_S,
+    ic_hi_h     = tab$CI_high / TIME_S
+  ) |>
+    # Contexto: que parte del efecto cubre el recorrido p10-p90 del eje.
+    dplyr::mutate(
+      p90_menos_p10_h = estimacion_h * (q90[dims] - q10[dims])[dim]
     )
-  })
 }
 
 efectos <- bind_rows(
   map_dfr(names(modelos), function(f) efecto_por_eje(modelos[[f]], f))
-)
+) |>
+  dplyr::mutate(dim = factor(dim, levels = dims))
 
 write_csv(efectos, file.path(OUTDIR_CSV, "reference_slope_effects.csv"))
-cat("\nEfecto de cada eje sobre la pendiente (promediado sobre especies):\n")
-print(efectos |> dplyr::select(phase, dim, estimacion_h, ic_lo_h, ic_hi_h))
+cat("\nEfecto de cada eje sobre la pendiente (coeficiente time_s:Dim.x):\n")
+print(efectos |>
+        dplyr::select(phase, dim, estimacion_h, ic_lo_h, ic_hi_h, p) |>
+        as.data.frame())
 
 # ============================================================
 # 3. Curvas predichas a p10 y p90 de cada eje
@@ -232,8 +239,10 @@ curvas <- bind_rows(
 # 4. Figuras
 # ============================================================
 # Figura principal: efecto de cada eje sobre la pendiente.
+# Cada punto es el coeficiente `time_s:Dim.x`, es decir el cambio de pendiente
+# por una desviacion estandar de ese eje. El cero vertical es "el rasgo no
+# cambia la velocidad de desecacion".
 p_efecto <- efectos |>
-  dplyr::mutate(dim = factor(dim, levels = dims)) |>
   ggplot(aes(x = estimacion_h, y = dim)) +
   geom_vline(xintercept = 0, linetype = 2, colour = "grey40") +
   geom_errorbarh(aes(xmin = ic_lo_h, xmax = ic_hi_h),
@@ -242,7 +251,7 @@ p_efecto <- efectos |>
   facet_wrap(~ phase, ncol = 2) +
   scale_y_discrete(labels = lab_dim) +
   labs(x = expression(paste("Cambio de la pendiente (",
-                            Delta * " p90 - p10, % h"^-1 * ")")),
+                            Delta * " por 1 sd del eje, % h"^-1 * ")")),
        y = NULL) +
   theme_classic(base_size = 11)
 

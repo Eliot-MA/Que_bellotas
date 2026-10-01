@@ -26,9 +26,11 @@
 #      especies), de modo que cualquier intercepto de especie es ya
 #      representable como intercepto de procedencia y anadir ambos deja una
 #      dimension redundante. La variante con intercepto `(1 + time_s | species)`
-#      esta ajustada mas abajo COMO `m.ref_int` y NO converge: Hessian no
-#      definida positiva en PRE y ajuste singular en POST, con logLik NULL.
-#      Es la evidencia directa de que la dimension sobrante es real. Como
+#      esta ajustada mas abajo COMO `m.ref_int`. En PRE no converge: Hessian no
+#      definida positiva, logLik NULL y AIC NA. En POST si converge, con aviso de
+#      ajuste singular y AIC finito (8077.673), asi que aparece en la tabla de
+#      comparacion marcado como singular. Es la evidencia directa de que la
+#      dimension sobrante es real. Como
 #      `prov_code` aporta el nivel basal entre especies, perder el intercepto
 #      de especie no pierde informacion: en `m.ref_int.pre` la varianza de
 #      intercepto de especie sale en 4.16e-06, o sea cero. En cambio la
@@ -131,11 +133,12 @@ form_con_especie <- function(termino_especie) {
 #   estimarlos los dos a la vez deja una dimension redundante.
 #
 #   Esa redundancia no es teorica: la variante con intercepto de especie
-#   (`m.ref_int` mas abajo) NO CONVERGE. En PRE da "non-positive-definite
-#   Hessian matrix" y en POST "singular convergence (7)", y en ambos casos
-#   glmmTMB deja logLik en NULL, de modo que su AIC es NA y no admite
-#   comparacion. El aviso de convergencia de este script lo comprueba y lo
-#   dice en voz alta en lugar de renormalizar pesos sobre los modelos que si
+#   (`m.ref_int` mas abajo) falla en PRE con "non-positive-definite Hessian
+#   matrix", donde glmmTMB deja logLik en NULL y su AIC es NA, sin comparacion
+#   posible. En POST converge, pero con "singular convergence (7)" y un AIC
+#   finito (8077.673), asi que se mantiene en la comparacion marcado como
+#   singular. El aviso de convergencia de este script comprueba ambas fases y
+#   lo dice en voz alta en lugar de renormalizar pesos sobre los modelos que si
 #   funcionan.
 #
 #   Que el nivel basal entre especies no se pierda: lo aporta `prov_code`. Al
@@ -178,7 +181,7 @@ form_ref_naive <- paste0("Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + 
 cat("\n===== MODELOS AJUSTADOS =====\n\n")
 cat("m.ref  (REFERENCIA, pendiente por especie sin intercepto):\n")
 cat(form_ref, "\n\n")
-cat("m.ref_int  (con intercepto de especie; no identificable, no converge):\n")
+cat("m.ref_int  (con intercepto de especie; no identificable):\n")
 cat(form_ref_int, "\n\n")
 cat("m.ref_naive  (linea base, sin especie):\n")
 cat(form_ref_naive, "\n\n")
@@ -190,7 +193,7 @@ ajustar <- function(formula, data) {
 cat("\n-- Ajuste PRE (t < 94 h) --\n")
 cat("--   m.ref (referencia)\n")
 m.ref.pre       <- ajustar(form_ref, df.t1)
-cat("--   m.ref_int (con intercepto de especie; se espera que no converja)\n")
+cat("--   m.ref_int (con intercepto de especie; se espera que falle en PRE)\n")
 m.ref_int.pre   <- ajustar(form_ref_int, df.t1)
 cat("--   m.ref_naive (linea base)\n")
 m.ref_naive.pre <- ajustar(form_ref_naive, df.t1)
@@ -198,7 +201,7 @@ m.ref_naive.pre <- ajustar(form_ref_naive, df.t1)
 cat("\n-- Ajuste POST (t > 94 h) --\n")
 cat("--   m.ref (referencia)\n")
 m.ref.post       <- ajustar(form_ref, df.t2)
-cat("--   m.ref_int (con intercepto de especie; se espera que no converja)\n")
+cat("--   m.ref_int (con intercepto de especie; se espera singular en POST)\n")
 m.ref_int.post   <- ajustar(form_ref_int, df.t2)
 cat("--   m.ref_naive (linea base)\n")
 m.ref_naive.post <- ajustar(form_ref_naive, df.t2)
@@ -207,11 +210,13 @@ m.ref_naive.post <- ajustar(form_ref_naive, df.t2)
 # 1b. Estado de convergencia
 # ============================================================
 # Se informa antes de comparar nada. Un "convergence problem" de glmmTMB
-# significa que la Hessian no es definida positiva o el ajuste es singular: la
-# estimacion de algun termino no es fiable y, en la practica, logLik queda en
-# NULL. Conviene verlo de forma explicita y no perderlo en el log.
+# significa que la Hessian no es definida positiva o el ajuste es singular. En el
+# primer caso logLik queda en NULL y el modelo no admite comparacion; en el
+# segundo el ajuste puede conservar una verosimilitud valida, asi que se marca
+# como singular sin excluirlo. Conviene verlo de forma explicita y no perderlo en
+# el log.
 #
-# `m.ref_int` que no converja NO es un fallo del script ni del optimizador: es
+# Que `m.ref_int` de problemas NO es un fallo del script ni del optimizador: es
 # la manifestacion de la redundancia entre el intercepto de especie y el de
 # procedencia descrita al definir las formulas. Se espera, y se comprueba.
 estado_convergencia <- function(mod, etiqueta) {
@@ -242,20 +247,29 @@ if (!estado$ref.pre || !estado$ref.post) {
 
 if (!estado$ref_int.pre || !estado$ref_int.post) {
   cat(paste0(
-    "\n  Como se esperaba, m.ref_int no converge. Es coherente con la\n",
-    "  anidacion de `prov_code` en `species`: el intercepto de especie es\n",
-    "  redundante con el de procedencia. Se deja fuera de la comparacion y\n",
-    "  la referencia es m.ref. Ver el comentario de DECISION sobre form_ref.\n"))
+    "\n  m.ref_int falla en al menos una fase, como se esperaba. Es coherente\n",
+    "  con la anidacion de `prov_code` en `species`: el intercepto de especie\n",
+    "  es redundante con el de procedencia. La referencia sigue siendo m.ref.\n",
+    "  Ver el comentario de DECISION sobre form_ref.\n"))
+  if (!estado$ref_int.pre && estado$ref_int.post) {
+    cat(paste0(
+      "  PRE queda fuera de la comparacion (sin verosimilitud). POST si\n",
+      "  entra, con AIC finito y marcado como singular: el aviso no lo\n",
+      "  invalida, pero conviene tenerlo presente al leer la tabla.\n"))
+  }
 }
 
 # ============================================================
 # 2. Comparacion de modelos (AIC y pesos de Akaike)
 # ============================================================
-# Un modelo que no converge no tiene verosimilitud: glmmTMB deja logLik en
-# NULL y AIC() devuelve NA. Meterlo en la comparacion daria pesos de Akaike
-# renormalizados sobre un subconjunto, que es exactamente el modo sutil de
-# que un modelo fallido desaparezca del papel sin dejar rastro. Aqui se filtra
-# y se dice en voz alta que modelo se ha dejado fuera y por que.
+# Un modelo sin verosimilitud no admite comparacion: glmmTMB deja logLik en
+# NULL y AIC() devuelve NA. Meterlo daria pesos de Akaike renormalizados sobre
+# un subconjunto, que es exactamente el modo sutil de que un modelo fallido
+# desaparezca del papel sin dejar rastro. Aqui se filtra y se dice en voz alta
+# que modelo se ha dejado fuera y por que.
+#
+# El filtro es `AIC` finito, no "sin avisos": un ajuste singular pero con
+# verosimilitud (m.ref_int.post) entra en la tabla marcado como singular.
 es_utilizable <- function(mod) {
   if (is.null(mod)) return(FALSE)
   a <- tryCatch(stats::AIC(mod), error = function(e) NA_real_)

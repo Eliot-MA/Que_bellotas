@@ -121,8 +121,8 @@ d.05.0.model_traits.R            master: trait effects on desiccation rate
 ├── d.05.4_phylo_check.R            [check] brms + phylogenetic covariance;
 │                                    not run in the main flow (hours of
 │                                    sampling), launch standalone
-└── d.05.5.slope_effects_figures.R  marginal trait effect on the slope,
-                                     averaged over species, PRE and POST
+└── d.05.5.slope_effects_figures.R  trait effect on the slope from the
+                                     time_s:Dim.x coefficients, PRE and POST
 
 The reference model is `Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3)
 + (0 + time_s | species) + (1 + time_s | prov_code) + (1 | id_bellota)`, fitted
@@ -133,7 +133,8 @@ The species term carries no intercept on purpose: `prov_code` is nested inside
 `species`, so a species intercept is already representable as a provenance
 intercept and estimating both leaves a redundant dimension. That is not a
 hypothesis, it is what the fit shows — the variant with a species intercept does
-not converge (non-positive-definite Hessian in PRE, singular in POST).
+not converge in PRE (non-positive-definite Hessian); in POST it fits with a
+singular-convergence warning and a finite AIC, and is kept in the comparison.
 `d.05.3.reference_model.R` fits that variant as `m.ref_int` for the record,
 compares everything by AIC/Akaike weights with non-converged models reported as
 excluded, and stops if the reference itself fails to converge.
