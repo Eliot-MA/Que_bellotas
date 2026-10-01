@@ -197,7 +197,8 @@ Las dos curvas **no se conectan** en el tramo intermedio: esa región se deja en
 blanco a propósito. Son horas con muy poca densidad de datos y con las que
 ninguna de las dos fases está ajustada, de modo que no hay una predicción fiable
 que dibujar. Unir los extremos sugeriría una trayectoria continua que los datos
-no respaldan.
+no respaldan. Las observaciones individuales van de fondo en la misma figura, lo
+que deja ver el hueco en los datos que justifica ese blanco.
 
 ```{r curvas, eval=FALSE}
 knitr::include_graphics("../07-img/curves_reference.png")

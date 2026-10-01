@@ -31,8 +31,8 @@
 #   07-img/slope_effect_reference.png        efecto sobre la pendiente (principal)
 #   07-img/slope_effect_reference_pre.png    idem, solo PRE
 #   07-img/slope_effect_reference_post.png   idem, solo POST
-#   07-img/curves_reference.png             curvas predichas a p10 / p90
-#   07-img/observed_reference.png           nube de puntos observada
+#   07-img/curves_reference.png             curvas predichas a p10 / p90 con las
+#                                           observaciones individuales de fondo
 #   00-data/tablas_resumen/reference_slope_effects.csv
 # ============================================================
 
@@ -320,22 +320,30 @@ for (ph in c("PRE", "POST")) {
 # ajustada, asi que no se puede predecir con seguridad. Los valores ya vienen en
 # NA desde el recorte por rango, y el grupo garantiza que aunque se solaparan en
 # el tiempo seguirian siendo dos segmentos separados.
+#
+# Las observaciones individuales van de fondo en la misma figura. Se dibujan con
+# `inherit.aes = FALSE` porque si heredaran el aes principal (`colour = level`,
+# `group`) cada punto recibiria el color de un nivel que no le corresponde y se
+# agruparia por `dim`+`level`, que no es lo que se quiere. Sin faceta propia: se
+# reparten en las tres paneles por el tiempo que ocupan, que es lo que hace falta
+# para juzgar si las curvas siguen los datos.
 p_curvas <- curvas |>
   dplyr::mutate(dim = factor(dim, levels = dims),
                 level = factor(level, levels = c("p10", "p90")),
                 phase = factor(phase, levels = c("PRE", "POST"))) |>
   ggplot(aes(hr, med, colour = level, fill = level, linetype = level,
              group = interaction(level, phase))) +
+  geom_point(data = df, aes(time, Moisture_content), inherit.aes = FALSE,
+             alpha = 0.05, size = 0.5, colour = "grey60") +
   geom_vline(xintercept = TIME_CORTE, linetype = 3, colour = "grey45") +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.12, colour = NA) +
   geom_line(linewidth = 0.6, na.rm = FALSE) +
   facet_wrap(~ dim, nrow = 1, labeller = labeller(dim = lab_dim)) +
   scale_colour_manual(values = c(p10 = "#0072B2", p90 = "#D55E00")) +
   scale_fill_manual(values = c(p10 = "#0072B2", p90 = "#D55E00")) +
-  scale_x_continuous(breaks = seq(0, max(curvas$hr, na.rm = TRUE),
-                                  by = 24)) +
-  labs(x = "Tiempo (h)", y = "Humedad predicha (%)",
-       title = "Desecación en dos fases (línea discontinua: 94 h)",
+  scale_x_continuous(breaks = seq(0, max(df$time), by = 24)) +
+  labs(x = "Tiempo (h)", y = "Humedad (%)",
+       title = "Desecación en dos fases (puntos: observaciones individuales)",
        colour = "Nivel del eje", fill = "Nivel del eje",
        linetype = "Nivel del eje") +
   theme_classic(base_size = 11) +
@@ -345,23 +353,8 @@ p_curvas <- curvas |>
 ggsave(file.path(OUTDIR_IMG, "curves_reference.png"), p_curvas,
        width = 13, height = 4.4, dpi = 300)
 
-# ============================================================
-# 5. Nube de puntos observada (contexto visual de las curvas predichas)
-# ============================================================
-# Sin faceta por fase, igual que las curvas predichas: interesa ver la nube
-# completa como un unico proceso para juzgar si las curvas siguen los datos.
-p_obs <- df |>
-  dplyr::mutate(phase = factor(ifelse(time_s < t94, "PRE", "POST"),
-                               levels = c("PRE", "POST"))) |>
-  ggplot(aes(time, Moisture_content)) +
-  geom_point(alpha = 0.06, size = 0.6, colour = "grey55") +
-  geom_vline(xintercept = TIME_CORTE, linetype = 3, colour = "grey45") +
-  scale_x_continuous(breaks = seq(0, max(df$time), by = 24)) +
-  labs(x = "Tiempo (h)", y = "Humedad (%)",
-       title = "Datos observados (línea discontinua: 94 h)") +
-  theme_classic(base_size = 11)
-
-ggsave(file.path(OUTDIR_IMG, "observed_reference.png"), p_obs,
-       width = 8.5, height = 4.2, dpi = 300)
+# Las observaciones individuales ya van de fondo en la figura de curvas, asi que
+# no hay figura aparte de nube de puntos: era el mismo contenido duplicado y sin
+# las curvas, que es justo lo que hace falta para juzgar si las ajustan.
 
 cat("\nHecho. Figuras en", OUTDIR_IMG, "y tabla en", OUTDIR_CSV, "\n")
