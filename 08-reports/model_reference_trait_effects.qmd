@@ -178,10 +178,13 @@ knitr::include_graphics("../07-img/slope_effect_reference.png")
 ```{r tabla-efecto, eval=FALSE}
 knitr::kable(
   read.csv("00-data/tablas_resumen/reference_slope_effects.csv") |>
-    dplyr::select(phase, dim, estimacion_h, ic_lo_h, ic_hi_h, p),
+    dplyr::select(phase, dim, sd_eje, estimacion_sd, ic_lo_sd, ic_hi_sd, p),
   caption = paste(
     "Cambio de la pendiente por una desviación estándar de cada eje,",
-    "en % de humedad por hora."
+    "en % de humedad por hora. La escala por desviación estándar es la",
+    "comparable entre ejes: las coordenadas del FAMD no están",
+    "estandarizadas y su dispersión difiere, de modo que la escala por",
+    "unidad premiaría al eje más disperso."
   )
 )
 ```

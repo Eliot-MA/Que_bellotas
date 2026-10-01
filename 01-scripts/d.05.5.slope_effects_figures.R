@@ -91,8 +91,24 @@ q10  <- sapply(dims, function(d) unname(quantile(df[[d]], 0.10)))
 q90  <- sapply(dims, function(d) unname(quantile(df[[d]], 0.90)))
 meds <- sapply(dims, function(d) unname(median(df[[d]], na.rm = TRUE)))
 
-cat("Valores de referencia por eje (p10 / mediana / p90):\n")
-print(data.frame(dim = dims, p10 = q10, mediana = meds, p90 = q90))
+# Desviacion estandar de cada eje. El efecto de un rasgo se reporta por DESVIACION
+# ESTANDAR del eje, no por unidad, porque solo asi se pueden comparar entre ejes:
+# el coeficiente crudo esta en "% por unidad de Dim.x", y las unidades de los tres
+# ejes no son intercambiables si sus dispersiones difieren.
+#
+# Las coordenadas del FAMD NO estan estandarizadas: su desviacion estandar es la
+# raiz de su autovalor (1.674, 1.297 y 1.089 para Dim.1, Dim.2 y Dim.3), no 1. Es
+# un error de interpretacion leer "1 unidad de Dim.x" como "1 desviacion estandar de
+# Dim.x": el factor es 1.67 para el eje mas pesado y 1.09 para el mas ligero, de modo
+# que la lectura por unidad subestima el efecto del tamaño respecto a los demas y
+# exagera el de la cicatriz.
+sd_ejes <- sapply(dims, function(d) sd(df[[d]]))
+
+cat("Valores de referencia por eje (p10 / mediana / p90 / sd):\n")
+print(data.frame(dim = dims, p10 = q10, mediana = meds, p90 = q90, sd = sd_ejes))
+cat("\nNota: la desviacion de cada eje no es 1. Un incremento de UNA UNIDAD del eje\n",
+    "no equivale a una desviacion estandar; el efecto por sd es el efecto por unidad\n",
+    "multiplicado por la sd del eje.\n", sep = "")
 
 # ============================================================
 # 1. Cargar los modelos de referencia
@@ -127,10 +143,25 @@ modelos <- setNames(lapply(rutas, readRDS), names(rutas))
 #   por especie.
 #
 # UNIDADES
-#   `time_s` esta escalado, asi que el coeficiente esta en % de humedad por
-#   desviacion estandar de tiempo. Se divide por TIME_S para obtener %/h, que es
-#   la unidad con sentido biologico. El valor de Dim.x es la variacion por una
-#   desviacion estandar de ese eje del FAMD.
+#   Hay dos conversiones encadenadas y conviene no confundirlas.
+#
+#   1. `time_s` esta escalado, asi que el coeficiente viene en % de humedad por
+#      desviacion estandar de tiempo. Dividir por TIME_S lo pasa a %/h, que es
+#      la unidad con sentido biologico. Es una conversion de unidades.
+#
+#   2. El valor de Dim.x NO esta estandarizado. La coordenada de cada eje tiene
+#      desviacion estandar igual a la raiz de su autovalor (1.674, 1.297 y 1.089
+#      para Dim.1, Dim.2 y Dim.3), no 1. Por tanto el coeficiente por unidad de
+#      Dim.x no es el efecto de una desviacion estandar del rasgo, sino el de una
+#      unidad arbitraria de eje, y las unidades de los tres ejes no son
+#      intercambiables entre si.
+#
+#   Por eso el efecto que se interpreta y se grafica es el POR DESVIACION
+#   ESTANDAR: `estimacion_h * sd_ejes[dim]`. Es la unica lectura que permite
+#   comparar entre ejes, que es lo que hace el analisis. El error de saltarse
+#   este factor no es pequeno ni neutro: 1.67 para Dim.1 frente a 1.09 para
+#   Dim.3, de modo que la lectura por unidad subestima al eje del tamaño y
+#   exagera al de la cicatriz, comprimiendo la diferencia entre ambos.
 #
 # El tramo p10-p90 se calcula aparte solo como contexto de magnitud (cuanto
 # cambio de pendiente cubre el recorrido del 10 al 90 percentil del eje). No es
@@ -183,7 +214,18 @@ efecto_por_eje <- function(mod, fase) {
     ic_lo_h     = tab$CI_low / TIME_S,
     ic_hi_h     = tab$CI_high / TIME_S
   ) |>
+    # Lectura por DESVIACION ESTANDAR del eje, que es la comparable entre ejes.
+    # La de por unidad se conserva en las columnas `_h`: es la que se necesita
+    # para los tramos p10-p90, y sirve de trazabilidad del calculo.
+    dplyr::mutate(
+      sd_eje        = sd_ejes[dim],
+      estimacion_sd = estimacion_h * sd_eje,
+      ic_lo_sd      = ic_lo_h     * sd_eje,
+      ic_hi_sd      = ic_hi_h     * sd_eje
+    ) |>
     # Contexto: que parte del efecto cubre el recorrido p10-p90 del eje.
+    # Se mantiene en la escala por unidad porque el rango p10-p90 ya es una
+    # cantidad observada de cada eje, comparable entre si sin factor adicional.
     dplyr::mutate(
       p90_menos_p10_h = estimacion_h * (q90[dims] - q10[dims])[dim]
     )
@@ -198,9 +240,12 @@ efectos <- bind_rows(
                 phase = factor(phase, levels = c("PRE", "POST")))
 
 write_csv(efectos, file.path(OUTDIR_CSV, "reference_slope_effects.csv"))
-cat("\nEfecto de cada eje sobre la pendiente (coeficiente time_s:Dim.x):\n")
+cat("\nEfecto de cada eje sobre la pendiente (coeficiente time_s:Dim.x).\n",
+    "Se lee por desviacion estandar del eje, que es la escala comparable\n",
+    "entre ejes; las columnas por unidad quedan en el CSV solo como\n",
+    "trazabilidad del calculo.\n", sep = "")
 print(efectos |>
-        dplyr::select(phase, dim, estimacion_h, ic_lo_h, ic_hi_h, p) |>
+        dplyr::select(phase, dim, sd_eje, estimacion_sd, ic_lo_sd, ic_hi_sd, p) |>
         as.data.frame())
 
 # ============================================================
@@ -422,13 +467,19 @@ print(as.data.frame(perdida_por_nivel |>
 # 5. Figuras
 # ============================================================
 # Figura principal: efecto de cada eje sobre la pendiente.
-# Cada punto es el coeficiente `time_s:Dim.x`, es decir el cambio de pendiente
-# por una desviacion estandar de ese eje. El cero vertical es "el rasgo no
-# cambia la velocidad de desecacion".
+# Cada punto es el coeficiente `time_s:Dim.x` expresado por desviacion estandar
+# de ese eje y por hora. El cero vertical es "el rasgo no cambia la velocidad de
+# desecacion".
+#
+# Se grafica por DESVIACION ESTANDAR y no por unidad porque el objetivo de la
+# figura es comparar los tres ejes entre si, y solo la escala por sd es comparable:
+# las coordenadas del FAMD no estan estandarizadas (sd = raiz del autovalor) y sus
+# dispersiones difieren, de modo que la escala por unidad premia al eje mas
+# disperso sin que ello signifique mayor influencia biologica.
 p_efecto <- efectos |>
-  ggplot(aes(x = estimacion_h, y = dim)) +
+  ggplot(aes(x = estimacion_sd, y = dim)) +
   geom_vline(xintercept = 0, linetype = 2, colour = "grey40") +
-  geom_errorbarh(aes(xmin = ic_lo_h, xmax = ic_hi_h),
+  geom_errorbarh(aes(xmin = ic_lo_sd, xmax = ic_hi_sd),
                  height = 0, linewidth = 0.7) +
   geom_point(size = 2.4) +
   facet_wrap(~ phase, ncol = 2) +
