@@ -311,11 +311,21 @@ for (ph in c("PRE", "POST")) {
 # la curva PRE llega hasta 94 h y la POST arranca ahi. La linea vertical marca
 # el corte. El color sigue siendo el nivel del eje (p10/p90); la fase se
 # distingue por el tramo de tiempo que ocupa cada curva.
+#
+# `group = interaction(level, phase)` es lo que impide que geom_line una PRE con
+# POST. Sin el, ggplot agruparia solo por `level` (la unica variable discreta
+# mapeada) y la linea cruzaria la region intermedia, uniendo el ultimo punto de
+# PRE con el primero de POST. Ese tramo se deja en blanco a proposito: son horas
+# con muy poca densidad de datos y con las que ninguna de las dos fases esta
+# ajustada, asi que no se puede predecir con seguridad. Los valores ya vienen en
+# NA desde el recorte por rango, y el grupo garantiza que aunque se solaparan en
+# el tiempo seguirian siendo dos segmentos separados.
 p_curvas <- curvas |>
   dplyr::mutate(dim = factor(dim, levels = dims),
                 level = factor(level, levels = c("p10", "p90")),
                 phase = factor(phase, levels = c("PRE", "POST"))) |>
-  ggplot(aes(hr, med, colour = level, fill = level, linetype = level)) +
+  ggplot(aes(hr, med, colour = level, fill = level, linetype = level,
+             group = interaction(level, phase))) +
   geom_vline(xintercept = TIME_CORTE, linetype = 3, colour = "grey45") +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.12, colour = NA) +
   geom_line(linewidth = 0.6, na.rm = FALSE) +

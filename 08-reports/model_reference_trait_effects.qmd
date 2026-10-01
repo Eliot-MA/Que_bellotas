@@ -193,6 +193,12 @@ hasta las 94 h y la curva POST arranca ahí, de modo que la figura se lee como u
 Cada curva se recorta a su propio rango observado, porque el modelo de cada
 fase no está ajustado para los tiempos de la otra.
 
+Las dos curvas **no se conectan** en el tramo intermedio: esa región se deja en
+blanco a propósito. Son horas con muy poca densidad de datos y con las que
+ninguna de las dos fases está ajustada, de modo que no hay una predicción fiable
+que dibujar. Unir los extremos sugeriría una trayectoria continua que los datos
+no respaldan.
+
 ```{r curvas, eval=FALSE}
 knitr::include_graphics("../07-img/curves_reference.png")
 ```
