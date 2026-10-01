@@ -31,15 +31,14 @@ comprobación de que las conclusiones no cambian al introducir la filogenia.
 (0 + time_s | species) + (1 + time_s | prov_code) + (1 | id_bellota)`, ajustado
 por separado en la fase lineal (PRE, *t* < 94 h) y en la de equilibrio (POST,
 *t* > 94 h) con glmmTMB. Los tres ejes morfológicos proceden de un FAMD sobre
-medidas originales de acinos y bellotas, y las dos fases se modelan aparte porque
-la dinámica de la desecación cambia de signo: pierde peso de forma rápida y
-lenta a la vez, o se rehidrata y se estabiliza.
+medidas originales de bellotas, y las dos fases se modelan aparte porque
+la dinámica de la desecación cambia de signo: pierde peso de forma rápida al principio y lenta posteriormente.
 
 **Hallazgo central**: los rasgos modulan la **velocidad** de desecación en la
-fase lineal, no el contenido de humedad de equilibrio. En PRE, un pericarpo más
-grueso y una cicatriz mayor aceleran la pérdida de agua, mientras que una
-bellota mayor se seca más despacio. En POST, esos efectos sobre la pendiente
-desaparecen.
+fase lineal, pero en la fase POST solo es importante el tamaño de la bellota.
+En PRE, un pericarpo más grueso y una cicatriz mayor aceleran la pérdida de agua,
+mientras que una bellota mayor se seca más despacio.
+En POST, esos efectos sobre la pendiente desaparecen.
 
 **Sobre la heterogeneidad entre especies**: la velocidad de desecación es
 claramente heterogénea, y esto no es un inconveniente del modelo sino parte del
@@ -52,7 +51,7 @@ Conviene precisar *qué* heterogeneidad es esa, porque aquí hay una sutileza qu
 condiciona la lectura de las cifras. `prov_code` está anidada en `species` (15
 códigos en 8 especies), de modo que **las varianzas de pendiente de los dos
 niveles no están identificadas de forma única**: cualquier reparto que sume la
-misma cantidad es igualmente bueno a ojos del verosimilitud. La procedencia y
+misma cantidad es igualmente bueno a ojos de la verosimilitud. La procedencia y
 la especie no compiten por aportar información nueva, se reparten la misma.
 
 La observación que lo hace evidente es que al añadir el término de especie, la
@@ -87,13 +86,10 @@ heterogeneidad se modela como **pendientes aleatorias por especie**, sin
 intercepto. La alternativa sería un coeficiente fijo `time_s:Dim.x:species`, que
 estimaría 8 efectos por rasgo. Se descarta porque:
 
-1. En este diseño no balanceado, los modelos libres por especie son más
-   identificables y su interpretación no depende de qué nivel se use como
-   referencia.
-2. Con 8 especies, un contraste por especie no tiene potencia suficiente para
+1. Con 8 especies, un contraste por especie no tiene potencia suficiente para
    sostenerse en una conclusión; la varianza de las pendientes aleatorias
    captura la misma heterogeneidad de forma más parsimoniosa.
-3. La pregunta del artículo es sobre rasgos, no sobre un ranking de especies.
+2. La pregunta del artículo es sobre rasgos, no sobre un ranking de especies.
 
 **Por qué sin intercepto de especie.** `prov_code` está anidada en `species` (15
 códigos en 8 especies), de modo que cualquier intercepto de especie es ya
@@ -125,8 +121,7 @@ knitr::kable(
 
 La comparación de modelos no incluye los ajustes que no han convergido, y el
 script lo dice explícitamente en lugar de renormalizar los pesos de Akaike sobre
-los modelos supervivientes: un modelo fallido que desaparece en silencio de una
-tabla es un revisor perdido.
+los modelos supervivientes.
 
 **Cómo leer el empate.** `m.ref` sale 1.47 unidades de AIC por detrás de
 `m.ref_naive` en PRE. Es un empate, y conviene decir de qué tipo: no es que los

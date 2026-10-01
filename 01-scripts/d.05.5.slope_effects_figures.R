@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # d.05.5.slope_effects_figures.R
 # Figuras y tabla del EFECTO MARGINAL de cada eje del FAMD sobre la PENDIENTE
 # de desecacion, en las fases PRE (t < 94 h) y POST (t > 94 h).
@@ -114,6 +114,43 @@ modelos <- setNames(lapply(rutas, readRDS), names(rutas))
 # El contraste entre p10 y p90 es el cambio de pendiente atribuible al rasgo,
 # en % de humedad por unidad de tiempo escalada. Se divide por TIME_S para
 # pasarlo a %/h, que es la unidad con sentido biologico.
+# El nombre de la columna de estimacion de emmeans/emtrends NO es fijo: si la
+# tendencia tiene un solo coeficiente se llama `em.trend`, y si tiene varios
+# aparece una columna `dim.coe` mas una por coeficiente. Escribir el nombre a
+# mano hace que el script reviente con "Can't rename columns that don't exist"
+# en cuanto el paquete cambia ese comportamiento. Se localiza por patron.
+columna_estimacion <- function(df) {
+  candidatas <- c("em.trend", "trend", "emestimate", "estimate")
+  hit <- intersect(candidatas, names(df))
+  if (length(hit) == 0) {
+    # ultimo recurso: la primera columna numerica que no sea un intervalo
+    num <- names(df)[vapply(df, is.numeric, logical(1))]
+    hit <- setdiff(num, c("SE", "df", "asymp.LCL", "asymp.UCL",
+                          "lower.CL", "upper.CL"))[1]
+  }
+  if (is.na(hit) || !(hit %in% names(df))) {
+    stop("No encuentro la columna de estimacion. Columnas disponibles: ",
+         paste(names(df), collapse = ", "), call. = FALSE)
+  }
+  hit
+}
+
+# Los limites del intervalo tambien cambian de nombre segun el metodo
+# (asymp.LCL/asymp.UCL frente a lower.CL/upper.CL). Si no estan, se recalculan
+# con el cuantil t usando los grados de libertad que da el propio emmeans, y no
+# con 1.96: sobre glmmTMB los intervalos son t y usar la normal acortaria los
+# limites alatorios.
+intervalos_de <- function(df, col_est) {
+  if (all(c("asymp.LCL", "asymp.UCL") %in% names(df))) {
+    return(list(lo = df$asymp.LCL, hi = df$asymp.UCL))
+  }
+  if (all(c("lower.CL", "upper.CL") %in% names(df))) {
+    return(list(lo = df$lower.CL, hi = df$upper.CL))
+  }
+  q <- if ("df" %in% names(df)) stats::qt(0.975, df$df) else stats::qnorm(0.975)
+  list(lo = df[[col_est]] - q * df$SE, hi = df[[col_est]] + q * df$SE)
+}
+
 efecto_por_eje <- function(mod, fase) {
   map_dfr(dims, function(d) {
     at <- as.list(meds)
@@ -121,21 +158,24 @@ efecto_por_eje <- function(mod, fase) {
     at[[d]] <- c(q10[d], q90[d])
 
     tr <- emmeans::emtrends(mod, specs = d, var = "time_s", at = at)
-    co <- emmeans::contrast(tr, method = "revpairwise", adjust = "none")
+    co <- emmeans::contrast(tr, method = "revpairwise", adjust = "none") |>
+      as.data.frame()
 
-    as.data.frame(co) |>
-      # emmeans anade `dim.coe` cuando la tendencia tiene mas de un
-      # coeficiente; aqui solo interesa el contraste de la pendiente.
-      dplyr::select(-dplyr::any_of("dim.coe")) |>
-      dplyr::mutate(dim = d, phase = fase) |>
-      dplyr::rename(estimacion = em.trend, se = SE,
-                    ic_lo = asymp.LCL, ic_hi = asymp.UCL) |>
-      dplyr::mutate(
-        # de % por sd(horas) a % por hora
-        estimacion_h = estimacion / TIME_S,
-        ic_lo_h     = ic_lo / TIME_S,
-        ic_hi_h     = ic_hi / TIME_S
-      )
+    col_est <- columna_estimacion(co)
+    ic <- intervalos_de(co, col_est)
+
+    tibble::tibble(
+      dim         = d,
+      phase       = fase,
+      estimacion  = co[[col_est]][1],
+      se          = co$SE[1],
+      ic_lo       = ic$lo[1],
+      ic_hi       = ic$hi[1],
+      # de % por sd(horas) a % por hora
+      estimacion_h = co[[col_est]][1] / TIME_S,
+      ic_lo_h     = ic$lo[1] / TIME_S,
+      ic_hi_h     = ic$hi[1] / TIME_S
+    )
   })
 }
 
@@ -160,17 +200,22 @@ curvas_por_eje <- function(mod, fase, ts_seq) {
       names(at) <- dims
       at[[d]] <- val
 
-      emmeans::emmeans(mod, ~ time_s, at = at) |>
-        as.data.frame() |>
-        dplyr::mutate(
-          dim   = d,
-          level = niv,
-          phase = fase,
-          hr    = TIME_M + time_s * TIME_S,
-          med   = emmean,
-          lwr   = asyp.LCL,
-          upr   = asyp.UCL
-        )
+      em <- as.data.frame(
+        emmeans::emmeans(mod, ~ time_s, at = c(at, list(time_s = ts_seq)))
+      )
+      # `emmean` y los limites tampoco tienen nombre fijo segun el metodo.
+      col_est <- intersect(c("emmean", "emestimate", "estimate"), names(em))[1]
+      ic <- intervalos_de(em, col_est)
+
+      tibble::tibble(
+        dim   = d,
+        level = niv,
+        phase = fase,
+        hr    = TIME_M + em$time_s * TIME_S,
+        med   = em[[col_est]],
+        lwr   = ic$lo,
+        upr   = ic$hi
+      )
     })
   })
 }
