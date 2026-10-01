@@ -77,9 +77,10 @@ TIME_CORTE <- 94
 t94    <- as.vector((TIME_CORTE - TIME_M) / TIME_S)
 
 dims <- c("Dim.1", "Dim.2", "Dim.3")
-lab_dim <- c(Dim.1 = "Dim.1 (tamano)",
-             Dim.2 = "Dim.2 (pericarpo)",
-             Dim.3 = "Dim.3 (cicatriz)")
+# Etiquetas de las facetas en ingles (figuras destined to the paper).
+lab_dim <- c(Dim.1 = "Dim.1 (size)",
+             Dim.2 = "Dim.2 (pericarp)",
+             Dim.3 = "Dim.3 (scar)")
 
 # Deciles 10 y 90 por eje, y mediana de cada eje para los puntos de referencia.
 q10  <- sapply(dims, function(d) unname(quantile(df[[d]], 0.10)))
@@ -291,8 +292,8 @@ p_efecto <- efectos |>
   geom_point(size = 2.4) +
   facet_wrap(~ phase, ncol = 2) +
   scale_y_discrete(labels = lab_dim) +
-  labs(x = expression(paste("Cambio de la pendiente (",
-                            Delta * " por 1 sd del eje, % h"^-1 * ")")),
+  labs(x = expression(paste("Change in desiccation rate (",
+                            Delta * " per 1 sd of the axis, % h"^-1 * ")")),
        y = NULL) +
   theme_classic(base_size = 11)
 
@@ -301,13 +302,13 @@ ggsave(file.path(OUTDIR_IMG, "slope_effect_reference.png"), p_efecto,
 
 for (ph in c("PRE", "POST")) {
   p <- p_efecto + facet_wrap(~ phase, ncol = 1) +
-    ggtitle(paste0("Fase ", ph))
+    ggtitle(paste0("Phase ", ph))
   ggsave(file.path(OUTDIR_IMG, paste0("slope_effect_reference_",
                                      tolower(ph), ".png")),
          p, width = 7, height = 3.2, dpi = 300)
 }
 
-# Curvas predichas. PRE y POST comparten faceta para leer el proceso completo:
+# Figura secundaria: curvas predichas. PRE y POST comparten faceta para leer el proceso completo:
 # la curva PRE llega hasta 94 h y la POST arranca ahi. La linea vertical marca
 # el corte. El color sigue siendo el nivel del eje (p10/p90); la fase se
 # distingue por el tramo de tiempo que ocupa cada curva.
@@ -342,10 +343,11 @@ p_curvas <- curvas |>
   scale_colour_manual(values = c(p10 = "#0072B2", p90 = "#D55E00")) +
   scale_fill_manual(values = c(p10 = "#0072B2", p90 = "#D55E00")) +
   scale_x_continuous(breaks = seq(0, max(df$time), by = 24)) +
-  labs(x = "Tiempo (h)", y = "Humedad (%)",
-       title = "Desecación en dos fases (puntos: observaciones individuales)",
-       colour = "Nivel del eje", fill = "Nivel del eje",
-       linetype = "Nivel del eje") +
+  labs(x = "Time (h)", y = "Moisture content (%)",
+       title = "Desiccation in two phases (points: individual observations)",
+       subtitle = paste0("Dashed line: phase boundary at ", TIME_CORTE, " h"),
+       colour = "Axis level", fill = "Axis level",
+       linetype = "Axis level") +
   theme_classic(base_size = 11) +
   theme(legend.key.width = unit(1.3, "cm"),
         strip.background = element_blank())

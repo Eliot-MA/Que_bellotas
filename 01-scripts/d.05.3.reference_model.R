@@ -494,7 +494,7 @@ plot_check_model(diagnostico, sufijo = "ref")
 plot_obs_fitted(diagnostico,  sufijo = "ref")
 plot_dharma(diagnostico,         sufijo = "ref")
 plot_varcomp(varcomp_ref, "07-img/varcomp_reference_model.png",
-             "Varianza por nivel - modelo de referencia")
+             "Variance components - reference model")
 
 # ============================================================
 # 6. Dashboards (opcional)

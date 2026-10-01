@@ -94,15 +94,18 @@ source("01-scripts/00-export_helpers.R")
 # 1. Variacion interespecifica de los ejes del FAMD
 # ============================================================
 p1 <- ggplot(df.traits, aes(y = species, x = Dim.1)) +
-  geom_boxplot() + geom_violin(alpha = .4) + geom_jitter(alpha = .2)
+  geom_boxplot() + geom_violin(alpha = .4) + geom_jitter(alpha = .2) +
+  labs(x = "Dim.1 (size)")
 p2 <- ggplot(df.traits, aes(y = species, x = Dim.2)) +
-  geom_boxplot() + geom_violin(alpha = .4) + geom_jitter(alpha = .2)
+  geom_boxplot() + geom_violin(alpha = .4) + geom_jitter(alpha = .2) +
+  labs(x = "Dim.2 (pericarp)")
 p3 <- ggplot(df.traits, aes(y = species, x = Dim.3)) +
-  geom_boxplot() + geom_violin(alpha = .4) + geom_jitter(alpha = .2)
+  geom_boxplot() + geom_violin(alpha = .4) + geom_jitter(alpha = .2) +
+  labs(x = "Dim.3 (scar)")
 
 ggsave("07-img/heterogeneity_axes_distribution.png",
        p1 + p2 + p3 +
-         plot_annotation(title = "Distribucion de los ejes del FAMD por especie"),
+         plot_annotation(title = "Distribution of FAMD axes by species"),
        width = 13, height = 6, dpi = 300)
 cat("Figura guardada: 07-img/heterogeneity_axes_distribution.png\n")
 
@@ -213,8 +216,8 @@ p_cor_traits_orig <- ggplot(cor_plot_orig, aes(x = pair, y = species, fill = cor
   geom_text(aes(label = paste0(round(cor, 2), sig)), size = 3) +
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0,
                        limits = c(-1, 1), name = "r") +
-  labs(x = "Par de rasgos", y = NULL,
-       title = "Correlacion entre rasgos funcionales originales por especie",
+  labs(x = "Trait pair", y = NULL,
+       title = "Correlation among original functional traits, by species",
        caption = "* p < 0.05, ** p < 0.01, *** p < 0.001") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
@@ -423,8 +426,8 @@ p_dim2_t0 <- df |>
   geom_point() +
   geom_smooth(method = "lm") +
   facet_wrap(~species) +
-  xlab("Robustez del pericarpo (Dim.2)") +
-  ylab("Contenido hidrico inicial (%)")
+  xlab("Pericarp robustness (Dim.2)") +
+  ylab("Initial moisture content (%)")
 
 ggsave("07-img/heterogeneity_dim2_initial_moisture.png", p_dim2_t0,
        width = 11, height = 7, dpi = 300)

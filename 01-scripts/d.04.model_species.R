@@ -145,9 +145,9 @@ p1 <- df2 |>
   geom_point(aes(color = fase), size = 0.8, alpha = .2) +
   geom_vline(aes(xintercept = 100), linetype = "dashed", colour = "red", alpha = .8) +
   scale_color_manual(values = c("antes" = "red", "despues" = "grey30"), guide = "none") +
-  labs(x = "Time (hours)", y = "Moisture content (%)", 
-       caption = "Points before calculated breakpoints per acorn (red).", 
-       title = "Analysys of the presence of breakpoints in the desiccation curves.") +
+  labs(x = "Time (hours)", y = "Moisture content (%)",
+       caption = "Points before the calculated breakpoint for each acorn (red).",
+       title = "Breakpoints in the desiccation curves.") +
   theme_minimal()
  
 sumtable_breakpoints <- df2 |> 
@@ -313,7 +313,7 @@ varcomp_especie <- varcomp_table(list("mm.pre (t<94h)" = mm.pre, "mm.post (t>94h
 write.csv(varcomp_especie, "00-data/varcomp_species_models.csv", row.names = FALSE)
 cat("Componentes de varianza guardados en 00-data/varcomp_species_models.csv\n")
 plot_varcomp(varcomp_especie, "07-img/varcomp_species_models.png",
-             "Varianza por nivel - modelos de especie")
+             "Variance components - species models")
 
 # Diagnosticos de los modelos finales de especie
 modelos_especie <- list(mm.pre = mm.pre, mm.post = mm.post)

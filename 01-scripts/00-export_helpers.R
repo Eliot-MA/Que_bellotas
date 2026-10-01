@@ -48,13 +48,32 @@ varcomp_table <- function(models) {
 }
 
 # Barplot de varianza por nivel ----
+# Las etiquetas de `nivel` llegan en castellano desde las tablas de varianza, asi
+# que se traducen dentro de la funcion: los CSV exportados siguen en castellano
+# para los informes y solo se rotulan las facetas y el eje del grafico.
 plot_varcomp <- function(vc, archivo, titulo) {
-  suppressPackageStartupMessages(library(ggplot2))
-  p <- ggplot(vc, aes(x = reorder(nivel, varianza), y = varianza)) +
+  suppressPackageStartupMessages({
+    library(ggplot2)
+    library(dplyr)
+  })
+  # Traduccion local: no se tocan las tablas exportadas, que siguen en
+  # castellano para los informes, y solo se rotulan las etiquetas del grafico.
+  vc <- vc |>
+    dplyr::mutate(
+      nivel_et = dplyr::case_match(
+        nivel,
+        "species"   ~ "Species",
+        "prov_code" ~ "Provenance",
+        "id_bellota" ~ "Acorn",
+        .default = as.character(nivel)
+      ),
+      modelo_et = as.character(modelo)
+    )
+  p <- ggplot(vc, aes(x = reorder(nivel_et, varianza), y = varianza)) +
     geom_col(fill = "steelblue") +
     coord_flip() +
-    facet_wrap(~modelo, scales = "free_y") +
-    labs(x = NULL, y = "Varianza", title = titulo) +
+    facet_wrap(~modelo_et, scales = "free_y") +
+    labs(x = NULL, y = "Variance", title = titulo) +
     theme_minimal()
   ggplot2::ggsave(archivo, p, width = 8, height = 5)
   cat("Barplot de varianza guardado en ", archivo, "\n", sep = "")
