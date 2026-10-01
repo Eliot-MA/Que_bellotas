@@ -73,7 +73,8 @@ assert_sin_procedencias_excluidas(df, "prov_code", "d.05.5 datos")
 
 TIME_M <- mean(df$time)
 TIME_S <- sd(df$time)
-t94    <- as.vector((94 - TIME_M) / TIME_S)
+TIME_CORTE <- 94
+t94    <- as.vector((TIME_CORTE - TIME_M) / TIME_S)
 
 dims <- c("Dim.1", "Dim.2", "Dim.3")
 lab_dim <- c(Dim.1 = "Dim.1 (tamano)",
@@ -186,7 +187,10 @@ efecto_por_eje <- function(mod, fase) {
 efectos <- bind_rows(
   map_dfr(names(modelos), function(f) efecto_por_eje(modelos[[f]], f))
 ) |>
-  dplyr::mutate(dim = factor(dim, levels = dims))
+  # `phase` como factor con orden explicito: si fuera character, facet_wrap la
+  # ordenaria alfabeticamente y POST (P-O-S-T) apareceria antes que PRE.
+  dplyr::mutate(dim = factor(dim, levels = dims),
+                phase = factor(phase, levels = c("PRE", "POST")))
 
 write_csv(efectos, file.path(OUTDIR_CSV, "reference_slope_effects.csv"))
 cat("\nEfecto de cada eje sobre la pendiente (coeficiente time_s:Dim.x):\n")
@@ -199,6 +203,14 @@ print(efectos |>
 # ============================================================
 # Curvas de humedad predicha a lo largo del tiempo, fijando un eje en p10 o
 # p90 y los demas en su mediana. De nuevo se marginaliza sobre especie.
+# Curvas predichas a p10 y p90 de cada eje.
+#
+# PRE y POST se dibujan en la MISMA faceta, sobre la misma escala de tiempo,
+# para que se lea la desecacion como un proceso continuo y no como dos
+# analisis separados. Cada fase aporta el tramo de su propio rango observado:
+# la curva PRE cubre desde el inicio hasta 94 h y la curva POST desde 94 h
+# hasta el final. Las curvas no se extrapolan fuera de ese tramo, porque el
+# modelo de cada fase no esta ajustado para esos valores de tiempo.
 curvas_por_eje <- function(mod, fase, ts_seq) {
   map_dfr(dims, function(d) {
     map_dfr(c("p10", "p90"), function(niv) {
@@ -218,6 +230,7 @@ curvas_por_eje <- function(mod, fase, ts_seq) {
         dim   = d,
         level = niv,
         phase = fase,
+        time_s = em$time_s,
         hr    = TIME_M + em$time_s * TIME_S,
         med   = em[[col_est]],
         lwr   = ic$lo,
@@ -230,10 +243,29 @@ curvas_por_eje <- function(mod, fase, ts_seq) {
 rango_pre  <- range(df$time_s[df$time_s < t94])
 rango_post <- range(df$time_s[df$time_s > t94])
 
+# Secuencia sobre el rango temporal completo. Se anaden explicitamente el
+# ultimo tiempo de PRE y el primero de POST: son los puntos por los que cada
+# curva empieza y termina tras el recorte, y sin ellos geom_line los
+# descartaria al no haber ningun valor adyacente dentro del rango.
+secuencia_completa <- sort(unique(c(
+  seq(rango_pre[1], rango_post[2], length.out = 60),
+  rango_pre[2], rango_post[1], t94
+)))
+
 curvas <- bind_rows(
-  curvas_por_eje(modelos[["PRE"]],  "PRE",  seq(rango_pre[1],  rango_pre[2],  length.out = 30)),
-  curvas_por_eje(modelos[["POST"]], "POST", seq(rango_post[1], rango_post[2], length.out = 30))
-)
+  curvas_por_eje(modelos[["PRE"]],  "PRE",  secuencia_completa),
+  curvas_por_eje(modelos[["POST"]], "POST", secuencia_completa)
+) |>
+  # Cada curva se recorta a su propio rango observado. Sin esto, emmeans
+  # devolveria la prediccion del modelo PRE para tiempos de la fase POST, que es
+  # extrapolacion: ese modelo no esta ajustado para esos valores. El recorte es
+  # elemento a elemento, asi que no hace falta agrupar.
+  dplyr::mutate(
+    en_rango = if (phase == "PRE") time_s <= rango_pre[2] else time_s >= rango_post[1],
+    med = ifelse(en_rango, med, NA_real_),
+    lwr = ifelse(en_rango, lwr, NA_real_),
+    upr = ifelse(en_rango, upr, NA_real_)
+  )
 
 # ============================================================
 # 4. Figuras
@@ -266,38 +298,51 @@ for (ph in c("PRE", "POST")) {
          p, width = 7, height = 3.2, dpi = 300)
 }
 
-# Curvas predichas.
+# Curvas predichas. PRE y POST comparten faceta para leer el proceso completo:
+# la curva PRE llega hasta 94 h y la POST arranca ahi. La linea vertical marca
+# el corte. El color sigue siendo el nivel del eje (p10/p90); la fase se
+# distingue por el tramo de tiempo que ocupa cada curva.
 p_curvas <- curvas |>
   dplyr::mutate(dim = factor(dim, levels = dims),
-                level = factor(level, levels = c("p10", "p90"))) |>
+                level = factor(level, levels = c("p10", "p90")),
+                phase = factor(phase, levels = c("PRE", "POST"))) |>
   ggplot(aes(hr, med, colour = level, fill = level, linetype = level)) +
+  geom_vline(xintercept = TIME_CORTE, linetype = 3, colour = "grey45") +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.12, colour = NA) +
-  geom_line(linewidth = 0.6) +
-  facet_grid(phase ~ dim, scales = "free_x",
-             labeller = labeller(dim = lab_dim)) +
+  geom_line(linewidth = 0.6, na.rm = FALSE) +
+  facet_wrap(~ dim, nrow = 1, labeller = labeller(dim = lab_dim)) +
   scale_colour_manual(values = c(p10 = "#0072B2", p90 = "#D55E00")) +
   scale_fill_manual(values = c(p10 = "#0072B2", p90 = "#D55E00")) +
+  scale_x_continuous(breaks = seq(0, max(curvas$hr, na.rm = TRUE),
+                                  by = 24)) +
   labs(x = "Tiempo (h)", y = "Humedad predicha (%)",
+       title = "Desecación en dos fases (línea discontinua: 94 h)",
        colour = "Nivel del eje", fill = "Nivel del eje",
        linetype = "Nivel del eje") +
   theme_classic(base_size = 11) +
-  theme(legend.key.width = unit(1.3, "cm"))
+  theme(legend.key.width = unit(1.3, "cm"),
+        strip.background = element_blank())
 
 ggsave(file.path(OUTDIR_IMG, "curves_reference.png"), p_curvas,
-       width = 12, height = 7.5, dpi = 300)
+       width = 13, height = 4.4, dpi = 300)
 
 # ============================================================
 # 5. Nube de puntos observada (contexto visual de las curvas predichas)
 # ============================================================
+# Sin faceta por fase, igual que las curvas predichas: interesa ver la nube
+# completa como un unico proceso para juzgar si las curvas siguen los datos.
 p_obs <- df |>
-  dplyr::mutate(phase = ifelse(time_s < t94, "PRE", "POST")) |>
+  dplyr::mutate(phase = factor(ifelse(time_s < t94, "PRE", "POST"),
+                               levels = c("PRE", "POST"))) |>
   ggplot(aes(time, Moisture_content)) +
   geom_point(alpha = 0.06, size = 0.6, colour = "grey55") +
-  facet_wrap(~ phase, ncol = 2) +
-  labs(x = "Tiempo (h)", y = "Humedad (%)") +
+  geom_vline(xintercept = TIME_CORTE, linetype = 3, colour = "grey45") +
+  scale_x_continuous(breaks = seq(0, max(df$time), by = 24)) +
+  labs(x = "Tiempo (h)", y = "Humedad (%)",
+       title = "Datos observados (línea discontinua: 94 h)") +
   theme_classic(base_size = 11)
 
 ggsave(file.path(OUTDIR_IMG, "observed_reference.png"), p_obs,
-       width = 8, height = 3.4, dpi = 300)
+       width = 8.5, height = 4.2, dpi = 300)
 
 cat("\nHecho. Figuras en", OUTDIR_IMG, "y tabla en", OUTDIR_CSV, "\n")

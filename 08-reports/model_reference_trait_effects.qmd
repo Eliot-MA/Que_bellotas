@@ -187,7 +187,11 @@ knitr::kable(
 ```
 
 Las curvas predichas a p10 y p90 de cada eje, con los otros dos fijados en su
-mediana, contextualizan el resultado sobre los datos:
+mediana, se muestran en la misma faceta que la fase previa: la curva PRE llega
+hasta las 94 h y la curva POST arranca ahí, de modo que la figura se lee como un
+único proceso de desecación en dos fases y no como dos análisis independientes.
+Cada curva se recorta a su propio rango observado, porque el modelo de cada
+fase no está ajustado para los tiempos de la otra.
 
 ```{r curvas, eval=FALSE}
 knitr::include_graphics("../07-img/curves_reference.png")
