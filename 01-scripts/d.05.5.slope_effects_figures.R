@@ -252,16 +252,25 @@ secuencia_completa <- sort(unique(c(
   rango_pre[2], rango_post[1], t94
 )))
 
+
 curvas <- bind_rows(
   curvas_por_eje(modelos[["PRE"]],  "PRE",  secuencia_completa),
   curvas_por_eje(modelos[["POST"]], "POST", secuencia_completa)
 ) |>
   # Cada curva se recorta a su propio rango observado. Sin esto, emmeans
   # devolveria la prediccion del modelo PRE para tiempos de la fase POST, que es
-  # extrapolacion: ese modelo no esta ajustado para esos valores. El recorte es
-  # elemento a elemento, asi que no hace falta agrupar.
+  # extrapolacion: ese modelo no esta ajustado para esos valores.
+  #
+  # El recorte es elemento a elemento, asi que no hace falta agrupar. La
+  # condicion se evalua con `case_when` y no con `if`: `if` exige una condicion
+  # de longitud 1 y aqui `phase` tiene un valor por fila, que es exactamente lo
+  # que hace que aborte con "the condition has length > 1".
   dplyr::mutate(
-    en_rango = if (phase == "PRE") time_s <= rango_pre[2] else time_s >= rango_post[1],
+    en_rango = dplyr::case_when(
+      phase == "PRE"  ~ time_s <= rango_pre[2],
+      phase == "POST" ~ time_s >= rango_post[1],
+      .default = FALSE
+    ),
     med = ifelse(en_rango, med, NA_real_),
     lwr = ifelse(en_rango, lwr, NA_real_),
     upr = ifelse(en_rango, upr, NA_real_)
