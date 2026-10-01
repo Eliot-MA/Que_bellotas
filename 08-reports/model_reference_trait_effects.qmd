@@ -189,6 +189,86 @@ knitr::kable(
 )
 ```
 
+## Del efecto por hora a la pérdida acumulada
+
+El efecto sobre la pendiente se expresa en % de humedad por hora, y en esa unidad
+los valores son pequeños: 0.021 %/h para el tamaño en la fase previa equivale a
+algo menos de una décima parte de punto porcentual por hora. La cifra no es
+reseñable por sí sola, porque el significado de una tasa depende de cuánto dura
+la fase sobre la que se aplica. Integrar el efecto a lo largo de la fase
+observada y expresarlo en **puntos porcentuales de humedad** es lo que traduce la
+tasa a una magnitud comparable con la desecación total.
+
+La diferencia se calcula entre los percentiles 90 y 10 de cada eje, el mismo
+recorrido que usan las curvas, de modo que es interpretable como "bellotas
+grandes frente a bellotas pequeñas" sin recurrir a una desviación estándar. Como
+el rango p10–p90 está observado en cada eje, la comparación entre ejes es
+legítima.
+
+```{r tabla-acumulado, eval=FALSE}
+knitr::kable(
+  read.csv("00-data/tablas_resumen/reference_cumulative_loss.csv") |>
+    dplyr::transmute(
+      fase     = phase,
+      eje      = dim,
+      ventana  = sprintf("%.1f–%.1f h", t_ini_h, t_fin_h),
+      duracion = sprintf("%.1f h", duracion_h),
+      dif_pp   = sprintf("%.2f", dif_pp),
+      ic       = sprintf("[%.2f, %.2f]", ic_lo_pp, ic_hi_pp),
+      p        = ifelse(p < 0.001, "<0.001", sprintf("%.3f", p))
+    ),
+  caption = paste(
+    "Pérdida de humedad acumulada: diferencia entre el percentil 90 y el",
+    "percentil 10 de cada eje, en puntos porcentuales de humedad. Positivo",
+    "indica que las bellotas de p90 terminan la fase con más agua que las de",
+    "p10. Solo las combinaciones con p < 0.05: en el resto, los intervalos",
+    "demuestran que el efecto remanente es despreciable y multiplicarlo por la",
+    "duración de la fase generaría una cifra mayor con apariencia de resultado."
+  )
+)
+```
+
+```{r figura-acumulado, eval=FALSE}
+knitr::include_graphics("../07-img/cumulative_loss_reference.png")
+```
+
+La ventana de integración es la **observada** en cada fase, no la que va de 0 a
+94 h. Entre 45.2 h y 139.67 h no hay ninguna observación, de modo que el umbral
+analítico de 94 h cae dentro de un hueco de muestreo de unas 94 h. Acumular la
+pérdida hasta las 94 h obligaría a proyectar el modelo sobre un tramo que
+ninguna de las dos fases tiene ajustado, que es la misma extrapolación que las
+curvas evitan por construcción. La fase previa integrate sobre 45.2 h y la
+posterior sobre 241.8 h.
+
+Los resultados de esta tabla invierten la lectura que sugería la tabla de
+pendientes. El efecto del tamaño por hora es **cinco veces menor** en la fase
+posterior, pero como esa fase dura **5.4 veces más**, la separación acumulada
+resultante es ligeramente *mayor*: 2.56 puntos porcentuales frente a 2.30. Es
+decir, el tamaño no pierde influencia tras el umbral en términos absolutos; lo
+que cambia es su peso relativo, porque la pérdida total de la fase tardía es
+mucho mayor (15.3 frente a 8.2 puntos porcentuales) y la fracción de esa pérdida
+explicada por el tamaño pasa del 28% al 17%.
+
+El comportamiento del pericarpo y de la cicatriz sí es específico de
+la fase temprana: 0.93 y 0.50 puntos porcentuales adicionales en la fase previa,
+y nada detectable en la posterior.
+
+Que esa ausencia en la fase tardía no se explique por una pérdida de potencia
+estadística se apoya en que el modelo de esa fase resolvió un efecto de 0.0027 %/h
+para Dim.1 (t = 10), de modo que habría detectado los efectos observados en la
+fase previa (0.0064 y 0.0040 %/h, entre 1.5 y 2.4 veces mayores) sin dificultad.
+Para escapar a la detección, estos efectos habrían tenido que reducirse al menos
+un 88% y un 79%.
+
+Esta conclusión se refiere a la **velocidad** de desecación. En pérdida acumulada
+los intervalos de la fase posterior (−0.59 a +0.49 puntos porcentuales para
+Dim.2; −0.37 a +0.56 para Dim.3) tienen una anchura comparable a la del efecto
+temprano, porque la ventana es mucho más larga y el error residual se triplica. Por
+ello **no** puede afirmarse que la pérdida total de agua sea equivalente entre
+fases para estos dos ejes.
+
+## Curvas predichas
+
 Las curvas predichas a p10 y p90 de cada eje, con los otros dos fijados en su
 mediana, se muestran en la misma faceta que la fase previa: la curva PRE llega
 hasta las 94 h y la curva POST arranca ahí, de modo que la figura se lee como un
