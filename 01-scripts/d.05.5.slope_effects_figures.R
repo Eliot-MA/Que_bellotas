@@ -33,7 +33,11 @@
 #   07-img/slope_effect_reference_post.png   idem, solo POST
 #   07-img/curves_reference.png             curvas predichas a p10 / p90 con las
 #                                           observaciones individuales de fondo
+#   07-img/cumulative_loss_reference.png    diferencia de perdida acumulada entre
+#                                           p90 y p10 (solo efectos significativos)
 #   00-data/tablas_resumen/reference_slope_effects.csv
+#   00-data/tablas_resumen/reference_cumulative_loss.csv
+#   00-data/tablas_resumen/reference_predicted_mc_window.csv
 # ============================================================
 
 suppressPackageStartupMessages({
@@ -278,7 +282,144 @@ curvas <- bind_rows(
   )
 
 # ============================================================
-# 4. Figuras
+# 4. Perdida acumulada de agua entre p10 y p90, dentro de cada fase
+# ============================================================
+# POR QUE NO SE INTEGRA HASTA EL UMBRAL DE 94 h
+#   El corte en 94 h es ANALITICO: separa las fases de los modelos. No es un
+#   tiempo de muestreo. Entre 45.2 h y 139.67 h no hay ninguna observacion, de
+#   modo que el umbral cae dentro de un hueco de ~94 h. Acumular la perdida
+#   "hasta las 94 h" obligaria a proyectar el modelo sobre un tramo que ninguna
+#   de las dos fases tiene ajustado: es la misma extrapolacion que las curvas de
+#   la seccion 3 evitan por construccion.
+#   La ventana de integracion es por tanto la REAL de cada fase, que es la
+#   unica que su propio modelo puede integrar sin salirse de sus datos.
+#
+# POR QUE PUNTOS DE HUMEDAD Y NO %/h
+#   Un efecto de 0.0027 %/h no dice cuanta agua se pierde: depende de cuanto
+#   dura la fase. La perdida acumulada en puntos de humedad es comparable con la
+#   desecacion total observada y responde a la pregunta en contenido de agua, no
+#   en velocidad. Ademas la fase POST dura ~5 veces mas que la PRE, asi que un
+#   efecto por hora mas pequeno puede dar una perdida acumulada comparable.
+#
+# POR QUE LA DIFERENCIA SE SACA DEL COEFICIENTE Y NO DE UN CONTRASTE
+#   El modelo es lineal en `time_s`, luego MC(d,t) = b0 + (b_t + b_int*d)*t.
+#   Al restar la prediccion en p10 de la de p90 se cancelan los terminos que no
+#   dependen de d, y la diferencia de perdida queda
+#
+#       dif_pp = (b_int / TIME_S) * (p90 - p10) * duracion_fase
+#
+#   es decir `p90_menos_p10_h` multiplicado por la duracion observada. Es una
+#   multiplicacion por una constante positiva, asi que el intervalo del
+#   coeficiente se traslada tal cual y solo hace falta el error estandar de la
+#   interaccion, que ya se leyo en la seccion 2.
+
+ventana_fase <- tibble::tibble(
+  # `phase` es factor con los mismos niveles que en `efectos`: el join de la
+  # seccion siguiente empareja factor contra factor, no factor contra texto.
+  phase      = factor(c("PRE", "POST"), levels = c("PRE", "POST")),
+  t_ini_h    = c(min(df$time[df$time_s < t94]), min(df$time[df$time_s > t94])),
+  t_fin_h    = c(max(df$time[df$time_s < t94]), max(df$time[df$time_s > t94]))
+) |>
+  dplyr::mutate(
+    duracion_h = t_fin_h - t_ini_h,
+    t_ini_s    = (t_ini_h - TIME_M) / TIME_S,
+    t_fin_s    = (t_fin_h - TIME_M) / TIME_S
+  )
+
+cat("\nVentana observada de cada fase (el umbral de 94 h cae en el hueco entre\n",
+    "las dos; no se puede integrar hasta 94 h sin extrapolar):\n", sep = "")
+print(as.data.frame(ventana_fase |> dplyr::select(phase, t_ini_h, t_fin_h, duracion_h)))
+
+acumulado <- efectos |>
+  dplyr::left_join(ventana_fase, by = "phase") |>
+  dplyr::mutate(
+    rango_dim = (q90[dims] - q10[dims])[dim],
+    dif_pp    = estimacion_h * rango_dim * duracion_h,
+    ic_lo_pp  = ic_lo_h     * rango_dim * duracion_h,
+    ic_hi_pp  = ic_hi_h     * rango_dim * duracion_h,
+    # p90 retiene MAS humedad si la diferencia es positiva; si es negativa, p90
+    # pierde mas agua que p10.
+    lectura = dplyr::case_when(
+      dif_pp > 0 ~ "p90 retains more moisture",
+      TRUE        ~ "p90 loses more moisture"
+    )
+  ) |>
+  # Solo las combinaciones con efecto significativo. En las otras dos el
+  # intervalo ya demuestra que cualquier efecto remanente es despreciable, y
+  # multiplicar un efecto no significativo por la duracion de la fase genera un
+  # numero mayor que parece informativo y no lo es.
+  dplyr::filter(p < 0.05) |>
+  dplyr::mutate(
+    dim  = factor(dim, levels = dims),
+    phase = factor(phase, levels = c("PRE", "POST"))
+  )
+
+write_csv(acumulado, file.path(OUTDIR_CSV, "reference_cumulative_loss.csv"))
+cat("\nPerdida acumulada: diferencia entre p90 y p10 (puntos de humedad).\n",
+    "Positivo = las bellotas de p90 terminan con mas agua que las de p10.\n", sep = "")
+print(as.data.frame(acumulado |>
+  dplyr::select(phase, dim, duracion_h, dif_pp, ic_lo_pp, ic_hi_pp, p, lectura)))
+
+# Predicciones de humedad al inicio y al final de la ventana de cada fase, con
+# cada eje en p10 y p90 y los otros dos en su mediana. Da el contexto que
+# necesita la tabla anterior: no solo cuanto separa a los extremos del eje, sino
+# cuantos puntos de humedad se pierden en total.
+mc_ventana <- function(mod, fase, t_ini_s, t_fin_s) {
+  bind_rows(map_dfr(dims, function(d) {
+    map_dfr(c("p10", "p90"), function(niv) {
+      at <- as.list(meds)
+      names(at) <- dims
+      at[[d]] <- if (niv == "p10") q10[d] else q90[d]
+
+      em <- as.data.frame(emmeans::emmeans(mod, ~ time_s,
+                                           at = c(at, list(time_s = c(t_ini_s, t_fin_s)))))
+      col_est <- intersect(c("emmean", "emestimate", "estimate"), names(em))[1]
+      ic <- intervalos_de(em, col_est)
+
+      tibble::tibble(
+        dim      = d,
+        level    = niv,
+        phase    = fase,
+        # El tiempo se recupera de la escala, no del orden de las filas de
+        # emmeans: si el orden de la retícula cambiara, el par de tiempos
+        # quedaria descolgado de sus predicciones.
+        tiempo_h = TIME_M + em$time_s * TIME_S,
+        mc       = em[[col_est]],
+        lo       = ic$lo,
+        hi       = ic$hi
+      )
+    })
+  }))
+}
+
+mc_ventana_largo <- bind_rows(
+  mc_ventana(modelos[["PRE"]],  "PRE",  ventana_fase$t_ini_s[1], ventana_fase$t_fin_s[1]),
+  mc_ventana(modelos[["POST"]], "POST", ventana_fase$t_ini_s[2], ventana_fase$t_fin_s[2])
+)
+
+perdida_por_nivel <- mc_ventana_largo |>
+  dplyr::group_by(phase, dim, level) |>
+  dplyr::arrange(tiempo_h, .by_group = TRUE) |>
+  dplyr::summarise(
+    mc_ini     = dplyr::first(mc),
+    mc_fin     = dplyr::last(mc),
+    perdida_pp = dplyr::first(mc) - dplyr::last(mc),
+    .groups = "drop"
+  ) |>
+  dplyr::mutate(
+    dim   = factor(dim, levels = dims),
+    phase = factor(phase, levels = c("PRE", "POST")),
+    level = factor(level, levels = c("p10", "p90"))
+  )
+
+write_csv(perdida_por_nivel,
+          file.path(OUTDIR_CSV, "reference_predicted_mc_window.csv"))
+cat("\nHumedad predicha al inicio y al final de cada fase, y perdida total:\n")
+print(as.data.frame(perdida_por_nivel |>
+  dplyr::select(phase, dim, level, mc_ini, mc_fin, perdida_pp)))
+
+# ============================================================
+# 5. Figuras
 # ============================================================
 # Figura principal: efecto de cada eje sobre la pendiente.
 # Cada punto es el coeficiente `time_s:Dim.x`, es decir el cambio de pendiente
@@ -298,6 +439,30 @@ p_efecto <- efectos |>
   theme_classic(base_size = 11)
 
 ggsave(file.path(OUTDIR_IMG, "slope_effect_reference.png"), p_efecto,
+       width = 8.5, height = 3.6, dpi = 300)
+
+# Perdida acumulada entre los extremos del eje, en puntos de humedad. Es la
+# misma magnitud que la figura anterior pero en la unidad en la que se lee la
+# desecacion: cuantos puntos de humedad separa a p90 de p10 al final de la fase.
+# Solo aparecen las combinaciones con p < 0.05; las demas ya se ha mostrado que
+# son despreciables, y dibujarlas daria a un intervalo que cruza el cero la
+# apariencia de un resultado.
+p_acumulado <- acumulado |>
+  ggplot(aes(x = dif_pp, y = dim)) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "grey40") +
+  geom_errorbarh(aes(xmin = ic_lo_pp, xmax = ic_hi_pp),
+                 height = 0, linewidth = 0.7) +
+  geom_point(size = 2.4) +
+  facet_wrap(~ phase, ncol = 2) +
+  scale_y_discrete(labels = lab_dim) +
+  labs(x = expression(paste("Difference in water loss between p90 and p10 ",
+                            "(percentage points)")),
+       y = NULL,
+       subtitle = paste0("Significant trait effects only (p < 0.05). ",
+                         "Positive values: p90 acorns retain more water")) +
+  theme_classic(base_size = 11)
+
+ggsave(file.path(OUTDIR_IMG, "cumulative_loss_reference.png"), p_acumulado,
        width = 8.5, height = 3.6, dpi = 300)
 
 for (ph in c("PRE", "POST")) {
