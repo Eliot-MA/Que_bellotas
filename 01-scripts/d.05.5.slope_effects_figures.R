@@ -29,8 +29,6 @@
 #
 # Salidas:
 #   07-img/slope_effect_reference.png        efecto sobre la pendiente (principal)
-#   07-img/slope_effect_reference_pre.png    idem, solo PRE
-#   07-img/slope_effect_reference_post.png   idem, solo POST
 #   07-img/curves_reference.png             curvas predichas a p10 / p90 con las
 #                                           observaciones individuales de fondo
 #   07-img/cumulative_loss_reference.png    diferencia de perdida acumulada entre
@@ -516,13 +514,11 @@ p_acumulado <- acumulado |>
 ggsave(file.path(OUTDIR_IMG, "cumulative_loss_reference.png"), p_acumulado,
        width = 8.5, height = 3.6, dpi = 300)
 
-for (ph in c("PRE", "POST")) {
-  p <- p_efecto + facet_wrap(~ phase, ncol = 1) +
-    ggtitle(paste0("Phase ", ph))
-  ggsave(file.path(OUTDIR_IMG, paste0("slope_effect_reference_",
-                                     tolower(ph), ".png")),
-         p, width = 7, height = 3.2, dpi = 300)
-}
+# No se generan variantes de una sola fase del forest de efecto. Salen de
+# facet_wrap con ncol = 1, asi que repiten los mismos puntos e intervalos de la
+# figura de dos facetas y solo anaden el titulo de la fase: no aportan nada y
+# multiplican los archivos que hay que revisar al elegir la version del
+# manuscrito. Para una sola fase se recorta el data.frame o se filtra `efectos`.
 
 # Figura secundaria: curvas predichas. PRE y POST comparten faceta para leer el proceso completo:
 # la curva PRE llega hasta 94 h y la POST arranca ahi. La linea vertical marca
