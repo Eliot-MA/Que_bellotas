@@ -1,0 +1,10 @@
+"dimension";"estructura";"AIC";"logLik";"var_random";"singular"
+"Dim.1";"(1|species)";1414,4;-704,2;0,9819;FALSE
+"Dim.1";"(1|prov_code)";1296;-644,98;1,4741;FALSE
+"Dim.1";"anidado";1297,7;-644,87;1,2049;FALSE
+"Dim.2";"(1|species)";1145,2;-569,6;0,7669;FALSE
+"Dim.2";"(1|prov_code)";1055,8;-524,88;0,9837;FALSE
+"Dim.2";"anidado";1055,7;-523,83;0,5256;FALSE
+"Dim.3";"(1|species)";1104,9;-549,47;0,3166;FALSE
+"Dim.3";"(1|prov_code)";1073,3;-533,64;0,4351;FALSE
+"Dim.3";"anidado";1072,8;-532,4;0,237;FALSE

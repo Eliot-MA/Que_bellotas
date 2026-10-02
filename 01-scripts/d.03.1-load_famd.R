@@ -254,11 +254,15 @@ write.csv2(x = tabla_wide, file = "00-data/paper_famd.csv")
 
 
 ## 3. Tabla de individuos con bioclimate (compartida con d.03.2 y d.03.3) ----
+# prov_code viaja aqui porque d.03.3 modela la procedencia como unidad aleatoria
+# (ver la nota de decision al inicio de d.03.3).
 ind.bio <- df |>
-  dplyr::select(id_bellota, species, Dim.1, Dim.2, Dim.3) |>
+  dplyr::select(id_bellota, species, prov_code, Dim.1, Dim.2, Dim.3) |>
   left_join(bioclimate, by = "species") |>
   mutate(bioclimate = factor(bioclimate,
                              levels = c("Mediterranean",
                                         "Sub-Mediterranean",
                                         "Temperate")))
+
+assert_sin_procedencias_excluidas(ind.bio, "prov_code", "ind.bio (tabla de individuos)")
 
