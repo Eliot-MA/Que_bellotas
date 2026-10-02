@@ -82,7 +82,7 @@ dims <- c("Dim.1", "Dim.2", "Dim.3")
 # Etiquetas de las facetas en ingles (figuras destined to the paper).
 lab_dim <- c(Dim.1 = "Dim.1 (size)",
              Dim.2 = "Dim.2 (pericarp)",
-             Dim.3 = "Dim.3 (scar)")
+             Dim.3 = "Dim.3 (scar and crack probability)")
 
 # Deciles 10 y 90 por eje, y mediana de cada eje para los puntos de referencia.
 q10  <- sapply(dims, function(d) unname(quantile(df[[d]], 0.10)))
