@@ -16,8 +16,8 @@ library(tidyverse)
 # HOBO CSV exports: hourly records, GMT+01:00
 # Columns: row number, datetime, temp (°C), RH (%), status flags
 
-hobo19 <- read.csv("00-data/hobo19.csv", stringsAsFactors = FALSE)
-hobo18 <- read.csv("00-data/hobo18.csv", stringsAsFactors = FALSE)
+hobo19 <- read.csv("00-data/rawd/hobo19.csv", stringsAsFactors = FALSE)
+hobo18 <- read.csv("00-data/rawd/hobo18.csv", stringsAsFactors = FALSE)
 
 # --- 2. Clean and standardise -----------------------------------------------
 
@@ -77,7 +77,7 @@ cat("HOBO-21984651 - RH < 10%:", sum(df_hobo18$rh_pct < 10, na.rm = TRUE),
 
 # --- 4. Load experimental phases --------------------------------------------
 
-phases <- read.csv("00-data/experimental_phases.csv", stringsAsFactors = FALSE) |>
+phases <- read.csv("00-data/rawd/experimental_phases.csv", stringsAsFactors = FALSE) |>
   mutate(
     start = as.POSIXct(start, format = "%Y-%m-%d %H:%M:%S", tz = "Europe/Madrid"),
     end   = as.POSIXct(end,   format = "%Y-%m-%d %H:%M:%S", tz = "Europe/Madrid")
@@ -429,5 +429,5 @@ cat("\nChamber (separate):\n")
 df_stats |> filter(group == "chamber") |> print()
 
 # Save to CSV
-write.csv(df_stats, "00-data/laboratory_conditions_stats.csv", row.names = FALSE)
-cat("\nStats saved to 00-data/laboratory_conditions_stats.csv\n")
+write.csv(df_stats, "00-data/processed/laboratory_conditions_stats.csv", row.names = FALSE)
+cat("\nStats saved to 00-data/processed/laboratory_conditions_stats.csv\n")

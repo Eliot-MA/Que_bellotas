@@ -25,7 +25,7 @@
 ##      biologically undefined MC50 (slope <= 0, non-finite, or              ##
 ##      |MC50| > 500) are discarded per species and their rates reported.    ##
 ##                                                                           ##
-## Outputs (00-data/tablas_resumen/):                                        ##
+## Outputs (00-data/processed/tablas_resumen/):                                        ##
 ##   mc50_delta.csv          point estimates + delta SE and CI               ##
 ##   mc50_bootstrap.csv      bootstrap distribution summary                  ##
 ##   mc50_summary.csv        side-by-side comparison                         ##
@@ -43,11 +43,11 @@ EXCLUDE_SPECIES <- c("RO")   # lot-level viability failure (see s.02)
 SIM_SEED        <- 20260823
 BOOT_REPS       <- 2000
 
-tablas_dir <- "00-data/tablas_resumen"
+tablas_dir <- "00-data/processed/tablas_resumen"
 
 # --- 1. Data (same filters as s.02) --------------------------------------------
 
-df.mc <- read.csv("00-data/sensitivity_germination_long.csv") |>
+df.mc <- read.csv("00-data/processed/sensitivity_germination_long.csv") |>
   mutate(
     species = factor(species),
     phase   = recode_factor(factor(phase), `1` = "phase_1", `2` = "phase_2")

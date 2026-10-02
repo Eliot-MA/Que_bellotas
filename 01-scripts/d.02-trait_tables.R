@@ -3,7 +3,7 @@ stopifnot("GEN_DASH must be 'Y' or 'N'" = GEN_DASH %in% c("Y", "N"))
 
 if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
 
-# Fuente de datos. Antes se leia "00-data/df.bellotas.csv", una tabla ancha de
+# Fuente de datos. Antes se leia "00-data/processed/df.bellotas.csv", una tabla ancha de
 # una fila por bellota que d.01.2 tiene comentada y que ya no existe en el
 # repositorio. Se usa el mismo long que d.03.1 ("desiccation_traits_long.csv"),
 # que contiene todas las columnas necesarias. Es seguro porque las variables
@@ -11,7 +11,7 @@ if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias
 # del tiempo de muestreo), de modo que distinct(id_bellota) conserva los mismos
 # valores sea cual sea la fila de tiempo que se quede. Los NA son por bellota,
 # no por punto de muestreo.
-df.bellotas <- read.csv(file = "00-data/desiccation_traits_long.csv")
+df.bellotas <- read.csv(file = "00-data/processed/desiccation_traits_long.csv")
 
 library(tidyverse)
 library(emmeans)     # Calculo de medias marginales y tendencias
@@ -326,8 +326,8 @@ tabla_publicacion
 
 ## Save ----
 
-write.csv2(x = tabla_final, file = "00-data/emm_traits_long.csv")
-write.csv2(x = tabla_publicacion, file = "00-data/paper_traits.csv")
+write.csv2(x = tabla_final, file = "00-data/processed/emm_traits_long.csv")
+write.csv2(x = tabla_publicacion, file = "00-data/processed/paper_traits.csv")
 
 # ===========================================================================
 # TABLAS RESUMEN: table_traitmodel_summary y table_traitmodel_effects
@@ -584,8 +584,8 @@ print(table_traitmodel_summary)
 cat("\n==== table_traitmodel_effects ====\n")
 print(table_traitmodel_effects)
 
-write.csv(table_traitmodel_summary, file = "00-data/table_traitmodel_summary.csv")
-write.csv(table_traitmodel_effects, file = "00-data/table_traitmodel_effects.csv")
+write.csv(table_traitmodel_summary, file = "00-data/processed/table_traitmodel_summary.csv")
+write.csv(table_traitmodel_effects, file = "00-data/processed/table_traitmodel_effects.csv")
 
 # --- 3. paper_table_traitmodel_effects ---
 # Versión condensada de table_traitmodel_effects para el artículo.
@@ -628,7 +628,7 @@ paper_table_traitmodel_effects <- purrr::imap_dfr(modelos, function(mod, nm) {
 
 cat("\n==== paper_table_traitmodel_effects ====\n")
 print(paper_table_traitmodel_effects)
-write.csv(paper_table_traitmodel_effects, file = "00-data/paper_table_traitmodel_effects.csv", row.names = FALSE)
+write.csv(paper_table_traitmodel_effects, file = "00-data/processed/paper_table_traitmodel_effects.csv", row.names = FALSE)
 
 if (GEN_DASH == "Y") {
   cat("\n>> Dashboards generados correctamente en 06-html/\n")

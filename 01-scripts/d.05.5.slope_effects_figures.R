@@ -22,10 +22,10 @@
 #   la pendiente de la poblacion. Es una lectura, no un calculo.
 #
 #   La heterogeneidad por especie NO desaparece, vive en la varianza del termino
-#   aleatorio (00-data/reference_model_varcomp.csv, d.05.1). No hace falta
+#   aleatorio (00-data/processed/reference_model_varcomp.csv, d.05.1). No hace falta
 #   resumir una pendiente por especie.
 #
-# Sin refit: se usan los modelos guardados en 00-data/models/.
+# Sin refit: se usan los modelos guardados en 00-data/processed/models/.
 #
 # Salidas:
 #   07-img/slope_effect_reference.png        efecto sobre la pendiente (principal)
@@ -33,9 +33,9 @@
 #                                           observaciones individuales de fondo
 #   07-img/cumulative_loss_reference.png    diferencia de perdida acumulada entre
 #                                           p90 y p10 (solo efectos significativos)
-#   00-data/tablas_resumen/reference_slope_effects.csv
-#   00-data/tablas_resumen/reference_cumulative_loss.csv
-#   00-data/tablas_resumen/reference_predicted_mc_window.csv
+#   00-data/processed/tablas_resumen/reference_slope_effects.csv
+#   00-data/processed/tablas_resumen/reference_cumulative_loss.csv
+#   00-data/processed/tablas_resumen/reference_predicted_mc_window.csv
 # ============================================================
 
 suppressPackageStartupMessages({
@@ -44,7 +44,7 @@ suppressPackageStartupMessages({
 })
 
 OUTDIR_IMG <- "07-img"
-OUTDIR_CSV <- "00-data/tablas_resumen"
+OUTDIR_CSV <- "00-data/processed/tablas_resumen"
 dir.create(OUTDIR_IMG, showWarnings = FALSE, recursive = TRUE)
 dir.create(OUTDIR_CSV, showWarnings = FALSE, recursive = TRUE)
 
@@ -52,8 +52,8 @@ dir.create(OUTDIR_CSV, showWarnings = FALSE, recursive = TRUE)
 # 0. Datos
 # ============================================================
 if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
-df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
-df.famd     <- read.csv("00-data/famd_ind_coord.csv")
+df.bellotas <- read.csv("00-data/processed/desiccation_traits_long.csv")
+df.famd     <- read.csv("00-data/processed/famd_ind_coord.csv")
 df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
@@ -111,8 +111,8 @@ cat("\nNota: la desviacion de cada eje no es 1. Un incremento de UNA UNIDAD del 
 # ============================================================
 # 1. Cargar los modelos de referencia
 # ============================================================
-rutas <- c(PRE = "00-data/models/m.ref.pre.rds",
-           POST = "00-data/models/m.ref.post.rds")
+rutas <- c(PRE = "00-data/processed/models/m.ref.pre.rds",
+           POST = "00-data/processed/models/m.ref.post.rds")
 faltantes <- rutas[!file.exists(rutas)]
 if (length(faltantes) > 0) {
   stop("Faltan los modelos de referencia: ", paste(faltantes, collapse = ", "),

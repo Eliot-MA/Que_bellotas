@@ -19,7 +19,13 @@ The project covers two complementary experiments plus laboratory monitoring:
 
 ```
 Que_bellotas/
-├── 00-data/              Data: raw inputs (read-only) and derived outputs
+├── 00-data/              Data, split by provenance of the file
+│   ├── rawd/             Original inputs, read-only, never rewritten
+│   │   └── phylo/        Downloaded source trees (Hipp et al. 2020)
+│   └── processed/        Everything derived, rewritten by master scripts
+│       ├── models/       Serialised model objects (.rds)
+│       ├── phylo/        Pruned trees, covariance matrices, phylo tables
+│       └── tablas_resumen/  Summary tables published in the reports
 ├── 01-scripts/           Analysis scripts (see conventions below)
 ├── 06-html/              HTML dashboards and model outputs
 ├── 07-img/               Figures
@@ -42,11 +48,11 @@ Que_bellotas/
 ### Rules
 
 1. **Masters orchestrate, children compute.** A master `source()`s its children
-   sequentially and performs **all** file exports to `00-data/`. Children build
-   objects in memory only.
-2. **Raw inputs are read-only.** Raw data live in `00-data/` and are never
-   overwritten; derived tables are written back to `00-data/` exclusively by
-   master scripts.
+   sequentially and performs **all** file exports to `00-data/processed/`.
+   Children build objects in memory only.
+2. **Raw inputs are read-only.** Raw data live in `00-data/rawd/` and are never
+   overwritten; derived tables are written back to `00-data/processed/`
+   exclusively by master scripts.
 3. **Object names:** `rD.*` for raw data as loaded, `df.*` for processed data
    frames.
 4. **Units:** weights in grams; datetimes in local time (`Europe/Madrid`).
@@ -72,13 +78,14 @@ s.01-load_sensitivity_exp.R       master: sources children + exports final CSV
 └── s.01.4-germination_table.R    moisture content + outcomes -> df.analysis [done]
 ```
 
-Final exports: `00-data/sensitivity_germination_long.csv` (one row per acorn)
-and `00-data/error_correction_log.csv` (audit trail of the manual corrections).
+Final exports: `00-data/processed/sensitivity_germination_long.csv` (one row per
+acorn) and `00-data/processed/error_correction_log.csv` (audit trail of the manual
+corrections).
 
 s.01.3 additionally writes its own transparency artifacts (agreed exception to
 the master-only-export rule): diagnostic plots to `07-img/dw_model_diagnostics/`
 and decision/validation tables plus a selection log to
-`00-data/tablas_resumen/` (`dw_*` files).
+`00-data/processed/tablas_resumen/` (`dw_*` files).
 
 ```
 s.02-germination_glm.R           germination GLMs: MC x species response,
@@ -97,15 +104,15 @@ s.03-mc50_critical_moisture.R    MC50 per species, marginalized over batches
 ```
 
 Both scripts follow the same transparency pattern agreed for s.01.3: each
-exports its own tables to `00-data/tablas_resumen/` (`glm_*`, `mc50_*`) and
-its own figures to `07-img/germ_glm_diagnostics/` and
+exports its own tables to `00-data/processed/tablas_resumen/` (`glm_*`,
+`mc50_*`) and its own figures to `07-img/germ_glm_diagnostics/` and
 `07-img/mc50_estimation/`.
 
 ### Desiccation-rate experiment
 
 ```
 d.01-load_desiccation_exp.R      master: loads d.01.1 + d.01.2, exports
-│                                  00-data/desiccation_traits_long.csv
+│                                  00-data/processed/desiccation_traits_long.csv
 ├── d.01.1-load_data.R           raw wide table -> long format
 └── d.01.2-derived_variables.R   derived variables (rates, times)
 

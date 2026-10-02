@@ -30,13 +30,13 @@
 ## formal estimates.                                                          ##
 ##                                                                           ##
 ## Outputs:                                                                  ##
-##   00-data/models/germ_final_model.rds                                      ##
-##   00-data/anova_germ_final.csv                                             ##
-##   00-data/tablas_resumen/glm_dredge_with_phase.csv                        ##
-##   00-data/tablas_resumen/glm_dredge_no_phase.csv                          ##
-##   00-data/tablas_resumen/glm_global_comparison.csv                        ##
-##   00-data/tablas_resumen/glm_selected_coefficients.csv                    ##
-##   00-data/tablas_resumen/glm_dharma_tests.csv                             ##
+##   00-data/processed/models/germ_final_model.rds                                      ##
+##   00-data/processed/anova_germ_final.csv                                             ##
+##   00-data/processed/tablas_resumen/glm_dredge_with_phase.csv                        ##
+##   00-data/processed/tablas_resumen/glm_dredge_no_phase.csv                          ##
+##   00-data/processed/tablas_resumen/glm_global_comparison.csv                        ##
+##   00-data/processed/tablas_resumen/glm_selected_coefficients.csv                    ##
+##   00-data/processed/tablas_resumen/glm_dharma_tests.csv                             ##
 ##   07-img/germ_glm_diagnostics/*.png                                       ##
 ##     - germ_ro_exclusion_justification.png (all 8 species, pre-exclusion)  ##
 ##     - glm_pred_curves_species_phase.png (per-batch curves + raw points)   ##
@@ -55,13 +55,13 @@ EXCLUDE_WEIRD_MC <- TRUE    # drop impossible predictor values (negative-MC arti
 EXCLUDE_SPECIES  <- c("RO") # lot-level viability failure; see justification figure
 SIM_SEED         <- 20260823
 
-tablas_dir <- "00-data/tablas_resumen"
+tablas_dir <- "00-data/processed/tablas_resumen"
 plots_dir  <- "07-img/germ_glm_diagnostics"
 dir.create(plots_dir, showWarnings = FALSE, recursive = TRUE)
 
 # --- 1. Data -----------------------------------------------------------------
 
-df.germ <- read.csv("00-data/sensitivity_germination_long.csv") |>
+df.germ <- read.csv("00-data/processed/sensitivity_germination_long.csv") |>
   mutate(
     species  = factor(species),
     phase    = recode_factor(factor(phase), `1` = "phase_1", `2` = "phase_2")
@@ -438,9 +438,9 @@ write.csv(dharma_tests,
           row.names = FALSE)
 
 # Final model + ANOVA table
-saveRDS(glm_final, file.path("00-data/models", "germ_final_model.rds"))
+saveRDS(glm_final, file.path("00-data/processed/models", "germ_final_model.rds"))
 write.csv(anova_final,
-          file.path("00-data", "anova_germ_final.csv"),
+          file.path("00-data", "processed", "anova_germ_final.csv"),
           row.names = FALSE)
 
 cat("\ns.02 done: dredge tables, global comparison, coefficients, DHARMa checks,",

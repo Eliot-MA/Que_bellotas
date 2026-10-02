@@ -15,7 +15,7 @@
 #
 # Reproduce y exporta el analisis de
 #   08-reports/Heterogeneus_effects_acorn_traits.qmd
-# Genera tablas en 00-data/ y figuras en 07-img/:
+# Genera tablas en 00-data/processed/ y figuras en 07-img/:
 #   - distribucion de los ejes del FAMD por especie (figura)
 #   - R2 de cada eje explicado por la especie (tabla)
 #   - correlacion entre ejes: global y dentro de especie (tablas)
@@ -24,7 +24,7 @@
 #   - comparacion modelo "ingenuo" vs especie en random (tabla: cambio de signo)
 #   - forest plot de contrastes (Delta slope Dim.alto - Dim.bajo) por especie
 #   - relacion Dim.2 (pericarpo) vs contenido hidrico inicial (figura)
-#   - objetos de modelos en 00-data/models/
+#   - objetos de modelos en 00-data/processed/models/
 #
 # La descomposicion DENTRO/ENTRE especies (within-between) se elimino de los
 # scripts: daba conclusiones equivalentes a otros modelos que ya contemplan la
@@ -55,8 +55,8 @@ suppressPackageStartupMessages(library(patchwork))
 if (!exists("df") || !exists("df.traits") || !exists("df.t1") || !exists("df.t2")) {
   # Procedencias excluidas declaradas en 01-scripts/00-config_procedencias.R
   if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
-  df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
-  df.famd     <- read.csv("00-data/famd_ind_coord.csv")
+  df.bellotas <- read.csv("00-data/processed/desiccation_traits_long.csv")
+  df.famd     <- read.csv("00-data/processed/famd_ind_coord.csv")
   df <- df.bellotas |>
     dplyr::select(-X) |>
     dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
@@ -118,8 +118,8 @@ axis_r2 <- tibble(
   Dim = c("Dim.1", "Dim.2", "Dim.3"),
   R2  = sapply(list(lm.d1, lm.d2, lm.d3), function(m) performance::r2(m)$R2)
 )
-write.csv(axis_r2, "00-data/heterogeneity_axis_r2_species.csv", row.names = FALSE)
-cat("Guardada: 00-data/heterogeneity_axis_r2_species.csv\n")
+write.csv(axis_r2, "00-data/processed/heterogeneity_axis_r2_species.csv", row.names = FALSE)
+cat("Guardada: 00-data/processed/heterogeneity_axis_r2_species.csv\n")
 
 # ============================================================
 # 2. Correlacion entre ejes: global y dentro de especie
@@ -128,7 +128,7 @@ cor.global <- df.traits |>
   dplyr::select(Dim.1, Dim.2, Dim.3) |>
   distinct() |>
   cor()
-write.csv(cor.global, "00-data/heterogeneity_cor_global.csv")
+write.csv(cor.global, "00-data/processed/heterogeneity_cor_global.csv")
 
 cor.species <- df |>
   group_by(species) |>
@@ -141,8 +141,8 @@ cor.species <- df |>
     )
   }) |>
   ungroup()
-write.csv(cor.species, "00-data/heterogeneity_cor_species.csv", row.names = FALSE)
-cat("Guardadas: 00-data/heterogeneity_cor_global.csv y 00-data/heterogeneity_cor_species.csv\n")
+write.csv(cor.species, "00-data/processed/heterogeneity_cor_species.csv", row.names = FALSE)
+cat("Guardadas: 00-data/processed/heterogeneity_cor_global.csv y 00-data/processed/heterogeneity_cor_species.csv\n")
 
 # ============================================================
 # 2b. Correlacion entre rasgos funcionales originales dentro de especies
@@ -151,7 +151,7 @@ cat("Guardadas: 00-data/heterogeneity_cor_global.csv y 00-data/heterogeneity_cor
 # Se releen del CSV largo (no del FAMD) porque se usan los rasgos en bruto, pero
 # se aplican las MISMAS exclusions que el resto de la linea d.*: sin este
 # filtro las correlaciones por especie incluian las bellotas de IL3.
-df.traits_orig <- read.csv("00-data/desiccation_traits_long.csv") |>
+df.traits_orig <- read.csv("00-data/processed/desiccation_traits_long.csv") |>
   dplyr::select(id_bellota, especie, prov_code, peso_seco, Volumen_estimado_cm3,
                 Relacion_SV, SPM_g_cm2, Seed_Coat_Ratio, 
                 Ratio_A.cicatriz_A.bellota, rajas_pericarpo) |>
@@ -201,8 +201,8 @@ cor_traits_orig <- df.traits_orig |>
     TRUE ~ ""
   ))
 
-write.csv(cor_traits_orig, "00-data/heterogeneity_cor_original_traits_by_species.csv", row.names = FALSE)
-cat("Guardada: 00-data/heterogeneity_cor_original_traits_by_species.csv\n")
+write.csv(cor_traits_orig, "00-data/processed/heterogeneity_cor_original_traits_by_species.csv", row.names = FALSE)
+cat("Guardada: 00-data/processed/heterogeneity_cor_original_traits_by_species.csv\n")
 
 # Grafico: heatmap de correlaciones entre rasgos originales por especie
 cor_plot_orig <- cor_traits_orig |>
@@ -291,8 +291,8 @@ cmp_post <- add_weights(performance::compare_performance(
   "POST (t > 94 h)")
 
 cmp_all <- bind_rows(cmp_pre, cmp_post)
-write.csv(cmp_all, "00-data/heterogeneity_model_comparison.csv", row.names = FALSE)
-cat("Guardada: 00-data/heterogeneity_model_comparison.csv\n")
+write.csv(cmp_all, "00-data/processed/heterogeneity_model_comparison.csv", row.names = FALSE)
+cat("Guardada: 00-data/processed/heterogeneity_model_comparison.csv\n")
 
 # 3d. Comparacion del modelo "ingenuo" vs especie en random (cambio de signo)
 naive_compare <- bind_rows(
@@ -309,8 +309,8 @@ naive_compare <- bind_rows(
     as.data.frame() |>
     dplyr::mutate(modelo = "POST - especie en random",  fase = "POST")
 )
-write.csv(naive_compare, "00-data/heterogeneity_naive_vs_random.csv", row.names = FALSE)
-cat("Guardada: 00-data/heterogeneity_naive_vs_random.csv\n")
+write.csv(naive_compare, "00-data/processed/heterogeneity_naive_vs_random.csv", row.names = FALSE)
+cat("Guardada: 00-data/processed/heterogeneity_naive_vs_random.csv\n")
 
 # 3e. Forest plot: cambio de pendiente (Dim.alto - Dim.bajo) por especie
 D1.values.species <- df.traits |>
@@ -413,9 +413,9 @@ p_forest <- ggplot(all_contrasts, aes(x = estimate, y = species)) +
 ggsave("07-img/heterogeneity_forest_plot.png", p_forest, width = 11, height = 8, dpi = 300)
 cat("Figura guardada: 07-img/heterogeneity_forest_plot.png\n")
 
-saveRDS(all_contrasts, "00-data/heterogeneity_contrasts.rds")
-write.csv(all_contrasts, "00-data/heterogeneity_contrasts.csv", row.names = FALSE)
-cat("Guardado: 00-data/heterogeneity_contrasts.rds y .csv\n")
+saveRDS(all_contrasts, "00-data/processed/heterogeneity_contrasts.rds")
+write.csv(all_contrasts, "00-data/processed/heterogeneity_contrasts.csv", row.names = FALSE)
+cat("Guardado: 00-data/processed/heterogeneity_contrasts.rds y .csv\n")
 
 # ============================================================
 # 4. Hipotesis mecanistica: pericarpo (Dim.2) y contenido hidrico inicial

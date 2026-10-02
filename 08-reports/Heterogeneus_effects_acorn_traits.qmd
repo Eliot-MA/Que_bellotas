@@ -26,8 +26,8 @@ suppressPackageStartupMessages({
 })
 
 
-df.bellotas <- read.csv("../00-data/desiccation_traits_long.csv")
-df.famd <- read.csv("../00-data/famd_ind_coord.csv")
+df.bellotas <- read.csv("../00-data/processed/desiccation_traits_long.csv")
+df.famd <- read.csv("../00-data/processed/famd_ind_coord.csv")
 
 # Creat working dataframe ----
 df <- df.bellotas |> 

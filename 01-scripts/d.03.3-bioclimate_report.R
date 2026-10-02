@@ -168,7 +168,7 @@ bioclimate_anova_mixed <- bind_rows(lapply(dims, function(dd) {
   )
 }))
 
-write.csv2(bioclimate_anova_mixed, "00-data/bioclimate_anova_mixed.csv", row.names = FALSE)
+write.csv2(bioclimate_anova_mixed, "00-data/processed/bioclimate_anova_mixed.csv", row.names = FALSE)
 cat("\n===== 3. Test del efecto bioclimate (Wald) =====\n")
 print(as.data.frame(bioclimate_anova_mixed), row.names = FALSE)
 
@@ -190,7 +190,7 @@ bioclimate_emmeans_cld <- bind_rows(lapply(dims, function(dd) {
              .group     = str_replace_all(cf$.group, "\\s+", ""))
 }))
 
-write.csv2(bioclimate_emmeans_cld, "00-data/bioclimate_emmeans_cld.csv", row.names = FALSE)
+write.csv2(bioclimate_emmeans_cld, "00-data/processed/bioclimate_emmeans_cld.csv", row.names = FALSE)
 cat("\n===== 4. EMMs por bioclima =====\n")
 print(as.data.frame(bioclimate_emmeans_cld |>
                       dplyr::select(dimension, bioclimate, emmean, lower.CL,
@@ -210,7 +210,7 @@ bioclimate_species_means <- ind.bio |>
             .groups = "drop") |>
   arrange(factor(bioclimate, levels = levels(ind.bio$bioclimate)), species)
 
-write.csv2(bioclimate_species_means, "00-data/bioclimate_species_means.csv", row.names = FALSE)
+write.csv2(bioclimate_species_means, "00-data/processed/bioclimate_species_means.csv", row.names = FALSE)
 
 # ---------------------------------------------------------------------------
 # 5b. Tabla 3b: medias por PROCEDENCIA (misma unidad del modelo)
@@ -303,7 +303,7 @@ bioclimate_sp_anova <- bind_rows(lapply(dims, function(dd) {
              p_value = r[["Pr(>F)"]])
 }))
 
-write.csv2(bioclimate_sp_anova, "00-data/bioclimate_species_level_anova.csv", row.names = FALSE)
+write.csv2(bioclimate_sp_anova, "00-data/processed/bioclimate_species_level_anova.csv", row.names = FALSE)
 
 bioclimate_sp_kruskal <- bind_rows(lapply(dims, function(dd) {
   k <- kruskal.test(stats::as.formula(paste(dd, "~ bioclimate")), data = sp.means)

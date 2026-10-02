@@ -10,7 +10,7 @@ format:
 ---
 
 ```{r setup, include=FALSE}
-if (!file.exists("00-data/desiccation_traits_long.csv")) {
+if (!file.exists("00-data/processed/desiccation_traits_long.csv")) {
   knitr::opts_knit$set(root.dir = "..")
 }
 suppressPackageStartupMessages({
@@ -114,7 +114,7 @@ Se ajustan tres variantes del mismo cuerpo y se comparan por AIC:
 
 ```{r comparacion, eval=FALSE}
 knitr::kable(
-  read.csv("00-data/reference_model_comparison.csv"),
+  read.csv("00-data/processed/reference_model_comparison.csv"),
   caption = "Comparaci贸n AIC/pesos de Akaike. `m.ref_int` queda fuera en PRE por no converger."
 )
 ```
@@ -138,7 +138,7 @@ secan igual. La honestidad est谩 en decir la estimaci贸n con su incertidumbre 鈥
 
 ```{r varcomp, eval=FALSE}
 knitr::kable(
-  read.csv("00-data/reference_model_varcomp_detalle.csv") |>
+  read.csv("00-data/processed/reference_model_varcomp_detalle.csv") |>
     dplyr::filter(modelo %in% c("m.ref.pre", "m.ref.post")) |>
     dplyr::select(modelo, nivel, componente, varianza, sd, peso_total),
   caption = "Componentes de varianza del modelo de referencia. `peso_total` es la fracci贸n sobre la varianza total del modelo, sigma incluida."
@@ -151,7 +151,7 @@ identificado de forma 煤nica.
 
 ```{r varianzas, eval=FALSE}
 knitr::kable(
-  read.csv("00-data/reference_model_varcomp.csv"),
+  read.csv("00-data/processed/reference_model_varcomp.csv"),
   caption = "Componentes de varianza del modelo de referencia."
 )
 ```
@@ -177,7 +177,7 @@ knitr::include_graphics("../07-img/slope_effect_reference.png")
 
 ```{r tabla-efecto, eval=FALSE}
 knitr::kable(
-  read.csv("00-data/tablas_resumen/reference_slope_effects.csv") |>
+  read.csv("00-data/processed/tablas_resumen/reference_slope_effects.csv") |>
     dplyr::select(phase, dim, sd_eje, estimacion_sd, ic_lo_sd, ic_hi_sd, p),
   caption = paste(
     "Cambio de la pendiente por una desviaci贸n est谩ndar de cada eje,",
@@ -207,7 +207,7 @@ leg铆tima.
 
 ```{r tabla-acumulado, eval=FALSE}
 knitr::kable(
-  read.csv("00-data/tablas_resumen/reference_cumulative_loss.csv") |>
+  read.csv("00-data/processed/tablas_resumen/reference_cumulative_loss.csv") |>
     dplyr::transmute(
       fase     = phase,
       eje      = dim,

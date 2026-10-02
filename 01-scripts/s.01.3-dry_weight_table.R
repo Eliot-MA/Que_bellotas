@@ -491,10 +491,10 @@ print(as.data.frame(agreement), row.names = FALSE)
 # Decision trail and validation artifacts written directly by this child
 # script (agreed exception to the master-only-export rule):
 #   plots  -> 07-img/dw_model_diagnostics
-#   tables -> 00-data/tablas_resumen
+#   tables -> 00-data/processed/tablas_resumen
 
 img_dir <- file.path("07-img", "dw_model_diagnostics")
-tbl_dir <- file.path("00-data", "tablas_resumen")
+tbl_dir <- file.path("00-data", "processed", "tablas_resumen")
 dir.create(img_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(tbl_dir, recursive = TRUE, showWarnings = FALSE)
 

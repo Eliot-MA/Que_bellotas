@@ -1,0 +1,218 @@
+
+===== Summary: m_het_1_pre =====
+ Family: gaussian 
+  Links: mu = identity 
+Formula: Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + (0 + time_s | gr(phylo_species, cov = A)) + (0 + time_s | species) + (1 + time_s | codigo) + (1 | id_bellota) 
+   Data: data (Number of observations: 2012) 
+  Draws: 4 chains, each with iter = 6000; warmup = 3000; thin = 1;
+         total post-warmup draws = 12000
+
+Multilevel Hyperparameters:
+~codigo (Number of levels: 15) 
+                      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)             4.37      0.77     3.15     6.10 1.00     1092     2567
+sd(time_s)                4.18      0.94     2.71     6.37 1.01     1409     2949
+cor(Intercept,time_s)     0.76      0.13     0.42     0.93 1.00     1821     2973
+
+~id_bellota (Number of levels: 403) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     2.73      0.10     2.55     2.94 1.01      476     1132
+
+~phylo_species (Number of levels: 8) 
+           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(time_s)     0.61      0.48     0.03     1.84 1.01      714     1219
+
+~species (Number of levels: 8) 
+           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(time_s)     1.78      1.26     0.06     4.77 1.00     1452     1728
+
+Regression Coefficients:
+             Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept       25.05      1.19    22.74    27.41 1.01      534     1361
+time_s         -15.89      3.73   -21.47    -6.04 1.00      508      846
+Dim.1            1.05      0.16     0.73     1.35 1.00      423     1203
+Dim.2           -0.96      0.22    -1.40    -0.52 1.02      394      952
+Dim.3           -0.61      0.22    -1.03    -0.18 1.00      429      915
+time_s:Dim.1     1.77      0.12     1.54     2.00 1.00     2760     5034
+time_s:Dim.2    -0.88      0.16    -1.20    -0.56 1.00     2917     5381
+time_s:Dim.3    -0.56      0.16    -0.86    -0.25 1.00     3101     4869
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.68      0.01     0.66     0.70 1.00     4262     6145
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).
+
+===== Summary: m_het_1_post =====
+ Family: gaussian 
+  Links: mu = identity 
+Formula: Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + (0 + time_s | gr(phylo_species, cov = A)) + (0 + time_s | species) + (1 + time_s | codigo) + (1 | id_bellota) 
+   Data: data (Number of observations: 2015) 
+  Draws: 4 chains, each with iter = 6000; warmup = 3000; thin = 1;
+         total post-warmup draws = 12000
+
+Multilevel Hyperparameters:
+~codigo (Number of levels: 15) 
+                      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)             2.91      0.62     1.97     4.34 1.00     1811     3525
+sd(time_s)                1.20      0.32     0.73     1.97 1.00     2815     4784
+cor(Intercept,time_s)    -0.22      0.29    -0.74     0.37 1.00     2334     4194
+
+~id_bellota (Number of levels: 403) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     3.81      0.14     3.55     4.09 1.00     1005     1096
+
+~phylo_species (Number of levels: 8) 
+           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(time_s)     0.23      0.20     0.01     0.73 1.00     2011     3080
+
+~species (Number of levels: 8) 
+           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(time_s)     0.94      0.67     0.05     2.54 1.00     2194     3896
+
+Regression Coefficients:
+             Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept       29.71      0.81    28.10    31.30 1.00     2069     3417
+time_s          -7.73      1.40   -10.39    -4.71 1.00     2064     2235
+Dim.1            0.62      0.17     0.28     0.95 1.01      806     1987
+Dim.2           -0.52      0.23    -0.98    -0.07 1.00      569     1221
+Dim.3           -0.15      0.23    -0.59     0.29 1.00      868     1836
+time_s:Dim.1     0.37      0.04     0.29     0.44 1.00     6018     7615
+time_s:Dim.2    -0.01      0.05    -0.10     0.09 1.00     6681     7703
+time_s:Dim.3     0.02      0.05    -0.08     0.12 1.00     6309     6505
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     1.17      0.02     1.13     1.21 1.00     5910     7756
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).
+
+===== Summary: m_het_2_pre =====
+ Family: gaussian 
+  Links: mu = identity 
+Formula: Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + time_s:Dim.1:species + time_s:Dim.2:species + time_s:Dim.3:species + (0 + time_s | gr(phylo_species, cov = A)) + (1 + time_s | codigo) + (1 | id_bellota) 
+   Data: data (Number of observations: 2012) 
+  Draws: 4 chains, each with iter = 6000; warmup = 3000; thin = 1;
+         total post-warmup draws = 12000
+
+Multilevel Hyperparameters:
+~codigo (Number of levels: 15) 
+                      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)             4.41      0.79     3.17     6.27 1.00     1081     1732
+sd(time_s)                4.42      1.00     2.77     6.68 1.00     1017     1723
+cor(Intercept,time_s)     0.72      0.14     0.37     0.92 1.00     1530     3036
+
+~id_bellota (Number of levels: 403) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     2.88      0.11     2.66     3.11 1.01      504     1013
+
+~phylo_species (Number of levels: 8) 
+           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(time_s)     0.61      0.47     0.03     1.80 1.00      698     1213
+
+Regression Coefficients:
+                                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept                               24.77      1.17    22.46    27.13 1.01      702     1166
+time_s                                 -16.22      3.62   -22.03    -7.00 1.00      764      910
+Dim.1                                    1.04      0.17     0.71     1.37 1.01      337      863
+Dim.2                                   -0.98      0.22    -1.41    -0.54 1.00      594     1154
+Dim.3                                   -0.61      0.21    -1.02    -0.19 1.01      559     1678
+time_s:Dim.1                             1.69      0.27     1.16     2.23 1.00      594     1340
+time_s:Dim.2                            -0.42      0.31    -1.01     0.18 1.01      472     1164
+time_s:Dim.3                            -1.67      0.31    -2.28    -1.06 1.00      625     1123
+time_s:Dim.1:speciesQuercusfaginea       0.31      0.50    -0.71     1.29 1.00      930     1346
+time_s:Dim.1:speciesQuercusilex         -0.37      0.34    -1.03     0.26 1.00      676     1566
+time_s:Dim.1:speciesQuercuspetraea       1.99      0.35     1.29     2.69 1.00      781     1537
+time_s:Dim.1:speciesQuercuspubescens     1.45      0.51     0.44     2.46 1.00      803     1622
+time_s:Dim.1:speciesQuercuspyrenaica     0.10      0.35    -0.59     0.78 1.00      586     1160
+time_s:Dim.1:speciesQuercusrobur        -0.89      0.41    -1.69    -0.08 1.01      558     1181
+time_s:Dim.1:speciesQuercussuber        -0.57      0.40    -1.35     0.21 1.01      655     1219
+time_s:Dim.2:speciesQuercusfaginea      -0.08      0.49    -1.05     0.86 1.01      426     1390
+time_s:Dim.2:speciesQuercusilex         -0.40      0.41    -1.24     0.39 1.01      552     1519
+time_s:Dim.2:speciesQuercuspetraea      -1.44      0.42    -2.24    -0.59 1.00      654     1423
+time_s:Dim.2:speciesQuercuspubescens    -2.02      0.61    -3.20    -0.83 1.00      607     1334
+time_s:Dim.2:speciesQuercuspyrenaica    -1.62      0.57    -2.82    -0.55 1.00      530      836
+time_s:Dim.2:speciesQuercusrobur        -1.01      0.54    -2.04     0.08 1.01      622     1526
+time_s:Dim.2:speciesQuercussuber         0.38      0.49    -0.54     1.36 1.00      675     1360
+time_s:Dim.3:speciesQuercusfaginea       1.43      0.53     0.36     2.48 1.00      720     1186
+time_s:Dim.3:speciesQuercusilex          1.29      0.48     0.35     2.23 1.00      581      902
+time_s:Dim.3:speciesQuercuspetraea       0.62      0.43    -0.21     1.48 1.00      671     1270
+time_s:Dim.3:speciesQuercuspubescens     1.53      0.51     0.53     2.55 1.00      766     1226
+time_s:Dim.3:speciesQuercuspyrenaica     1.27      0.44     0.42     2.13 1.00      610     1249
+time_s:Dim.3:speciesQuercusrobur         0.74      0.47    -0.17     1.68 1.01      579     1162
+time_s:Dim.3:speciesQuercussuber         1.77      0.45     0.90     2.67 1.00      682      920
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.65      0.01     0.62     0.67 1.00     3149     5166
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).
+
+===== Summary: m_het_2_post =====
+ Family: gaussian 
+  Links: mu = identity 
+Formula: Moisture_content ~ time_s * (Dim.1 + Dim.2 + Dim.3) + time_s:Dim.1:species + time_s:Dim.2:species + time_s:Dim.3:species + (0 + time_s | gr(phylo_species, cov = A)) + (1 + time_s | codigo) + (1 | id_bellota) 
+   Data: data (Number of observations: 2015) 
+  Draws: 4 chains, each with iter = 6000; warmup = 3000; thin = 1;
+         total post-warmup draws = 12000
+
+Multilevel Hyperparameters:
+~codigo (Number of levels: 15) 
+                      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)             2.89      0.62     1.94     4.39 1.01     1344     2960
+sd(time_s)                1.27      0.36     0.74     2.10 1.00     1620     3884
+cor(Intercept,time_s)    -0.13      0.30    -0.69     0.46 1.00     1203     2914
+
+~id_bellota (Number of levels: 403) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     3.81      0.14     3.55     4.08 1.01      769     1574
+
+~phylo_species (Number of levels: 8) 
+           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(time_s)     0.30      0.22     0.02     0.82 1.00      960     2128
+
+Regression Coefficients:
+                                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept                               29.69      0.77    28.12    31.20 1.00     1051     2126
+time_s                                  -7.80      1.60   -10.83    -4.05 1.00     1518     1680
+Dim.1                                    0.63      0.17     0.27     0.96 1.01      495      776
+Dim.2                                   -0.50      0.22    -0.94    -0.08 1.01      553     1405
+Dim.3                                   -0.16      0.23    -0.61     0.28 1.00      458     1195
+time_s:Dim.1                             0.09      0.10    -0.11     0.29 1.01     1236     2268
+time_s:Dim.2                            -0.07      0.12    -0.30     0.16 1.01     1379     2758
+time_s:Dim.3                            -0.20      0.12    -0.44     0.04 1.00     1172     2775
+time_s:Dim.1:speciesQuercusfaginea       0.27      0.20    -0.11     0.66 1.00     2655     4655
+time_s:Dim.1:speciesQuercusilex          0.60      0.13     0.35     0.85 1.00     1631     3255
+time_s:Dim.1:speciesQuercuspetraea       0.12      0.14    -0.15     0.38 1.00     1713     2913
+time_s:Dim.1:speciesQuercuspubescens     0.17      0.19    -0.20     0.54 1.00     2334     4214
+time_s:Dim.1:speciesQuercuspyrenaica     0.19      0.14    -0.08     0.47 1.01     1854     3663
+time_s:Dim.1:speciesQuercusrobur         0.58      0.16     0.26     0.90 1.00     2023     3517
+time_s:Dim.1:speciesQuercussuber         0.50      0.15     0.20     0.79 1.00     1923     3880
+time_s:Dim.2:speciesQuercusfaginea       0.63      0.19     0.24     1.00 1.00     2225     4033
+time_s:Dim.2:speciesQuercusilex          0.02      0.17    -0.31     0.34 1.00     1839     4331
+time_s:Dim.2:speciesQuercuspetraea      -0.03      0.17    -0.35     0.30 1.00     2038     4543
+time_s:Dim.2:speciesQuercuspubescens    -0.37      0.24    -0.85     0.10 1.00     2765     4893
+time_s:Dim.2:speciesQuercuspyrenaica    -0.28      0.22    -0.72     0.15 1.00     2479     4049
+time_s:Dim.2:speciesQuercusrobur         0.58      0.21     0.16     1.00 1.00     2213     4651
+time_s:Dim.2:speciesQuercussuber         0.06      0.19    -0.32     0.43 1.00     2364     4628
+time_s:Dim.3:speciesQuercusfaginea       0.49      0.21     0.08     0.90 1.00     1886     4830
+time_s:Dim.3:speciesQuercusilex         -0.04      0.19    -0.41     0.32 1.00     2123     4059
+time_s:Dim.3:speciesQuercuspetraea       0.22      0.17    -0.10     0.56 1.00     1681     3811
+time_s:Dim.3:speciesQuercuspubescens     0.75      0.20     0.35     1.14 1.00     1909     4608
+time_s:Dim.3:speciesQuercuspyrenaica     0.36      0.17     0.02     0.71 1.00     1782     3785
+time_s:Dim.3:speciesQuercusrobur         0.04      0.18    -0.32     0.40 1.00     1906     4415
+time_s:Dim.3:speciesQuercussuber         0.13      0.18    -0.23     0.49 1.00     1751     3509
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     1.14      0.02     1.10     1.18 1.00     5406     7484
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).

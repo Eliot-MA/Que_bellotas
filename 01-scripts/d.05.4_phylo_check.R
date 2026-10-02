@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # d.05.4_phylo_check.R
 # COMPROBACION FILOGENETICA (no es el modelo de referencia).
 #
@@ -74,7 +74,8 @@ if (BACKEND == "cmdstanr") {
   )
 }
 
-dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
+dir.create("00-data/processed/phylo", showWarnings = FALSE, recursive = TRUE)
+dir.create("07-img/phylo_diagnostics", showWarnings = FALSE, recursive = TRUE)
 
 # ============================================================
 # FASE 0: Preparacion
@@ -92,8 +93,8 @@ if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias
 
 # ---- 0.1 Cargar datos (siempre frescos; no reutilizar dataframes viejos
 #   del entorno, que pueden tener columnas obsoletas) ----
-df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
-df.famd     <- read.csv("00-data/famd_ind_coord.csv")
+df.bellotas <- read.csv("00-data/processed/desiccation_traits_long.csv")
+df.famd     <- read.csv("00-data/processed/famd_ind_coord.csv")
 df <- df.bellotas |>
   dplyr::select(-X) |>
   dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
@@ -133,12 +134,12 @@ if (length(missing_t1) > 0 || length(missing_t2) > 0) {
 cat("Datos cargados:", nrow(df.t1), "obs PRE,", nrow(df.t2), "obs POST\n")
 
 # ---- 0.2 Cargar filogenia y matriz A ----
-if (!file.exists("00-data/phylo/oak_tree.rds") || !file.exists("00-data/phylo/oak_vcv.rds")) {
+if (!file.exists("00-data/processed/phylo/oak_tree.rds") || !file.exists("00-data/processed/phylo/oak_vcv.rds")) {
   stop("Faltan archivos filogeneticos. Ejecuta primero d.05.2.phylo_data.R")
 }
 
-tree <- readRDS("00-data/phylo/oak_tree.rds")
-A    <- readRDS("00-data/phylo/oak_vcv.rds")
+tree <- readRDS("00-data/processed/phylo/oak_tree.rds")
+A    <- readRDS("00-data/processed/phylo/oak_vcv.rds")
 cat("Filogenia cargada:", length(tree$tip.label), "tips\n")
 
 # ---- 0.3 Verificar concordancia entre especies y matriz A ----
@@ -359,8 +360,8 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
     cat("Treedepth maximo:", treedepth_max, "\n")
 
     # Guardar modelo
-    saveRDS(fit, file.path("00-data/phylo", paste0(name, ".rds")))
-    cat("\nModelo guardado en: 00-data/phylo/", name, ".rds\n", sep = "")
+    saveRDS(fit, file.path("00-data/processed/phylo", paste0(name, ".rds")))
+    cat("\nModelo guardado en: 00-data/processed/phylo/", name, ".rds\n", sep = "")
 
     # Trace plots en PNG
     cat("\n-- Generando trace plots --\n")
@@ -382,7 +383,7 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
       }
     )
     if (!is.null(p_trace)) {
-      file_png <- file.path("00-data/phylo", paste0("trace_", name, ".png"))
+      file_png <- file.path("07-img/phylo_diagnostics", paste0("trace_", name, ".png"))
       n_rows <- ceiling(length(trace_params) / 4)
       ggplot2::ggsave(
         filename = file_png,
@@ -468,7 +469,7 @@ cat("\n========== FASE 1: Tirada completa ==========\n")
 #   - senal filogenetica (CCI) por modelo (CSV)
 #   - comparacion LOO entre los dos modelos exploratorios (CSV + figura)
 #   - posterior predictive checks (PNG)
-# Salidas en: 00-data/phylo/ y 07-img/
+# Salidas en: 00-data/processed/phylo/, 07-img/phylo_diagnostics/ y 08-reports/
 # ============================================================
 cat("\n========== FASE 2: Validacion y comparacion ==========\n")
 
@@ -478,7 +479,7 @@ dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
 # Se recargan de disco: asi la FASE 2 es independiente de la sesion
 # de la FASE 1 (los RDS fueron guardados por smoke_test()).
 nombres_modelo <- c("m_phylo_1_pre", "m_phylo_1_post", "m_phylo_2_pre", "m_phylo_2_post")
-rutas_modelo   <- file.path("00-data/phylo", paste0(nombres_modelo, ".rds"))
+rutas_modelo   <- file.path("00-data/processed/phylo", paste0(nombres_modelo, ".rds"))
 faltantes      <- nombres_modelo[!file.exists(rutas_modelo)]
 if (length(faltantes) > 0) {
   stop("Faltan modelos de la FASE 1: ", paste(faltantes, collapse = ", "),
@@ -487,7 +488,7 @@ if (length(faltantes) > 0) {
 modelos <- setNames(lapply(rutas_modelo, readRDS), nombres_modelo)
 
 # ---- 2.2 Resumen por modelo (a pantalla y a log) ----
-sink("00-data/phylo/summary_modelos.txt")
+sink("08-reports/summary_modelos.txt")
 for (nm in names(modelos)) {
   cat("\n===== Summary:", nm, "=====\n")
   print(summary(modelos[[nm]]))
@@ -532,7 +533,7 @@ cci_df <- bind_rows(
   m_phylo_2_post = calcular_cci(modelos$m_phylo_2_post, con_especie_libre = FALSE),
   .id = "modelo"
 )
-write.csv(cci_df, "00-data/phylo/cci_filogenetica.csv", row.names = FALSE)
+write.csv(cci_df, "00-data/processed/phylo/cci_filogenetica.csv", row.names = FALSE)
 cat("\n-- Senal filogenetica (CCI) --\n")
 print(cci_df)
 
@@ -540,7 +541,7 @@ print(cci_df)
 for (nm in names(modelos)) {
   fe <- as.data.frame(fixef(modelos[[nm]]))
   fe$parametro <- rownames(fe)
-  write.csv(fe, paste0("00-data/phylo/fixef_", nm, ".csv"), row.names = FALSE)
+  write.csv(fe, paste0("00-data/processed/phylo/fixef_", nm, ".csv"), row.names = FALSE)
 
   vc <- VarCorr(modelos[[nm]])
   sd_filas <- list()
@@ -554,9 +555,9 @@ for (nm in names(modelos)) {
     }
   }
   write.csv(dplyr::bind_rows(sd_filas),
-            paste0("00-data/phylo/varcom_", nm, ".csv"), row.names = FALSE)
+            paste0("00-data/processed/phylo/varcom_", nm, ".csv"), row.names = FALSE)
 }
-cat("\nEfectos fijos y varcom exportados a 00-data/phylo/fixef_*.csv y varcom_*.csv\n")
+cat("\nEfectos fijos y varcom exportados a 00-data/processed/phylo/fixef_*.csv y varcom_*.csv\n")
 
 # ---- 2.5 Comparacion LOO + pareto-k entre los dos modelos exploratorios ----
 # Pregunta que responde esta seccion: dentro de los modelos CON filogenia, que
@@ -573,7 +574,7 @@ for (fase in c("pre", "post")) {
   tabla_loo <- loo::loo_compare(loo_1, loo_2)
   print(tabla_loo)
   write.csv(as.data.frame(tabla_loo),
-            paste0("00-data/phylo/loo_comp_phylo_", fase, ".csv"))
+            paste0("00-data/processed/phylo/loo_comp_phylo_", fase, ".csv"))
 
   # pareto-k por observacion
   # brms descarto las filas con NA en Moisture_content al ajustar, de modo

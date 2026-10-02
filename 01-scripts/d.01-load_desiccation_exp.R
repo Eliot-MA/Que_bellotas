@@ -7,4 +7,4 @@ source("01-scripts/d.01.2-derived_variables.R")
 # un identificador en ingles. "procedencia" se conserva sin tocar.
 df.bellotas <- df.bellotas |> rename(prov_code = codigo)
 
-write.csv(x = df.bellotas, "00-data/desiccation_traits_long.csv")
+write.csv(x = df.bellotas, "00-data/processed/desiccation_traits_long.csv")

@@ -4,13 +4,13 @@
 # Usadas por d.04.model_species.R y d.05.model_traits.R.
 # Todas las rutas son relativas a la raiz del repositorio.
 
-# Guardar objetos de modelo en 00-data/models/ ----
+# Guardar objetos de modelo en 00-data/processed/models/ ----
 save_models <- function(models) {
-  dir.create("00-data/models", showWarnings = FALSE, recursive = TRUE)
+  dir.create("00-data/processed/models", showWarnings = FALSE, recursive = TRUE)
   for (nm in names(models)) {
-    saveRDS(models[[nm]], file.path("00-data/models", paste0(nm, ".rds")))
+    saveRDS(models[[nm]], file.path("00-data/processed/models", paste0(nm, ".rds")))
   }
-  cat("Modelos guardados en 00-data/models/:\n  ", paste(names(models), collapse = ", "), "\n", sep = "")
+  cat("Modelos guardados en 00-data/processed/models/:\n  ", paste(names(models), collapse = ", "), "\n", sep = "")
   invisible(NULL)
 }
 

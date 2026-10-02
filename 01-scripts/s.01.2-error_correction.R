@@ -15,7 +15,7 @@
 ##           the whole acorn leaves the pipeline                             ##
 ##                                                                           ##
 ## Every action is appended to error_correction_log, which the master        ##
-## exports as an audit trail (00-data/error_correction_log.csv).             ##
+## exports as an audit trail (00-data/processed/error_correction_log.csv).             ##
 ###############################################################################
 
 # --- 0. Guard ----------------------------------------------------------------

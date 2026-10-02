@@ -6,7 +6,7 @@
 ## species and provenance information by acorn ID ranges, and recodes the    ##
 ## germination records into a clean 0/1 encoding.                            ##
 ##                                                                           ##
-## Inputs  (00-data/, read-only):                                            ##
+## Inputs  (00-data/rawd/, read-only):                                       ##
 ##   - germination_phase_I.csv     Phase 1 records (acorn IDs 1-1600)        ##
 ##   - germination_phase_II.csv    Phase 2 records (local IDs, shifted       ##
 ##                                 +1600 to match the provenance lookup)     ##
@@ -30,21 +30,21 @@ library(fuzzyjoin)
 # and carry a UTF-8 BOM.
 
 rD.germ.phase1 <- read.csv2(
-  "00-data/germination_phase_I.csv",
+  "00-data/rawd/germination_phase_I.csv",
   fileEncoding = "UTF-8-BOM",
   check.names  = FALSE,
   stringsAsFactors = FALSE
 )
 
 rD.germ.phase2 <- read.csv2(
-  "00-data/germination_phase_II.csv",
+  "00-data/rawd/germination_phase_II.csv",
   fileEncoding = "UTF-8-BOM",
   check.names  = FALSE,
   stringsAsFactors = FALSE
 )
 
 rD.id.species <- read.csv2(
-  "00-data/id_species_provenances.csv",
+  "00-data/rawd/id_species_provenances.csv",
   fileEncoding = "UTF-8-BOM",
   check.names  = FALSE,
   stringsAsFactors = FALSE

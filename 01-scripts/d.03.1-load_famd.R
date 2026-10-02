@@ -8,7 +8,7 @@ library(tidyverse)
 # source("01-scripts/d.01-load_desiccation_exp.R")
 # rm(list = ls())
 
-df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
+df.bellotas <- read.csv("00-data/processed/desiccation_traits_long.csv")
 
 # 1. Calculate FAMD ----
 ## 1.1. Create famd dataframe ----
@@ -61,7 +61,7 @@ rownames(mat.corr) <- colnames(mat.corr) <- c("mass", "volume", "SVR",
                                                 "SPM", "SCR", "SSR", 
                                                 "pericarp rupture")
 
-write.csv2(mat.corr, "00-data/correlation_matrix_traits.csv")
+write.csv2(mat.corr, "00-data/processed/correlation_matrix_traits.csv")
 
 dir.create("07-img/FAMD_outputs", showWarnings = FALSE)
 
@@ -104,8 +104,8 @@ df <- cbind(df, coord_ind)
 assert_sin_procedencias_excluidas(df, "prov_code", "famd_ind_coord.csv")
 # row.names = FALSE: por defecto write.csv escribe los nombres de fila como
 # primera columna sin cabecera, que al releer el CSV aparece como "H1".
-write.csv(x = df, "00-data/famd_ind_coord.csv", row.names = FALSE)
-cat("Coordenadas FAMD guardadas en 00-data/famd_ind_coord.csv (",
+write.csv(x = df, "00-data/processed/famd_ind_coord.csv", row.names = FALSE)
+cat("Coordenadas FAMD guardadas en 00-data/processed/famd_ind_coord.csv (",
     nrow(df), " bellotas, ", length(PROCEDENCIAS_EXCLUIDAS) ,
     " procedencia(s) excluida(s): ",
     paste(PROCEDENCIAS_EXCLUIDAS, collapse = ", "), ")\n", sep = "")
@@ -224,7 +224,7 @@ tabla_famd <- bind_rows(quanti_df, quali_df)
 
 tabla_famd
 
-write.csv2(x = tabla_famd, file = "00-data/famd_long.csv")
+write.csv2(x = tabla_famd, file = "00-data/processed/famd_long.csv")
 
 # 2) Limpiar y ordenar la tabla
 # Construir la tabla (variables ├ù dimensiones con contribuciones)
@@ -250,7 +250,7 @@ tabla_wide <- tabla_contrib %>%
   dplyr::select(variable, dimension, contrib_signo) %>%
   pivot_wider(names_from = dimension, values_from = contrib_signo)
 
-write.csv2(x = tabla_wide, file = "00-data/paper_famd.csv")
+write.csv2(x = tabla_wide, file = "00-data/processed/paper_famd.csv")
 
 
 ## 3. Tabla de individuos con bioclimate (compartida con d.03.2 y d.03.3) ----

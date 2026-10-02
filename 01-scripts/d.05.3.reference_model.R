@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # d.05.3.reference_model.R
 # MODELO DE REFERENCIA del articulo.
 #
@@ -46,12 +46,12 @@
 #      comprobacion de robustez, no como modelo de referencia.
 #
 # Salidas:
-#   00-data/reference_model_comparison.csv   comparacion AIC/pesos (PRE y POST)
-#   00-data/reference_model_coef.csv        coeficientes fijos
-#   00-data/reference_model_varcomp.csv     componentes de varianza
-#   00-data/reference_model_varcomp_detalle.csv  varianzas separadas + ICC
-#   00-data/reference_model_anova.csv       Anova por tipo III
-#   00-data/models/m.ref*.rds               objetos de modelo
+#   00-data/processed/reference_model_comparison.csv   comparacion AIC/pesos (PRE y POST)
+#   00-data/processed/reference_model_coef.csv        coeficientes fijos
+#   00-data/processed/reference_model_varcomp.csv     componentes de varianza
+#   00-data/processed/reference_model_varcomp_detalle.csv  varianzas separadas + ICC
+#   00-data/processed/reference_model_anova.csv       Anova por tipo III
+#   00-data/processed/models/m.ref*.rds               objetos de modelo
 #   06-html/modeldashboard_m.ref*.html      dashboards (si GEN_DASH == "Y")
 # ============================================================
 
@@ -70,8 +70,8 @@ suppressPackageStartupMessages({
 # Reutiliza el dataframe del master si existe; si no, lo reconstruye con la
 # misma receta que d.05.0.model_traits.R.
 if (!exists("df") || !exists("df.t1") || !exists("df.t2")) {
-  df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
-  df.famd     <- read.csv("00-data/famd_ind_coord.csv")
+  df.bellotas <- read.csv("00-data/processed/desiccation_traits_long.csv")
+  df.famd     <- read.csv("00-data/processed/famd_ind_coord.csv")
   df <- df.bellotas |>
     dplyr::select(-X) |>
     dplyr::select(id_bellota, prov_code, tiempo_acumulado_horas, Moisture_content) |>
@@ -310,8 +310,8 @@ cmp_post <- comparar_fase("POST (t > 94 h)",
                           m.ref.post       = m.ref.post)
 
 cmp_all <- bind_rows(cmp_pre, cmp_post)
-write.csv(cmp_all, "00-data/reference_model_comparison.csv", row.names = FALSE)
-cat("\nGuardada: 00-data/reference_model_comparison.csv\n\n")
+write.csv(cmp_all, "00-data/processed/reference_model_comparison.csv", row.names = FALSE)
+cat("\nGuardada: 00-data/processed/reference_model_comparison.csv\n\n")
 print(cmp_all)
 
 # ============================================================
@@ -376,12 +376,12 @@ modelos_ref <- list(
 )
 
 coef_ref <- coef_table(modelos_ref)
-write.csv(coef_ref, "00-data/reference_model_coef.csv", row.names = FALSE)
-cat("Guardada: 00-data/reference_model_coef.csv\n")
+write.csv(coef_ref, "00-data/processed/reference_model_coef.csv", row.names = FALSE)
+cat("Guardada: 00-data/processed/reference_model_coef.csv\n")
 
 varcomp_ref <- varcomp_table(modelos_ref)
-write.csv(varcomp_ref, "00-data/reference_model_varcomp.csv", row.names = FALSE)
-cat("Guardada: 00-data/reference_model_varcomp.csv\n")
+write.csv(varcomp_ref, "00-data/processed/reference_model_varcomp.csv", row.names = FALSE)
+cat("Guardada: 00-data/processed/reference_model_varcomp.csv\n")
 
 # varcomp_table() exporta `varianza = sum(diag(vc[[nivel]]))`, o sea el trazo de
 # la matriz de covarianza. Para un grupo con pendiente e intercepto eso mezcla
@@ -453,8 +453,8 @@ componentes_icc <- function(modelos) {
 }
 
 comp_ref <- componentes_icc(modelos_ref)
-write.csv(comp_ref, "00-data/reference_model_varcomp_detalle.csv", row.names = FALSE)
-cat("Guardada: 00-data/reference_model_varcomp_detalle.csv\n")
+write.csv(comp_ref, "00-data/processed/reference_model_varcomp_detalle.csv", row.names = FALSE)
+cat("Guardada: 00-data/processed/reference_model_varcomp_detalle.csv\n")
 cat("\nComponentes por nivel (varianza, sd y peso sobre el total del modelo):\n")
 print(comp_ref)
 
@@ -470,8 +470,8 @@ if (es_utilizable(m.ref.pre) && es_utilizable(m.ref.post)) {
     car::Anova(m.ref.post, type = "III") |> as.data.frame() |>
       rownames_to_column("term") |> mutate(phase = "POST")
   )
-  write.csv(anova_ref, "00-data/reference_model_anova.csv", row.names = FALSE)
-  cat("Guardada: 00-data/reference_model_anova.csv\n")
+  write.csv(anova_ref, "00-data/processed/reference_model_anova.csv", row.names = FALSE)
+  cat("Guardada: 00-data/processed/reference_model_anova.csv\n")
 } else {
   cat("Omitido reference_model_anova.csv: m.ref no ha convergido.\n")
 }

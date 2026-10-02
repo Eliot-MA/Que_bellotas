@@ -9,12 +9,12 @@
 ##   s.01.3-dry_weight_table.R  one row per acorn + FW0->DW allometric model ##
 ##                              (also writes its own diagnostics artifacts   ##
 ##                               to 07-img/dw_model_diagnostics and          ##
-##                               00-data/tablas_resumen)                     ##
+##                               00-data/processed/tablas_resumen)                     ##
 ##   s.01.4-germination_table.R moisture content + outcomes -> df.analysis   ##
 ##                                                                           ##
 ## Outputs:                                                                  ##
-##   00-data/sensitivity_germination_long.csv  (one row per acorn)           ##
-##   00-data/error_correction_log.csv          (audit trail of s.01.2)       ##
+##   00-data/processed/sensitivity_germination_long.csv  (one row per acorn)           ##
+##   00-data/processed/error_correction_log.csv          (audit trail of s.01.2)       ##
 ###############################################################################
 
 source("01-scripts/s.01.1-load_raw.R")
@@ -23,14 +23,14 @@ source("01-scripts/s.01.3-dry_weight_table.R")
 source("01-scripts/s.01.4-germination_table.R")
 
 write.csv(df.analysis,
-          "00-data/sensitivity_germination_long.csv",
+          "00-data/processed/sensitivity_germination_long.csv",
           row.names = FALSE)
 
 write.csv(error_correction_log,
-          "00-data/error_correction_log.csv",
+          "00-data/processed/error_correction_log.csv",
           row.names = FALSE)
 
 cat("\ns.01 master done:",
     nrow(df.analysis), "acorns exported to",
-    "00-data/sensitivity_germination_long.csv;",
+    "00-data/processed/sensitivity_germination_long.csv;",
     nrow(error_correction_log), "correction actions logged\n")

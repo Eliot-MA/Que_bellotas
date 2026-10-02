@@ -19,12 +19,12 @@
 #     frente a OToL/GBOTB y (b) el uso distancias de Grafen si procediera
 #
 # Salidas:
-#   00-data/phylo/oak_crown.tre                   arbol crown crudo (descarga)
-#   00-data/phylo/tip_check_summary.csv           coincidencia de nombres
-#   00-data/phylo/oak_tree.rds | .nwk            arbol crown podado (principal)
-#   00-data/phylo/oak_vcv.rds                    matriz A
-#   00-data/phylo/gbotb_scenarios.rds            arboles S1-S3 + estado de especies
-#   00-data/phylo/tree_comparison_summary.csv    metricas de justificacion
+#   00-data/rawd/phylo/oak_crown.tre                     arbol crown crudo (descarga)
+#   00-data/processed/phylo/tip_check_summary.csv        coincidencia de nombres
+#   00-data/processed/phylo/oak_tree.rds | .nwk          arbol crown podado (principal)
+#   00-data/processed/phylo/oak_vcv.rds                  matriz A
+#   00-data/processed/phylo/gbotb_scenarios.rds          arboles S1-S3 + estado de especies
+#   00-data/processed/phylo/tree_comparison_summary.csv  metricas de justificacion
 #   07-img/oak_phylo.png
 #   07-img/phylomaker_scenarios.png
 #   07-img/phylo_trees_comparison.png
@@ -36,7 +36,7 @@ spp <- c("Quercus petraea", "Quercus robur", "Quercus faginea",
          "Quercus coccifera", "Quercus ilex", "Quercus pyrenaica",
          "Quercus suber", "Quercus pubescens")
 
-dir.create("00-data/phylo", showWarnings = FALSE, recursive = TRUE)
+dir.create("00-data/processed/phylo", showWarnings = FALSE, recursive = TRUE)
 dir.create("07-img", showWarnings = FALSE, recursive = TRUE)
 
 RECREATE_PHYLO <- FALSE   # TRUE para re-descargar y regenerar todo
@@ -53,10 +53,10 @@ RECREATE_OTOL  <- FALSE   # TRUE para generar el arbol OToL de cotejo (requiere 
 
 CROWN_URL <- "https://raw.githubusercontent.com/andrew-hipp/global-oaks-2019/master/ANALYSES/2019-06_globalOaks-gitUpdate/OUT/ANALYSIS.PRODUCTS/tr.singletons.correlated.1.taxaGrepCrown.tre"
 
-if (!file.exists("00-data/phylo/oak_tree.rds") || RECREATE_PHYLO) {
+if (!file.exists("00-data/processed/phylo/oak_tree.rds") || RECREATE_PHYLO) {
 
   # 1a. Descargar el crown tree (si no existe o se pide re-descarga)
-  crown_dest <- "00-data/phylo/oak_crown.tre"
+  crown_dest <- "00-data/rawd/phylo/oak_crown.tre"
   if (!file.exists(crown_dest) || RECREATE_PHYLO) {
     download.file(CROWN_URL, crown_dest, mode = "wb")
     cat("Crown tree descargado de Hipp et al. (2020)\n")
@@ -103,7 +103,7 @@ if (!file.exists("00-data/phylo/oak_tree.rds") || RECREATE_PHYLO) {
   }
 
   # Guardar verificacion como CSV
-  write.csv(check_df, "00-data/phylo/tip_check_summary.csv", row.names = FALSE)
+  write.csv(check_df, "00-data/processed/phylo/tip_check_summary.csv", row.names = FALSE)
 
   # 1e. Elegir 1 tip por especie: preferir la accesion con metadatos completos
   #     (label mas largo = mas pipes). Robur e ilex tienen 2 accesiones.
@@ -125,24 +125,24 @@ if (!file.exists("00-data/phylo/oak_tree.rds") || RECREATE_PHYLO) {
   cat("Branch lengths:", !is.null(tree$edge.length), "\n")
   cat("Ultrametric:", ape::is.ultrametric(tree), "\n")
 
-  ape::write.tree(tree, file = "00-data/phylo/oak_tree.nwk")
-  saveRDS(tree, "00-data/phylo/oak_tree.rds")
+  ape::write.tree(tree, file = "00-data/processed/phylo/oak_tree.nwk")
+  saveRDS(tree, "00-data/processed/phylo/oak_tree.rds")
 
 } else {
   cat("Cargando arbol crown ya construido\n")
-  tree <- readRDS("00-data/phylo/oak_tree.rds")
+  tree <- readRDS("00-data/processed/phylo/oak_tree.rds")
 }
 
 # Matriz de varianza-covarianza filogenetica
 A <- ape::vcv.phylo(tree)
-saveRDS(A, "00-data/phylo/oak_vcv.rds")
+saveRDS(A, "00-data/processed/phylo/oak_vcv.rds")
 
 # Figura del arbol crown
 png("07-img/oak_phylo.png", width = 1200, height = 800, res = 150)
 plot(tree, cex = 1.1)
 title("Quercus crown tree — Hipp et al. (2020)")
 dev.off()
-cat("Guardado: 00-data/phylo/oak_tree.rds, oak_tree.nwk, oak_vcv.rds, 07-img/oak_phylo.png\n")
+cat("Guardado: 00-data/processed/phylo/oak_tree.rds, oak_tree.nwk, oak_vcv.rds, 07-img/oak_phylo.png\n")
 
 # ============================================================
 # 2. Cotejo: OToL + Grafen (opcional, requiere rotl)
@@ -152,14 +152,14 @@ cat("Guardado: 00-data/phylo/oak_tree.rds, oak_tree.nwk, oak_vcv.rds, 07-img/oak
 # este bloque solo verifica que la topologia OToL es coherente con la del
 # crown tree. Habilitar con RECREATE_OTOL <- TRUE (tarda ~30 s). Si rotl no
 # esta instalado, se salta sin error.
-if ((!file.exists("00-data/phylo/oak_otol.rds") || RECREATE_OTOL) &&
+if ((!file.exists("00-data/processed/phylo/oak_otol.rds") || RECREATE_OTOL) &&
     requireNamespace("rotl", quietly = TRUE)) {
 
   suppressPackageStartupMessages(library(rotl))
 
   # 2a. Resolucion de nombres en la taxonomia de OToL
   resolved <- rotl::tnrs_match_names(spp, context_name = "Vascular plants")
-  saveRDS(resolved, "00-data/phylo/otol_resolution.rds")
+  saveRDS(resolved, "00-data/processed/phylo/otol_resolution.rds")
 
   cat("-- Resolucion de nombres en OToL (cotejo) --\n")
   print(resolved[, c("search_string", "unique_name", "ott_id", "is_synonym", "flags")])
@@ -185,12 +185,12 @@ if ((!file.exists("00-data/phylo/oak_otol.rds") || RECREATE_OTOL) &&
     tree_otol <- ape::compute.brlen(tree_otol, method = "Grafen")
   }
 
-  ape::write.tree(tree_otol, file = "00-data/phylo/oak_otol.nwk")
-  saveRDS(tree_otol, "00-data/phylo/oak_otol.rds")
+  ape::write.tree(tree_otol, file = "00-data/processed/phylo/oak_otol.nwk")
+  saveRDS(tree_otol, "00-data/processed/phylo/oak_otol.rds")
 
-} else if (file.exists("00-data/phylo/oak_otol.rds")) {
+} else if (file.exists("00-data/processed/phylo/oak_otol.rds")) {
   cat("Cargando arbol OToL de cotejo ya construido\n")
-  tree_otol <- readRDS("00-data/phylo/oak_otol.rds")
+  tree_otol <- readRDS("00-data/processed/phylo/oak_otol.rds")
 } else {
   cat("OToL de cotejo omitido (rotl no disponible o RECREATE_OTOL = FALSE)\n")
   tree_otol <- NULL
@@ -199,7 +199,7 @@ if ((!file.exists("00-data/phylo/oak_otol.rds") || RECREATE_OTOL) &&
 # ============================================================
 # 3. Via descartada: V.PhyloMaker2 / GBOTB (escenarios S1-S3)
 # ============================================================
-if (!file.exists("00-data/phylo/gbotb_scenarios.rds") || DEMO_GBOTB) {
+if (!file.exists("00-data/processed/phylo/gbotb_scenarios.rds") || DEMO_GBOTB) {
   if (!requireNamespace("V.PhyloMaker2", quietly = TRUE)) {
     cat("V.PhyloMaker2 no instalado; omitiendo cotejo GBOTB\n")
     res_sc <- list(S1 = NULL, S2 = NULL, S3 = NULL)
@@ -246,7 +246,7 @@ if (!file.exists("00-data/phylo/gbotb_scenarios.rds") || DEMO_GBOTB) {
   saveRDS(list(
     trees  = lapply(res_sc, function(r) if (is.null(r)) NULL else r[[1]]),
     status = status
-  ), "00-data/phylo/gbotb_scenarios.rds")
+  ), "00-data/processed/phylo/gbotb_scenarios.rds")
 
   # Figura: como resuelve cada escenario el arbol de Quercus
   png("07-img/phylomaker_scenarios.png", width = 2100, height = 900, res = 150)
@@ -263,11 +263,11 @@ if (!file.exists("00-data/phylo/gbotb_scenarios.rds") || DEMO_GBOTB) {
   mtext("rojo = especies no presentes en GBOTB (injertadas ad hoc)",
         side = 1, line = -1, outer = TRUE)
   dev.off()
-  cat("Guardado: 00-data/phylo/gbotb_scenarios.rds y 07-img/phylomaker_scenarios.png\n")
+  cat("Guardado: 00-data/processed/phylo/gbotb_scenarios.rds y 07-img/phylomaker_scenarios.png\n")
   }
 
 } else {
-  gbotb <- readRDS("00-data/phylo/gbotb_scenarios.rds")
+  gbotb <- readRDS("00-data/processed/phylo/gbotb_scenarios.rds")
   res_sc <- gbotb$trees
   status <- gbotb$status
 }
@@ -336,8 +336,8 @@ if (length(cands) > 0) {
     cophenetic_cor_crown  = 1
   )
 
-  write.csv(tree_summary, "00-data/phylo/tree_comparison_summary.csv", row.names = FALSE)
-  cat("Guardada: 00-data/phylo/tree_comparison_summary.csv\n")
+  write.csv(tree_summary, "00-data/processed/phylo/tree_comparison_summary.csv", row.names = FALSE)
+  cat("Guardada: 00-data/processed/phylo/tree_comparison_summary.csv\n")
   print(tree_summary)
 
   # Figura comparativa: crown + (OToL opcional) + escenarios GBOTB

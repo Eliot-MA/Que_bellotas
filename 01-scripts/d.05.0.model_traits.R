@@ -47,8 +47,8 @@ library(tidyverse)
 # 150 del resto) y metadatos de localidad incompletos. Se elimina de AMBAS
 # fases (PRE y POST) para que las comparaciones pre-post sean validas.
 if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
-df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
-df.famd     <- read.csv("00-data/famd_ind_coord.csv")
+df.bellotas <- read.csv("00-data/processed/desiccation_traits_long.csv")
+df.famd     <- read.csv("00-data/processed/famd_ind_coord.csv")
 
 df <- df.bellotas |>
   dplyr::select(-X) |>

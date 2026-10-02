@@ -2,8 +2,8 @@
 if (!exists("PROCEDENCIAS_EXCLUIDAS")) source("01-scripts/00-config_procedencias.R")
 
 # Load data ----
-df.bellotas <- read.csv("00-data/desiccation_traits_long.csv")
-df.famd <- read.csv("00-data/famd_ind_coord.csv")
+df.bellotas <- read.csv("00-data/processed/desiccation_traits_long.csv")
+df.famd <- read.csv("00-data/processed/famd_ind_coord.csv")
 
 # Libraries ----
 library(tidyverse)
@@ -117,8 +117,8 @@ breakpoints_out <- puntos_inflexion |>
     by = "id_bellota"
   )
 
-write.csv(breakpoints_out, "00-data/breakpoints_per_acorn.csv", row.names = FALSE)
-cat("Tabla de puntos de inflexion guardada en 00-data/breakpoints_per_acorn.csv\n")
+write.csv(breakpoints_out, "00-data/processed/breakpoints_per_acorn.csv", row.names = FALSE)
+cat("Tabla de puntos de inflexion guardada en 00-data/processed/breakpoints_per_acorn.csv\n")
 
 # Añadir la columna lógica al dataframe original
 df <- df %>%
@@ -166,7 +166,7 @@ sumtable_breakpoints <- df2 |>
   )
 
 ggsave("07-img/breakpoint_scatter.png", p1, width = 8, height = 6)
-write.csv(sumtable_breakpoints, "00-data/sumtable_breakpoints.csv", row.names = FALSE)
+write.csv(sumtable_breakpoints, "00-data/processed/sumtable_breakpoints.csv", row.names = FALSE)
 
 ## Fit model
 
@@ -272,7 +272,7 @@ tabla_comp_final <- tabla_comp %>%
   )
 
 # Save table
-write.csv(tabla_comp_final, "00-data/model_comparisons.csv")
+write.csv(tabla_comp_final, "00-data/processed/model_comparisons.csv")
 
 # Species models
 ## data
@@ -305,13 +305,13 @@ save_models(list(m.orig = m.orig, m.log = m.log, m.sqr = m.sqr,
 
 # Tabla de coeficientes de los modelos finales (MC ~ time * species)
 coef_especie <- coef_table(list("mm.pre (t<94h)" = mm.pre, "mm.post (t>94h)" = mm.post))
-write.csv(coef_especie, "00-data/coef_species_models.csv", row.names = FALSE)
-cat("Tabla de coeficientes guardada en 00-data/coef_species_models.csv\n")
+write.csv(coef_especie, "00-data/processed/coef_species_models.csv", row.names = FALSE)
+cat("Tabla de coeficientes guardada en 00-data/processed/coef_species_models.csv\n")
 
 # Componentes de varianza + barplot por nivel
 varcomp_especie <- varcomp_table(list("mm.pre (t<94h)" = mm.pre, "mm.post (t>94h)" = mm.post))
-write.csv(varcomp_especie, "00-data/varcomp_species_models.csv", row.names = FALSE)
-cat("Componentes de varianza guardados en 00-data/varcomp_species_models.csv\n")
+write.csv(varcomp_especie, "00-data/processed/varcomp_species_models.csv", row.names = FALSE)
+cat("Componentes de varianza guardados en 00-data/processed/varcomp_species_models.csv\n")
 plot_varcomp(varcomp_especie, "07-img/varcomp_species_models.png",
              "Variance components - species models")
 
@@ -428,8 +428,8 @@ cat("Efectos fijos (Anova Type II) por fase:\n")
 print(global_tests)
 
 # Tabla de efectos fijos (material suplementario)
-write.csv(global_tests, "00-data/anova_prepost_species.csv", row.names = FALSE)
-cat("Tabla de efectos fijos guardada en 00-data/anova_prepost_species.csv\n")
+write.csv(global_tests, "00-data/processed/anova_prepost_species.csv", row.names = FALSE)
+cat("Tabla de efectos fijos guardada en 00-data/processed/anova_prepost_species.csv\n")
 
 # Test global de la interaccion time:species (proteccion del procedimiento)
 test_interaccion <- global_tests |>
@@ -463,8 +463,8 @@ ic_pairs_table <- bind_rows(
   pairs_ci(mm.pre)  |> mutate(phase = "PRE"),
   pairs_ci(mm.post) |> mutate(phase = "POST")
 )
-write.csv(ic_pairs_table, "00-data/desiccation_pairs_ci.csv", row.names = FALSE)
-cat("Tabla de IC de comparaciones por pares guardada en 00-data/desiccation_pairs_ci.csv\n")
+write.csv(ic_pairs_table, "00-data/processed/desiccation_pairs_ci.csv", row.names = FALSE)
+cat("Tabla de IC de comparaciones por pares guardada en 00-data/processed/desiccation_pairs_ci.csv\n")
 
 # ---------------------------------------------------------------------------
 # 4.2b Comparaciones SELECTIVAS (inter-bioclima)
@@ -564,9 +564,9 @@ selective_pairs_table <- bind_rows(
   selective_pairs_from_model(mm.pre,  "PRE"),
   selective_pairs_from_model(mm.post, "POST")
 )
-write.csv(selective_pairs_table, "00-data/desiccation_selective_pairs_ci.csv",
+write.csv(selective_pairs_table, "00-data/processed/desiccation_selective_pairs_ci.csv",
           row.names = FALSE)
-cat("Tabla de IC de comparaciones selectivas (Sidak) guardada en 00-data/desiccation_selective_pairs_ci.csv\n")
+cat("Tabla de IC de comparaciones selectivas (Sidak) guardada en 00-data/processed/desiccation_selective_pairs_ci.csv\n")
 
 # Anadir ambas columnas de letras a rates
 rates <- rates |>
@@ -812,7 +812,7 @@ ggsave("07-img/paper_prepost_desiccation_comp_sel_compint.png", p_prepost_sel_co
 cat("Figura con comparison intervals selectivos guardada en 07-img/paper_prepost_desiccation_comp_sel_compint.png\n")
 
 # Tabla suplementaria de tasas de desecacion por especie (+ letras post-hoc)
-write.csv(plot_tab, "00-data/desiccation_rates_prepost.csv", row.names = FALSE)
-cat("Tabla de tasas guardada en 00-data/desiccation_rates_prepost.csv\n")
+write.csv(plot_tab, "00-data/processed/desiccation_rates_prepost.csv", row.names = FALSE)
+cat("Tabla de tasas guardada en 00-data/processed/desiccation_rates_prepost.csv\n")
 
 

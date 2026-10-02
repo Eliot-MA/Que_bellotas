@@ -15,7 +15,7 @@ format:
 ---
 
 ```{r setup, include=FALSE}
-if (!file.exists("00-data/desiccation_traits_long.csv")) {
+if (!file.exists("00-data/processed/desiccation_traits_long.csv")) {
   knitr::opts_knit$set(root.dir = "..")
 }
 

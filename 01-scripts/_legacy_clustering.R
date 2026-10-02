@@ -32,7 +32,7 @@
 #   sil.bio.tab$permanova_p  <- permanova$`Pr(>F)`[1]
 # }
 # 
-# write.csv(sil.bio.tab, "00-data/bioclimate_exploration_summary.csv", row.names = FALSE)
+# write.csv(sil.bio.tab, "00-data/processed/bioclimate_exploration_summary.csv", row.names = FALSE)
 # 
 # cat("\n--- Figure 1b, Phase 1 ---\n")
 # cat(sprintf("Mean silhouette (bioclimate as groups, Dim1-Dim3): %.3f\n",
@@ -147,17 +147,17 @@
 #             summary(sil.final)$avg.width))
 # 
 # ## 5.5 Guardar resultados ----
-# write.csv(ind.bio, "00-data/famd_clusters.csv", row.names = FALSE)
+# write.csv(ind.bio, "00-data/processed/famd_clusters.csv", row.names = FALSE)
 # 
 # comp.especie <- ind.bio |>
 #   count(cluster, species) |>
 #   pivot_wider(names_from = cluster, values_from = n, values_fill = 0)
-# write.csv(comp.especie, "00-data/cluster_species_composition.csv", row.names = FALSE)
+# write.csv(comp.especie, "00-data/processed/cluster_species_composition.csv", row.names = FALSE)
 # 
 # comp.bioclima <- ind.bio |>
 #   count(cluster, bioclimate) |>
 #   pivot_wider(names_from = cluster, values_from = n, values_fill = 0)
-# write.csv(comp.bioclima, "00-data/cluster_bioclimate_composition.csv", row.names = FALSE)
+# write.csv(comp.bioclima, "00-data/processed/cluster_bioclimate_composition.csv", row.names = FALSE)
 # 
 # k.table <- data.frame(
 #   method = names(k.methods),
@@ -166,7 +166,7 @@
 #   mean_silhouette_final = rep(summary(sil.final)$avg.width, length(k.methods)),
 #   hopkins_H = rep(H.hop, length(k.methods))
 # )
-# write.csv(k.table, "00-data/kmeans_k_selection.csv", row.names = FALSE)
+# write.csv(k.table, "00-data/processed/kmeans_k_selection.csv", row.names = FALSE)
 # 
 # ## 5.6 Figuras de decisi├│n (codo / silhouette / gap) ----
 # p.wss <- fviz_nbclust(X.kmeans, kmeans, method = "wss", k.max = 10) +
@@ -245,18 +245,18 @@
 #   mutate(cluster = factor(km.final3$cluster, levels = 1:3))
 # 
 # # Guardar la partici├│n definitiva (sobrescribe la provisional de k=4 de la secci├│n 5)
-# write.csv(ind.final, "00-data/famd_clusters.csv", row.names = FALSE)
+# write.csv(ind.final, "00-data/processed/famd_clusters.csv", row.names = FALSE)
 # 
 # comp.especie3 <- ind.final |>
 #   count(cluster, species) |>
 #   pivot_wider(names_from = cluster, values_from = n, values_fill = 0)
-# write.csv(comp.especie3, "00-data/cluster_species_composition.csv", row.names = FALSE)
+# write.csv(comp.especie3, "00-data/processed/cluster_species_composition.csv", row.names = FALSE)
 # cat("\n[Panel 1b] Composici├│n por especie (k=3):\n"); print(comp.especie3)
 # 
 # comp.bioclima3 <- ind.final |>
 #   count(cluster, bioclimate) |>
 #   pivot_wider(names_from = cluster, values_from = n, values_fill = 0)
-# write.csv(comp.bioclima3, "00-data/cluster_bioclimate_composition.csv", row.names = FALSE)
+# write.csv(comp.bioclima3, "00-data/processed/cluster_bioclimate_composition.csv", row.names = FALSE)
 # 
 # ## 7.2 Elipse 65% central por Mahalanobis (2D) ----
 # # Recorta las distancias de Mahalanobis al centroide en el cuantil 65%:

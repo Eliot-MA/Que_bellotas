@@ -10,7 +10,7 @@
 #      muestreo por debajo de 94 h (t0 = 0 h y t1 ~ 23,8 h) frente a 5 en el
 #      resto de procedencias: 60 observaciones PRE frente a 150. La pendiente
 #      PRE de cada bellota IL3 se estima con 2 puntos, sin grados de libertad.
-#   2. Metadatos de procedencia incompletos. En 00-data/procedencias_updated.csv
+#   2. Metadatos de procedencia incompletos. En 00-data/rawd/procedencias_updated.csv
 #      la fila de IL3 reutiliza la cabecera como datos
 #      ("IL3;Q. ilex;El Serranillo;Localidad;Procedencia;Latitud;..."), por lo
 #      que d.01.1 (paste(Procedencia, Localidad, sep = "-")) produce
